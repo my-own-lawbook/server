@@ -1,0 +1,35 @@
+[versions]
+exposed = "0.54.0"
+ktor = "2.3.12"
+koin = "4.0.0-RC1"
+kotlin-serialization = "1.7.1"
+kotlin-serialization-plugin = "2.0.20"
+kotlin-jvm-plugin = "1.9.23"
+postgres_version = "42.5.1"
+apache_email = "1.6.0"
+kotlin_datetime = "0.6.1"
+
+[libraries]
+apache-email = { group = "org.apache.commons", name = "commons-email", version.ref = "apache_email" }
+exposed = { group = "org.jetbrains.exposed", name = "exposed-core", version.ref = "exposed" }
+exposed-dao = { group = "org.jetbrains.exposed", name = "exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { group = "org.jetbrains.exposed", name = "exposed-jdbc", version.ref = "exposed" }
+exposed-datetime = { group = "org.jetbrains.exposed", name = "exposed-kotlin-datetime", version.ref = "exposed" }
+ktor = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
+ktor-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-serialization = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+koin = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+koin-ktor = { group = "io.insert-koin", name = "koin-ktor", version.ref = "koin" }
+kotlin-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlin-serialization" }
+kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlin_datetime" }
+postgres = { group = "org.postgresql", name = "postgresql", version.ref = "postgres_version" }
+
+[plugins]
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-serialization-plugin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-jvm-plugin" }
+
+[bundles]
+exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]
+ktor = ["ktor", "ktor-netty", "ktor-content-negotiation", "ktor-serialization"]
+koin = ["koin", "koin-ktor"]
