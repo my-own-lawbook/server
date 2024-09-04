@@ -13,7 +13,16 @@ dependencies {
     implementation(libs.bundles.koin)
     implementation(libs.bundles.exposed)
 
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.h2)
+
     implementation(project(":model"))
+}
+
+tasks.test.configure {
+    useJUnitPlatform()
 }
 
 kotlin {
