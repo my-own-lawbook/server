@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
+import org.jetbrains.exposed.sql.selectAll
 import java.util.*
 
 object TwoFactorToken {
@@ -93,9 +94,7 @@ object TwoFactorToken {
             get() = Model(id.value, token, issuedAt, expiringAt, used, additionalContent, type, user.asModel)
 
         fun populate(model: Model) {
-            user = User.Entity(EntityID(model.user.id, User.Table)).apply {
-                populate(model.user)
-            }
+            user = User.Entity.findById(model.user.id)!!
             issuedAt = model.issuedAt
             expiringAt = model.expiringAt
             used = model.used

@@ -77,6 +77,7 @@ object User {
             username = model.username
             password = model.password
             isEmailVerified = model.isEmailVerified
+            profile = model.profile?.let { profile -> UserProfile.Entity.findById(profile.id) }
         }
 
         companion object : LongEntityClass<Entity>(Table)
