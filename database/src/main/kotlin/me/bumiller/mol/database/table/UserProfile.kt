@@ -71,9 +71,9 @@ object UserProfile {
             gender = model.gender
         }
 
-    }
+        companion object : LongEntityClass<Entity>(Table)
 
-    internal object EntityClass : LongEntityClass<Entity>(Table)
+    }
 
 }
 

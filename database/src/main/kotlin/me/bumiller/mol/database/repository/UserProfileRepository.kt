@@ -3,7 +3,6 @@ package me.bumiller.mol.database.repository
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.UserProfile.Entity
-import me.bumiller.mol.database.table.UserProfile.EntityClass
 import me.bumiller.mol.database.table.UserProfile.Model
 import me.bumiller.mol.database.table.UserProfile.Table
 
@@ -13,7 +12,7 @@ import me.bumiller.mol.database.table.UserProfile.Table
 interface UserProfileRepository : IEntityRepository<Long, Model>
 
 internal class ExposedUserProfileRepository :
-    EntityRepository<Long, Model, Entity, Table, EntityClass>(Table, EntityClass), UserProfileRepository {
+    EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), UserProfileRepository {
 
     override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
         populate(model)

@@ -81,7 +81,7 @@ object TwoFactorToken {
 
     internal class Entity(id: EntityID<Long>) : LongEntity(id) {
 
-        var user by User.EntityClass referencedOn Table.user
+        var user by User.Entity referencedOn Table.user
         var token by Table.token
         var issuedAt by Table.issuedAt
         var expiringAt by Table.expiringAt
@@ -104,9 +104,9 @@ object TwoFactorToken {
             additionalContent = model.additionalContent
         }
 
-    }
+        companion object : LongEntityClass<Entity>(Table)
 
-    internal object EntityClass : LongEntityClass<Entity>(Table)
+    }
 
 }
 

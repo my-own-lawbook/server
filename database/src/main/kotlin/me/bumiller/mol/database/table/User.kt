@@ -58,7 +58,7 @@ object User {
 
         val isEmailVerified = bool("email_verified").default(false)
 
-        val profileId = entityId("profile_id", UserProfile.Table).nullable()
+        val profileId = reference("profile_id", UserProfile.Table).nullable()
     }
 
     internal class Entity(id: EntityID<Long>) : LongEntity(id) {
@@ -67,7 +67,7 @@ object User {
         var username by Table.username
         var password by Table.password
         var isEmailVerified by Table.isEmailVerified
-        var profile by UserProfile.EntityClass optionalReferencedOn Table.profileId
+        var profile by UserProfile.Entity optionalReferencedOn Table.profileId
 
         val asModel
             get() = Model(id.value, email, username, password, isEmailVerified, profile?.asModel)
@@ -79,9 +79,8 @@ object User {
             isEmailVerified = model.isEmailVerified
         }
 
+        companion object : LongEntityClass<Entity>(Table)
+
     }
-
-
-    internal object EntityClass : LongEntityClass<Entity>(Table)
 
 }

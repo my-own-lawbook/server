@@ -3,7 +3,6 @@ package me.bumiller.mol.database.repository
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.TwoFactorToken.Entity
-import me.bumiller.mol.database.table.TwoFactorToken.EntityClass
 import me.bumiller.mol.database.table.TwoFactorToken.Model
 import me.bumiller.mol.database.table.TwoFactorToken.Table
 import me.bumiller.mol.database.util.eqOpt
@@ -31,9 +30,9 @@ interface TwoFactorTokenRepository : IEntityRepository<Long, Model> {
 }
 
 internal class ExposedTwoFactorTokenRepository :
-    EntityRepository<Long, Model, Entity, Table, EntityClass>(
+    EntityRepository<Long, Model, Entity, Table, Entity.Companion>(
         Table,
-        EntityClass
+        Entity
     ), TwoFactorTokenRepository {
 
     override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
@@ -43,7 +42,7 @@ internal class ExposedTwoFactorTokenRepository :
     override fun map(entity: Entity): Model = entity.asModel
 
     override suspend fun getSpecific(id: Optional<Long>, token: Optional<UUID>): Model? = suspendTransaction {
-        EntityClass.find {
+        Entity.find {
             (Table.token eqOpt token) and
                     (Table.id eqOpt id)
         }

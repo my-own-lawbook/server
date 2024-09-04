@@ -3,7 +3,6 @@ package me.bumiller.mol.database.repository
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.User.Entity
-import me.bumiller.mol.database.table.User.EntityClass
 import me.bumiller.mol.database.table.User.Model
 import me.bumiller.mol.database.table.User.Table
 import me.bumiller.mol.database.util.eqOpt
@@ -32,7 +31,7 @@ interface UserRepository : IEntityRepository<Long, Model> {
 
 }
 
-internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Table, EntityClass>(Table, EntityClass),
+internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     UserRepository {
 
     override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
@@ -43,7 +42,7 @@ internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Tab
 
     override suspend fun getSpecific(id: Optional<Long>, username: Optional<String>, email: Optional<String>): Model? =
         suspendTransaction {
-            EntityClass.find {
+            Entity.find {
                 (Table.id eqOpt id) and
                         (Table.username eqOpt username) and
                         (Table.email eqOpt email)
