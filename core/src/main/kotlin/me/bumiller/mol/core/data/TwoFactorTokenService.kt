@@ -1,4 +1,4 @@
-package me.bumiller.mol.service.data
+package me.bumiller.mol.core.data
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant

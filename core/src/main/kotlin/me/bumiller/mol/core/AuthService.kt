@@ -1,4 +1,4 @@
-package me.bumiller.mol.service
+package me.bumiller.mol.core
 
 import me.bumiller.mol.model.AuthTokens
 import me.bumiller.mol.model.TwoFactorToken

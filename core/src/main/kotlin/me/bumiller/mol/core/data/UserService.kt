@@ -1,4 +1,4 @@
-package me.bumiller.mol.service.data
+package me.bumiller.mol.core.data
 
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile

@@ -1,4 +1,4 @@
-package me.bumiller.mol.service.mapping
+package me.bumiller.mol.core.mapping
 
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.TwoFactorTokenType

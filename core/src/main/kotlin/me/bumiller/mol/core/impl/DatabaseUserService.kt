@@ -1,11 +1,11 @@
-package me.bumiller.mol.service.impl
+package me.bumiller.mol.core.impl
 
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
-import me.bumiller.mol.service.data.UserService
-import me.bumiller.mol.service.mapping.mapGenderString
-import me.bumiller.mol.service.mapping.mapUser
+import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.mapping.mapGenderString
+import me.bumiller.mol.core.mapping.mapUser
 import java.util.*
 import me.bumiller.mol.database.table.User.Model as UserModel
 import me.bumiller.mol.database.table.UserProfile.Model as ProfileModel
