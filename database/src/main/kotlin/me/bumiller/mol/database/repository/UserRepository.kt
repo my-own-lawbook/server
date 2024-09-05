@@ -5,6 +5,7 @@ import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.User.Entity
 import me.bumiller.mol.database.table.User.Model
 import me.bumiller.mol.database.table.User.Table
+import me.bumiller.mol.database.table.UserProfile
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.and
@@ -35,7 +36,8 @@ internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Tab
     UserRepository {
 
     override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
-        populate(model)
+        val profileEntity = model.profile?.id?.let(UserProfile.Entity::findById)
+        populate(model, profileEntity)
     }
 
     override fun map(entity: Entity): Model = entity.asModel

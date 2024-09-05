@@ -93,8 +93,8 @@ object TwoFactorToken {
         val asModel
             get() = Model(id.value, token, issuedAt, expiringAt, used, additionalContent, type, user.asModel)
 
-        fun populate(model: Model) {
-            user = User.Entity.findById(model.user.id)!!
+        fun populate(model: Model, userEntity: User.Entity) {
+            user = userEntity
             issuedAt = model.issuedAt
             expiringAt = model.expiringAt
             used = model.used

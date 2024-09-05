@@ -44,7 +44,7 @@ object User {
          */
         val profile: UserProfile.Model?
 
-    ): BaseModel<Long>
+    ) : BaseModel<Long>
 
     internal object Table : LongIdTable("user") {
 
@@ -72,12 +72,12 @@ object User {
         val asModel
             get() = Model(id.value, email, username, password, isEmailVerified, profile?.asModel)
 
-        fun populate(model: Model) {
+        fun populate(model: Model, profileEntity: UserProfile.Entity?) {
             email = model.email
             username = model.username
             password = model.password
             isEmailVerified = model.isEmailVerified
-            profile = model.profile?.let { profile -> UserProfile.Entity.findById(profile.id) }
+            profile = profileEntity
         }
 
         companion object : LongEntityClass<Entity>(Table)
