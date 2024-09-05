@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.kotlin.datetime)
+
     implementation(project(":database"))
     implementation(project(":model"))
 }

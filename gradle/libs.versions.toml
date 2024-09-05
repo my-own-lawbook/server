@@ -13,6 +13,7 @@ mockk = "1.13.12"
 junit = "5.11.0"
 coroutines = "1.9.0-RC.2"
 h2 = "2.1.214"
+auth0-jwt = "4.4.0"
 
 [libraries]
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -27,12 +28,15 @@ ktor = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" 
 ktor-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-serialization = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-auth = { group = "io.ktor", name = "ktor-server-auth", version.ref = "ktor" }
+ktor-auth-jwt = { group = "io.ktor", name = "ktor-server-auth-jwt", version.ref = "ktor" }
 koin = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-ktor = { group = "io.insert-koin", name = "koin-ktor", version.ref = "koin" }
 kotlin-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlin-serialization" }
 kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlin_datetime" }
 postgres = { group = "org.postgresql", name = "postgresql", version.ref = "postgres_version" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
+java-jwt = { group = "com.auth0", name = "java-jwt", version.ref = "auth0-jwt" }
 
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-serialization-plugin" }
@@ -40,5 +44,5 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-jvm-plugin
 
 [bundles]
 exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]
-ktor = ["ktor", "ktor-netty", "ktor-content-negotiation", "ktor-serialization"]
+ktor = ["ktor", "ktor-netty", "ktor-content-negotiation", "ktor-serialization", "ktor-auth", "ktor-auth-jwt"]
 koin = ["koin", "koin-ktor"]
