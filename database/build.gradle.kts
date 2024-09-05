@@ -17,8 +17,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.h2)
-
-    implementation(project(":model"))
 }
 
 tasks.test.configure {
