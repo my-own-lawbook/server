@@ -21,7 +21,7 @@ data class TwoFactorToken (
     /**
      * Optional additional info
      */
-    val additionalInfo: String,
+    val additionalInfo: String?,
 
     /**
      * Time of ordering
@@ -31,7 +31,7 @@ data class TwoFactorToken (
     /**
      * Time of expiration
      */
-    val expiringAt: Instant,
+    val expiringAt: Instant?,
 
     /**
      * What context it was created in

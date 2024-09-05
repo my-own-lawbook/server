@@ -8,6 +8,11 @@ import kotlinx.datetime.LocalDate
 data class UserProfile (
 
     /**
+     * The id of the user
+     */
+    val id: Long,
+
+    /**
      * The birthday
      */
     val birthday: LocalDate,

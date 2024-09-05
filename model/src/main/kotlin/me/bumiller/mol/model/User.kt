@@ -26,6 +26,11 @@ data class User(
     val password: String,
 
     /**
+     * Whether the email is verified
+     */
+    val isEmailVerified: Boolean,
+
+    /**
      * The profile. Null if the user did not yet set up a profile
      */
     val profile: UserProfile?

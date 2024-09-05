@@ -3,26 +3,26 @@ package me.bumiller.mol.model
 /**
  * Model for a gender selection made by the user
  */
-sealed class Gender {
+sealed interface Gender {
 
     /**
      * Male gender
      */
-    data object Male
+    data object Male: Gender
 
     /**
      * Female gender
      */
-    data object Female
+    data object Female: Gender
 
     /**
      * Other gender
      */
-    data object Other
+    data object Other: Gender
 
     /**
      * User does not want to disclose
      */
-    data object Disclosed
+    data object Disclosed: Gender
 
 }
