@@ -8,8 +8,6 @@ import java.util.*
 
 /**
  * Interface to perform common authentication actions.
- *
- * Actions provided by this service will not signal failure by return value, but by throwing [RequestException]'s. This is done so to automatically respond to http-requests in the case of an error or wrong input value.
  */
 interface AuthService {
 
@@ -23,6 +21,7 @@ interface AuthService {
      * @param password The unhashed password of the user
      * @param sendVerificationEmail Whether this should automatically trigger sending an email with an email-verification-token to [email] for the user to verify their email address. Shorthand for calling [sendEmailVerification].
      * @return The created user
+     * @throws IllegalStateException When a user with [email] or [username] already exists
      */
     suspend fun createNewUser(
         email: String,
@@ -38,28 +37,27 @@ interface AuthService {
      *
      * @param user The user, used for personalization and for email address
      * @return The two-factor-token that was created for the email.
+     * @throws IllegalStateException When the token could not be created
      */
     suspend fun sendEmailVerification(user: User): TwoFactorToken
 
     /**
      * Routine for getting a user for passed credentials.
      *
-     * Either [username] or [email] need to be passed. Otherwise, [RequestException] with status 400 is thrown.
-     *
      * @param email The email passed by the user
      * @param username The username passed by the user
-     * @param password The raw, unhashed password passed by the user.
-     * @return The user, if one was found for [email] or [username] that matched with [password].
+     * @param password The raw, unhashed password passed by the user
+     * @return The user, if one was found for [email] or [username] that matched with [password], or null if none was found or could not be authenticated.
+     * @throws IllegalArgumentException If both [email] and [username] are present
      */
-    suspend fun getAuthenticatedUser(email: String? = null, username: String? = null, password: String): User
+    suspend fun getAuthenticatedUser(email: String? = null, username: String? = null, password: String): User?
 
     /**
      * Creates [AuthTokens] for a specified user.
      *
-     * **MUST** only be called after actually verifying the authentication of the user with [userId].
-     *
      * @param userId The id of the user
      * @return The auth tokens for the user
+     * @throws IllegalArgumentException If a user for [userId] was not found
      */
     suspend fun loginUser(userId: Long): AuthTokens
 
