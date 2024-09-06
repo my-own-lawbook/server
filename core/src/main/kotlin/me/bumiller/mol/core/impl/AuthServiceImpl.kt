@@ -42,12 +42,10 @@ internal class AuthServiceImpl(
         password: String,
         sendVerificationEmail: Boolean
     ): User {
-        userService.run {
-            listOf(
-                getSpecific(email = email),
-                getSpecific(username = username)
-            )
-        }.isNotEmpty {
+        listOfNotNull(
+            userService.getSpecific(email = email),
+            userService.getSpecific(username = username)
+        ).isNotEmpty {
             throw IllegalStateException("Found users for '$email' or '$username' already existing.'")
         }
 
@@ -117,7 +115,7 @@ internal class AuthServiceImpl(
 
         tokens.forEach { token ->
             val tokenModel = tokenService.getSpecific(token = token)
-            if (tokenModel?.user?.id == user.id)
+            if (tokenModel?.user?.id == user.id && tokenModel.type == TwoFactorTokenType.RefreshToken)
                 tokenService.markAsUsed(tokenModel.id)
         }
     }
