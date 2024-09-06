@@ -20,10 +20,6 @@ class OptionalExpressionsTest {
     @BeforeAll
     fun setup() {
         db = inMemoryDatabase()
-
-        transaction {
-            SchemaUtils.create(User.Table)
-        }
     }
 
     val users = (1..10).map {

@@ -26,10 +26,6 @@ internal class ExposedUserRepositoryTest {
     @BeforeAll
     fun setup() {
         db = inMemoryDatabase()
-
-        transaction {
-            SchemaUtils.create(User.Table)
-        }
     }
 
     val users = listOf(

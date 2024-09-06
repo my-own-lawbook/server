@@ -3,7 +3,6 @@ package me.bumiller.mol.database.table
 import kotlinx.datetime.LocalDate
 import me.bumiller.mol.database.test.util.inMemoryDatabase
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -18,12 +17,6 @@ class UserProfileTest {
     @BeforeAll
     fun setup() {
         db = inMemoryDatabase()
-
-        transaction {
-            SchemaUtils.create(User.Table)
-            SchemaUtils.create(UserProfile.Table)
-            SchemaUtils.create(TwoFactorToken.Table)
-        }
     }
 
     @Test

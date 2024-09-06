@@ -17,12 +17,6 @@ class UserTest {
     @BeforeAll
     fun setup() {
         db = inMemoryDatabase()
-
-        transaction {
-            SchemaUtils.create(User.Table)
-            SchemaUtils.create(UserProfile.Table)
-            SchemaUtils.create(TwoFactorToken.Table)
-        }
     }
 
     @Test

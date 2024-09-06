@@ -31,12 +31,6 @@ internal class ExposedTwoFactorTokenRepositoryTest {
     @BeforeAll
     fun setup() {
         db = inMemoryDatabase()
-
-        transaction {
-            SchemaUtils.create(TwoFactorToken.Table)
-            SchemaUtils.create(UserProfile.Table)
-            SchemaUtils.create(User.Table)
-        }
     }
 
     val user = User.Model(1L, "email", "username", "password", true, null)
