@@ -11,5 +11,4 @@ repositories {
 
 dependencies {
     implementation(libs.kotlin.datetime)
-    implementation(libs.java.jwt)
 }
