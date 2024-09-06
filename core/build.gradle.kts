@@ -11,6 +11,8 @@ repositories {
 
 dependencies {
     implementation(libs.kotlin.datetime)
+    implementation(libs.java.bcrypt)
+    implementation(libs.java.jwt)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
@@ -18,6 +20,7 @@ dependencies {
 
     implementation(project(":database"))
     implementation(project(":model"))
+    implementation(project(":email"))
 }
 
 tasks.test {
