@@ -24,7 +24,7 @@ interface AuthService {
      * @param sendVerificationEmail Whether this should automatically trigger sending an email with an email-verification-token to [email] for the user to verify their email address. Shorthand for calling [sendEmailVerification].
      * @return The created user
      */
-    fun createNewUser(
+    suspend fun createNewUser(
         email: String,
         username: String,
         password: String,
@@ -34,12 +34,12 @@ interface AuthService {
     /**
      * Routine for sending an email-verification-token to an email.
      *
-     * This will create a two-factor-token for the email and send it to [email].
+     * This will create a two-factor-token for the email and send it to [User.email].
      *
-     * @param email The email to send the token to. Also, the email referenced in the token
+     * @param user The user, used for personalization and for email address
      * @return The two-factor-token that was created for the email.
      */
-    fun sendEmailVerification(email: String): TwoFactorToken
+    suspend fun sendEmailVerification(user: User): TwoFactorToken
 
     /**
      * Routine for getting a user for passed credentials.
@@ -51,7 +51,7 @@ interface AuthService {
      * @param password The raw, unhashed password passed by the user.
      * @return The user, if one was found for [email] or [username] that matched with [password].
      */
-    fun getAuthenticatedUser(email: String? = null, username: String? = null, password: String): User
+    suspend fun getAuthenticatedUser(email: String? = null, username: String? = null, password: String): User
 
     /**
      * Creates [AuthTokens] for a specified user.
@@ -61,7 +61,7 @@ interface AuthService {
      * @param userId The id of the user
      * @return The auth tokens for the user
      */
-    fun loginUser(userId: Long): AuthTokens
+    suspend fun loginUser(userId: Long): AuthTokens
 
     /**
      * Will deactivate the refresh [tokens] added to the user with [userId].
@@ -69,6 +69,6 @@ interface AuthService {
      * @param userId The id of the user
      * @param tokens The refresh tokens to deactivate
      */
-    fun logoutUser(userId: Long, vararg tokens: UUID)
+    suspend fun logoutUser(userId: Long, vararg tokens: UUID)
 
 }
