@@ -12,7 +12,8 @@ internal fun mapToken(token: TwoFactorTokenModel): TwoFactorToken =
         issuedAt = token.issuedAt,
         expiringAt = token.expiringAt,
         type = mapTokenType(token.type),
-        used = token.used
+        used = token.used,
+        user = mapUser(token.user)
     )
 
 private fun mapTokenType(type: String): TwoFactorTokenType =

@@ -41,6 +41,11 @@ data class TwoFactorToken (
     /**
      * Whether it has already been used
      */
-    val used: Boolean
+    val used: Boolean,
+
+    /**
+     * The user this token is attached to
+     */
+    val user: User
 
 )

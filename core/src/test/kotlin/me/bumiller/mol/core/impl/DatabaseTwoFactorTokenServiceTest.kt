@@ -33,7 +33,7 @@ class DatabaseTwoFactorTokenServiceTest {
         tokenService = DatabaseTwoFactorTokenService(mockTokenRepository, mockUserRepository)
     }
 
-    val user = User.Model(1L, "email", "username", "password", true, null)
+    val userModel = User.Model(1L, "email", "username", "password", true, null)
 
     val tokens = (1..10).map {
         TwoFactorTokenModel(
@@ -44,7 +44,7 @@ class DatabaseTwoFactorTokenServiceTest {
             used = it % 2 == 0,
             additionalContent = "content-$it",
             type = if (it % 2 == 0) TwoFactorTokenType.RefreshToken.serializedName else TwoFactorTokenType.EmailConfirm.serializedName,
-            user = user
+            user = userModel
         )
     }
 
@@ -83,12 +83,12 @@ class DatabaseTwoFactorTokenServiceTest {
     @Test
     fun `create correctly maps arguments to created token`() = runTest {
         coEvery { mockTokenRepository.create(any()) } answers { c -> c.invocation.args[0] as TwoFactorTokenModel }
-        coEvery { mockUserRepository.getSpecific(any<Long>()) } returns user
+        coEvery { mockUserRepository.getSpecific(any<Long>()) } returns userModel
 
         val time = Clock.System.now()
 
-        val returned1 = tokenService.create(TwoFactorTokenType.RefreshToken, user.id, time, time, "content")
-        val returned2 = tokenService.create(TwoFactorTokenType.EmailConfirm, user.id)
+        val returned1 = tokenService.create(TwoFactorTokenType.RefreshToken, userModel.id, time, time, "content")
+        val returned2 = tokenService.create(TwoFactorTokenType.EmailConfirm, userModel.id)
 
         assertEquals("content", returned1?.additionalInfo)
         assertEquals(time, returned1?.expiringAt)
@@ -104,7 +104,7 @@ class DatabaseTwoFactorTokenServiceTest {
 
         val time = Clock.System.now()
 
-        val result = tokenService.create(TwoFactorTokenType.RefreshToken, user.id, time, time, "content")
+        val result = tokenService.create(TwoFactorTokenType.RefreshToken, userModel.id, time, time, "content")
 
         assertNull(result)
     }
@@ -123,7 +123,8 @@ class DatabaseTwoFactorTokenServiceTest {
             time,
             time,
             TwoFactorTokenType.RefreshToken,
-            true
+            true,
+            mockk()
         )
 
         val updated = tokenService.markAsUsed(token.id)
@@ -144,7 +145,8 @@ class DatabaseTwoFactorTokenServiceTest {
             time,
             time,
             TwoFactorTokenType.RefreshToken,
-            true
+            true,
+            mockk()
         )
 
         val updated = tokenService.markAsUsed(token.id)
