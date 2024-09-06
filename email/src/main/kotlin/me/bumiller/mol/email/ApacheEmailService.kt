@@ -9,8 +9,8 @@ import java.util.*
 internal class ApacheEmailService : EmailService {
 
     val properties = Properties().apply {
-        val stream = javaClass.getResource("/email/email.properties")?.openStream()
-            ?: throw IllegalStateException("Did not find the /email/email.properties file!")
+        val stream = Thread.currentThread().contextClassLoader.getResourceAsStream("email/email.properties")
+            ?: throw IllegalStateException("Did not find the email/email.properties file!")
         load(stream)
     }
 
@@ -52,6 +52,7 @@ internal class ApacheEmailService : EmailService {
         .apply {
             hostName = properties.getProperty("host")
             authenticator = DefaultAuthenticator(properties.getProperty("from"), properties.getProperty("password"))
+            isSSLOnConnect = properties.getProperty("use_ssl")?.toBoolean() ?: false
 
             setFrom(properties.getProperty("from"))
             setSmtpPort(properties.getProperty("port").toInt())
