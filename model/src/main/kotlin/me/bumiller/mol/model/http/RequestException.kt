@@ -22,7 +22,7 @@ data class RequestException(
  *
  * @param message Description of error
  */
-fun bad(message: String? = null) {
+fun bad(message: String? = null): Nothing {
     throw RequestException(400, DefaultErrorBody(message))
 }
 
@@ -31,7 +31,7 @@ fun bad(message: String? = null) {
  *
  * @param message Description of error
  */
-fun unauthorized(message: String? = null) {
+fun unauthorized(message: String? = null): Nothing {
     throw RequestException(401, DefaultErrorBody(message))
 }
 
@@ -40,7 +40,7 @@ fun unauthorized(message: String? = null) {
  *
  * @param message Description of error
  */
-fun forbidden(message: String? = null) {
+fun forbidden(message: String? = null): Nothing {
     throw RequestException(403, DefaultErrorBody(message))
 }
 
@@ -49,8 +49,18 @@ fun forbidden(message: String? = null) {
  *
  * @param message Description of error
  */
-fun notFound(message: String? = null) {
+fun notFound(message: String? = null): Nothing {
     throw RequestException(404, DefaultErrorBody(message))
+}
+
+/**
+ * Will throw an [RequestException] with status 404.
+ *
+ * @param type The type of resource that was requested
+ * @param identifier Identifier of the resource that was not found
+ */
+fun notFoundIdentifier(type: String, identifier: String): Nothing {
+    throw RequestException(404, DefaultErrorBody("Did not find $type with identifier '$identifier'"))
 }
 
 /**
@@ -58,8 +68,18 @@ fun notFound(message: String? = null) {
  *
  * @param message Description of error
  */
-fun conflict(message: String? = null) {
+fun conflict(message: String? = null): Nothing {
     throw RequestException(409, DefaultErrorBody(message))
+}
+
+/**
+ * Will throw an [RequestException] with status 409.
+ *
+ * @param field Field that caused a conflict
+ * @param value Value of the field
+ */
+fun conflictUnique(field: String, value: String): Nothing {
+    throw RequestException(409, DefaultErrorBody("Value '$value' is already taken for '$field'"))
 }
 
 /**
