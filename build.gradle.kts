@@ -19,6 +19,8 @@ dependencies {
     implementation(libs.postgres)
 
     implementation(project(":database"))
+    implementation(project(":email"))
+    implementation(project(":model"))
 
     implementation("ch.qos.logback:logback-classic:1.5.7")
 }
