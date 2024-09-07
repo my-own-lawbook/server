@@ -42,7 +42,7 @@ object UserProfile {
 
     ) : BaseModel<Long>
 
-    internal object Table : LongIdTable("user_profile") {
+    object Table : LongIdTable("user_profile") {
 
         val birthday = date("birthday")
 

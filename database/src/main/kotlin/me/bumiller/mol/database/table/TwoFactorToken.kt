@@ -62,7 +62,7 @@ object TwoFactorToken {
 
     ) : BaseModel<Long>
 
-    internal object Table : LongIdTable("two_factor_token") {
+    object Table : LongIdTable("two_factor_token") {
 
         val user = reference("user_id", User.Table)
 

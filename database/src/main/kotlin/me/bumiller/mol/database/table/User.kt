@@ -46,7 +46,7 @@ object User {
 
     ) : BaseModel<Long>
 
-    internal object Table : LongIdTable("user") {
+    object Table : LongIdTable("user") {
 
         val email: Column<String> = varchar("email", 255)
             .uniqueIndex()

@@ -1,6 +1,11 @@
 package me.bumiller.mol.rest.startup
 
+import me.bumiller.mol.database.table.TwoFactorToken
+import me.bumiller.mol.database.table.User
+import me.bumiller.mol.database.table.UserProfile
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
  * Initializes the database connection.
@@ -13,4 +18,8 @@ internal fun initDatabase() {
         user = "admin",
         password = "admin"
     )
+
+    transaction {
+        SchemaUtils.create(User.Table, UserProfile.Table, TwoFactorToken.Table, inBatch = true)
+    }
 }
