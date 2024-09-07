@@ -21,9 +21,11 @@ import org.koin.ktor.ext.inject
  */
 internal fun Route.signup() {
     val authService by inject<AuthService>()
+    val userService by inject<UserService>()
 
     route("/signup/") {
         createUser(authService)
+        requestEmailToken(userService, authService)
     }
 }
 
@@ -42,6 +44,9 @@ private suspend inline fun <reified Body : Any> ApplicationCall.validated(): Bod
                 email.validateEmailUnique(userService)
                 username.validateUsernameUnique(userService)
             }
+            is RequestEmailTokenRequest -> {
+                email.validateEmail()
+            }
         }
     } ?: bad()
 }
@@ -57,11 +62,25 @@ private data class CreateUserRequest(
 
 )
 
-private fun Route.createUser(authService: AuthService) {
-    post {
-        val body = call.validated<CreateUserRequest>()
+private fun Route.createUser(authService: AuthService) = post {
+    val body = call.validated<CreateUserRequest>()
 
-        val createdUser = authService.createNewUser(body.email, body.username, body.password)
-        call.respond(HttpStatusCode.Created, UserWithoutProfileResponse.create(createdUser))
+    val createdUser = authService.createNewUser(body.email, body.username, body.password)
+    call.respond(HttpStatusCode.Created, UserWithoutProfileResponse.create(createdUser))
+}
+
+@Serializable
+private data class RequestEmailTokenRequest(
+    val email: String
+)
+
+private fun Route.requestEmailToken(userService: UserService, authService: AuthService) = post("email-verify/") {
+    val email = call.validated<RequestEmailTokenRequest>().email
+
+    val user = userService.getSpecific(email = email)
+    if(user?.profile != null && !user.isEmailVerified) {
+        authService.sendEmailVerification(user)
     }
+
+    call.respond(HttpStatusCode.Accepted)
 }
