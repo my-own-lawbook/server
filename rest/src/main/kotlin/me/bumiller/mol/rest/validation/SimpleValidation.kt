@@ -33,7 +33,7 @@ private val UsernameRegex = Pattern.compile(
  * @return The [ValidationResult]
  */
 internal fun String.validateUsername() =
-    if (UsernameRegex.matcher(this).matches()) badFormat("username", this)
+    if (!UsernameRegex.matcher(this).matches()) badFormat("username", this)
     else null
 
 private val PasswordRegex = Pattern.compile(
@@ -46,5 +46,5 @@ private val PasswordRegex = Pattern.compile(
  * @return The [ValidationResult]
  */
 internal fun String.validatePassword() =
-    if (UsernameRegex.matcher(this).matches()) badFormat("password", this)
+    if (!UsernameRegex.matcher(this).matches()) badFormat("password", this)
     else null
