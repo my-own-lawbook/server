@@ -20,6 +20,6 @@ internal fun initDatabase() {
     )
 
     transaction {
-        SchemaUtils.create(User.Table, UserProfile.Table, TwoFactorToken.Table, inBatch = true)
+        SchemaUtils.createMissingTablesAndColumns(User.Table, UserProfile.Table, TwoFactorToken.Table, inBatch = true)
     }
 }
