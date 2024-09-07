@@ -2,6 +2,7 @@ package me.bumiller.mol.rest.http
 
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
+import me.bumiller.mol.rest.http.auth.signup
 
 /**
  * Will set up the applications endpoints.
@@ -9,7 +10,7 @@ import io.ktor.server.routing.*
  * @param basePath The base path
  */
 internal fun Application.restRouting(basePath: String) = routing {
-    route(basePath) {
-
+    route("/$basePath/auth") {
+        signup()
     }
 }

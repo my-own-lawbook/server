@@ -18,6 +18,9 @@ dependencies {
     implementation(libs.kotlin.serialization.json)
 
     implementation(project(":core"))
+    implementation(project(":model"))
+    implementation(project(":database"))
+    implementation(project(":email"))
 }
 
 tasks.test {

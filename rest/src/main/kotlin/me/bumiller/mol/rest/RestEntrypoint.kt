@@ -14,7 +14,6 @@ import me.bumiller.mol.rest.startup.initDatabase
 fun Application.restApi(basePath: String = "/api/v1") {
     setupPlugins()
     initDatabase()
-
     restRouting(basePath)
 }
 

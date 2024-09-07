@@ -27,6 +27,16 @@ fun bad(message: String? = null): Nothing {
 }
 
 /**
+ * Will throw an [RequestException] with status 400.
+ *
+ * @param format The expected format
+ * @param value The value
+ */
+fun badFormat(format: String, value: String): Nothing {
+    bad("Value '$value' violates the format '$format''")
+}
+
+/**
  * Will throw an [RequestException] with status 401.
  *
  * @param message Description of error
