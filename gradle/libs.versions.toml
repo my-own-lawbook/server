@@ -32,6 +32,7 @@ ktor-serialization = { group = "io.ktor", name = "ktor-serialization-kotlinx-jso
 ktor-auth = { group = "io.ktor", name = "ktor-server-auth", version.ref = "ktor" }
 ktor-auth-jwt = { group = "io.ktor", name = "ktor-server-auth-jwt", version.ref = "ktor" }
 ktor-validation = { group = "io.ktor", name = "ktor-server-request-validation", version.ref = "ktor" }
+ktor-statuspages = { group = "io.ktor", name = "ktor-server-status-pages", version.ref = "ktor" }
 koin = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-ktor = { group = "io.insert-koin", name = "koin-ktor", version.ref = "koin" }
 kotlin-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlin-serialization" }
@@ -47,5 +48,5 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-jvm-plugin
 
 [bundles]
 exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]
-ktor = ["ktor", "ktor-netty", "ktor-content-negotiation", "ktor-serialization", "ktor-auth", "ktor-auth-jwt", "ktor-validation"]
+ktor = ["ktor", "ktor-netty", "ktor-content-negotiation", "ktor-serialization", "ktor-auth", "ktor-auth-jwt", "ktor-validation", "ktor-statuspages"]
 koin = ["koin", "koin-ktor"]
