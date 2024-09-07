@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.bundles.koin)
+
     implementation(libs.kotlin.datetime)
     implementation(libs.java.bcrypt)
     implementation(libs.java.jwt)
