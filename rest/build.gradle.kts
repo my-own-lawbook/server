@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 group = "me.bumiller.mol"
@@ -12,6 +13,9 @@ repositories {
 dependencies {
     implementation(libs.bundles.ktor)
     implementation(libs.bundles.koin)
+    implementation(libs.bundles.exposed)
+
+    implementation(libs.kotlin.serialization.json)
 
     implementation(project(":core"))
 }
