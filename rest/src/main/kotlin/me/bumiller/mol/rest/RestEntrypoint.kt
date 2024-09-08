@@ -3,6 +3,7 @@ package me.bumiller.mol.rest
 import io.ktor.server.application.*
 import me.bumiller.mol.rest.http.restRouting
 import me.bumiller.mol.rest.plugins.contentNegotiation
+import me.bumiller.mol.rest.plugins.dataConversion
 import me.bumiller.mol.rest.plugins.exceptionHandling
 import me.bumiller.mol.rest.plugins.koin
 import me.bumiller.mol.rest.startup.initDatabase
@@ -22,4 +23,5 @@ private fun Application.setupPlugins() {
     contentNegotiation()
     koin()
     exceptionHandling()
+    dataConversion()
 }
