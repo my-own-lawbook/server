@@ -23,5 +23,5 @@ val dataServiceModule = module {
  */
 val servicesModule = module {
     single<EncryptionService> { BCryptEncryptionService() }
-    single<AuthService> { AuthServiceImpl(get(), get(), get(), get()) }
+    single<AuthService> { AuthServiceImpl(get(), get(), get(), get(), get()) }
 }
