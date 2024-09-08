@@ -11,7 +11,7 @@ import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.http.notFoundIdentifier
-import me.bumiller.mol.rest.http.response.user.UserWithoutProfileResponse
+import me.bumiller.mol.rest.response.user.UserWithoutProfileResponse
 import me.bumiller.mol.rest.validation.*
 import org.koin.ktor.ext.inject
 

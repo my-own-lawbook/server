@@ -12,7 +12,7 @@ import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.http.bad
-import me.bumiller.mol.rest.http.response.user.TokenResponse
+import me.bumiller.mol.rest.response.user.TokenResponse
 import me.bumiller.mol.rest.validation.*
 import org.koin.ktor.ext.inject
 

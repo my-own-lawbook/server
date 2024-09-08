@@ -1,4 +1,4 @@
-package me.bumiller.mol.rest.http.response.user
+package me.bumiller.mol.rest.response.user
 
 import kotlinx.serialization.Serializable
 import me.bumiller.mol.model.AuthTokens
