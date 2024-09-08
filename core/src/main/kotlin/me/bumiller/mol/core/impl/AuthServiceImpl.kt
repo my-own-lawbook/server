@@ -132,7 +132,7 @@ internal class AuthServiceImpl(
         require(token.expiringAt!! > now) { "The passed token is already expired" }
         require(!token.used) { "The passed token has already been used" }
         require(user != null) { "No user could be found for the passed token" }
-        require(user.isEmailVerified) { "The user for the token already has their email verified" }
+        require(!user.isEmailVerified) { "The user for the token already has their email verified" }
 
         tokenService.markAsUsed(token.id)
         userService.update(
