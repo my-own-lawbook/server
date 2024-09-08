@@ -1,6 +1,7 @@
 package me.bumiller.mol.rest.validation
 
 import io.ktor.server.plugins.requestvalidation.*
+import me.bumiller.mol.common.toUUIDSafe
 import me.bumiller.mol.model.http.badFormat
 import java.util.regex.Pattern
 
@@ -47,4 +48,11 @@ private val PasswordRegex = Pattern.compile(
  */
 internal fun String.validatePassword() =
     if (!UsernameRegex.matcher(this).matches()) badFormat("password", this)
+    else null
+
+/**
+ * Validates whether a string is a uuid
+ */
+internal fun String.validateUUID() =
+    if (toUUIDSafe() == null) badFormat("uuid", this)
     else null
