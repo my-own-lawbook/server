@@ -15,27 +15,16 @@ import me.bumiller.mol.model.AuthTokens
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.User
+import me.bumiller.mol.model.config.AppConfig
 import java.util.*
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.minutes
 
 internal class AuthServiceImpl(
     val userService: UserService,
     val tokenService: TwoFactorTokenService,
     val encryptor: EncryptionService,
-    val emailService: EmailService
+    val emailService: EmailService,
+    val appConfig: AppConfig
 ) : AuthService {
-
-    // TODO: Move these properties to a configuration file
-    companion object {
-
-        val EMAIL_VERIFY_TOKEN_DURATION = 5.minutes
-
-        val REFRESH_TOKEN_DURATION = 10.days
-
-        val JWT_SIGNING_SECRET = "secret".repeat(10)
-
-    }
 
     override suspend fun createNewUser(
         email: String,
@@ -63,7 +52,7 @@ internal class AuthServiceImpl(
         val emailToken = tokenService.create(
             type = TwoFactorTokenType.EmailConfirm,
             userId = user.id,
-            expiringAt = now.plus(EMAIL_VERIFY_TOKEN_DURATION),
+            expiringAt = now.plus(appConfig.emailTokenDuration),
             issuedAt = now,
             additionalContent = user.email
         ) ?: throw IllegalStateException("Could not create an email-verification-token for the user.")
@@ -89,7 +78,8 @@ internal class AuthServiceImpl(
 
     override suspend fun loginUser(userId: Long): AuthTokens {
         val now = Clock.System.now()
-        val expiringAt = now.plus(REFRESH_TOKEN_DURATION)
+        val expiringAtRefresh = now.plus(appConfig.refreshDuration)
+        val expiringAtJwt = now.plus(appConfig.jwtDuration)
 
         val user = userService.getSpecific(id = userId)
             ?: throw IllegalArgumentException("Did not find a user for id '$userId'.")
@@ -97,15 +87,15 @@ internal class AuthServiceImpl(
         val refreshToken = tokenService.create(
             type = TwoFactorTokenType.RefreshToken,
             userId = userId,
-            expiringAt = expiringAt,
+            expiringAt = expiringAtRefresh,
             issuedAt = now
         ) ?: throw IllegalStateException("Could not create an email-verification-token for the user.")
 
         val jwt = JWT.create()
-            .withExpiresAt(expiringAt.toJavaInstant())
+            .withExpiresAt(expiringAtJwt.toJavaInstant())
             .withIssuedAt(now.toJavaInstant())
             .withSubject(user.email)
-            .sign(Algorithm.HMAC256(JWT_SIGNING_SECRET))
+            .sign(Algorithm.HMAC256(appConfig.jwtSecret))
 
         return AuthTokens(jwt, refreshToken)
     }

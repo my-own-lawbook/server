@@ -1,11 +1,9 @@
 package me.bumiller.mol.rest
 
 import io.ktor.server.application.*
+import me.bumiller.mol.model.config.AppConfig
 import me.bumiller.mol.rest.http.restRouting
-import me.bumiller.mol.rest.plugins.contentNegotiation
-import me.bumiller.mol.rest.plugins.dataConversion
-import me.bumiller.mol.rest.plugins.exceptionHandling
-import me.bumiller.mol.rest.plugins.koin
+import me.bumiller.mol.rest.plugins.*
 import me.bumiller.mol.rest.startup.initDatabase
 
 /**
@@ -13,15 +11,16 @@ import me.bumiller.mol.rest.startup.initDatabase
  *
  * @param basePath The base path that will contain the endpoints. Defaults to '/api/v1'
  */
-fun Application.restApi(basePath: String = "/api/v1") {
-    setupPlugins()
+fun Application.restApi(appConfig: AppConfig, basePath: String = "/api/v1") {
+    setupPlugins(appConfig)
     initDatabase()
     restRouting(basePath)
 }
 
-private fun Application.setupPlugins() {
+private fun Application.setupPlugins(appConfig: AppConfig) {
     contentNegotiation()
-    koin()
+    koin(appConfig)
     exceptionHandling()
     dataConversion()
+    authentication(appConfig)
 }
