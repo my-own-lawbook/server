@@ -2,7 +2,9 @@ package me.bumiller.mol.core.impl
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import me.bumiller.mol.core.AuthService
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.*
+import kotlin.time.Duration.Companion.days
 
 class AuthServiceImplTest {
 
@@ -61,7 +64,7 @@ class AuthServiceImplTest {
         }
     }
 
-    val user = User(1L, "", "", "", false, null)
+    val user = User(1L, "", "", "", true, null)
 
     val uuid: UUID = UUID.randomUUID()
     val now = Clock.System.now()
@@ -204,6 +207,165 @@ class AuthServiceImplTest {
         tokenIdSlots.forEach { markedId ->
             assertTrue(markedId in allowedTokenIds)
         }
+    }
+
+    @Test
+    fun `validateEmailWithToken throws when token can't be found`() = runTest {
+        coEvery { tokenService.getSpecific(any(), any()) } returns null
+
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("Could not find a token for the passed id", it.message)
+        }
+    }
+
+    @Test
+    fun `validateEmailWithToken throws for non email-verification-token`() = runTest {
+        val now = Clock.System.now()
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now, TwoFactorTokenType.RefreshToken, false, user)
+        val token2 =
+            TwoFactorToken(2L, UUID.randomUUID(), null, now, now, TwoFactorTokenType.PasswordReset, false, user)
+        val token3 = TwoFactorToken(3L, UUID.randomUUID(), null, now, now, TwoFactorTokenType.EmailConfirm, false, user)
+
+        coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2, token3)
+
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("The passed token is not an email-verification-token", it.message)
+        }
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("The passed token is not an email-verification-token", it.message)
+        }
+    }
+
+    @Test
+    fun `validateEmailWithToken throws for invalid states of expiringAt`() = runTest {
+        val now = Clock.System.now()
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now.minus(10.days), TwoFactorTokenType.EmailConfirm, false, user)
+        val token2 =
+            TwoFactorToken(2L, UUID.randomUUID(), null, now, null, TwoFactorTokenType.EmailConfirm, false, user)
+        val token3 = TwoFactorToken(3L, UUID.randomUUID(), null, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user)
+
+        coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2, token3)
+
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("The passed token is already expired", it.message)
+        }
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("The passed token does not have an expiry date set", it.message)
+        }
+    }
+
+    @Test
+    fun `validateEmailWithToken throws for already used tokens`() = runTest {
+        val now = Clock.System.now()
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, true, user)
+        val token2 =
+            TwoFactorToken(2L, UUID.randomUUID(), null, now, null, TwoFactorTokenType.EmailConfirm, false, user)
+
+        coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2)
+
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("The passed token has already been used", it.message)
+        }
+    }
+
+    @Test
+    fun `validateEmailWithToken throws for null user`() = runTest {
+        val now = Clock.System.now()
+
+        coEvery { userService.getSpecific(any(), any(), any()) }.returnsMany(null, user)
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user)
+
+        coEvery { tokenService.getSpecific(any(), any()) } returns token1
+
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("No user could be found for the passed token", it.message)
+        }
+    }
+
+    @Test
+    fun `validateEmailWithToken throws for user that has their email already verified`() = runTest {
+        val now = Clock.System.now()
+
+        coEvery { userService.getSpecific(any(), any(), any()) } returns user
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+
+        coEvery { tokenService.getSpecific(any(), any()) } returns token1
+
+        assertThrows<IllegalArgumentException> {
+            authService.validateEmailWithToken(UUID.randomUUID())
+        }.let {
+            assertEquals("The user for the token already has their email verified", it.message)
+        }
+    }
+
+    @Test
+    fun `validateEmailWithToken calls markAsUsed with the id of the token`() = runTest {
+        val now = Clock.System.now()
+
+        coEvery { userService.getSpecific(any(), any(), any()) } returns user.copy(isEmailVerified = false)
+        coEvery { tokenService.markAsUsed(any()) } returns token
+        coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+
+        coEvery { tokenService.getSpecific(any(), any()) } returns token1
+
+        authService.validateEmailWithToken(UUID.randomUUID())
+
+        coVerify(exactly = 1) { tokenService.markAsUsed(token1.id) }
+    }
+
+    @Test
+    fun `validateEmailWithToken calls updateUser with user id`() = runTest {
+        val now = Clock.System.now()
+
+        coEvery { userService.getSpecific(any(), any(), any()) } returns user.copy(isEmailVerified = false)
+        coEvery { tokenService.markAsUsed(any()) } returns token
+        coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+
+        coEvery { tokenService.getSpecific(any(), any()) } returns token1
+
+        authService.validateEmailWithToken(UUID.randomUUID())
+
+        coVerify(exactly = 1) { userService.update(user.id, any(), any(), any(), Optional.of(true)) }
+    }
+
+    @Test
+    fun `validateEmailWithToken returns user`() = runTest {
+        val now = Clock.System.now()
+
+        coEvery { userService.getSpecific(any(), any(), any()) } returns user.copy(isEmailVerified = false)
+        coEvery { tokenService.markAsUsed(any()) } returns token
+        coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
+
+        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+
+        coEvery { tokenService.getSpecific(any(), any()) } returns token1
+
+        val returned = authService.validateEmailWithToken(UUID.randomUUID())
+
+        assertEquals(user, returned)
     }
 
 }

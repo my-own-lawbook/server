@@ -135,11 +135,9 @@ internal class AuthServiceImpl(
         require(!user.isEmailVerified) { "The user for the token already has their email verified" }
 
         tokenService.markAsUsed(token.id)
-        userService.update(
+        return userService.update(
             userId = user.id,
             isEmailVerified = Optional.of(true)
-        )
-
-        return user
+        )!!
     }
 }
