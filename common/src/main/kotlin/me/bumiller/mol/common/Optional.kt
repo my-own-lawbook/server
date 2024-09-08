@@ -1,10 +1,14 @@
 package me.bumiller.mol.common
 
+import kotlinx.serialization.Serializable
+import me.bumiller.mol.common.serialization.OptionalSerializer
+
 /**
  * Custom implementation of [java.util.Optional] in a more kotlin-idiomatic way. This also explicitly allows for storing null values.
  *
  * @param T The type to encapsulate
  */
+@Serializable(with = OptionalSerializer::class)
 sealed class Optional<T> {
 
     /**
