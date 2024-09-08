@@ -9,7 +9,8 @@ import me.bumiller.mol.database.table.UserProfile
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.and
-import java.util.*
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 
 /**
  * Repository to access the records in the users table
@@ -25,9 +26,9 @@ interface UserRepository : IEntityRepository<Long, Model> {
      * @return The entity that matched the criteria, or null if no matching one was found
      */
     suspend fun getSpecific(
-        id: Optional<Long> = Optional.empty(),
-        username: Optional<String> = Optional.empty(),
-        email: Optional<String> = Optional.empty()
+        id: Optional<Long> = empty(),
+        username: Optional<String> = empty(),
+        email: Optional<String> = empty()
     ): Model?
 
 }

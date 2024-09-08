@@ -1,10 +1,10 @@
 package me.bumiller.mol.database.util
 
+import me.bumiller.mol.common.Optional
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import java.util.*
 
 /**
  * Helper SQL-Operator that checks a column value against an optional value. If the optional is empty, true is returned.

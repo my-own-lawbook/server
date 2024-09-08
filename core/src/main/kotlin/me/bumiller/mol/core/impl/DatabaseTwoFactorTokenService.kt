@@ -1,6 +1,7 @@
 package me.bumiller.mol.core.impl
 
 import kotlinx.datetime.Instant
+import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.database.repository.TwoFactorTokenRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.model.TwoFactorToken
@@ -20,8 +21,8 @@ internal class DatabaseTwoFactorTokenService(
 
     override suspend fun getSpecific(id: Long?, token: UUID?) = tokenRepository
         .getSpecific(
-            id = Optional.ofNullable(id),
-            token = Optional.ofNullable(token)
+            id = presentWhenNotNull(id),
+            token = presentWhenNotNull(token)
         )?.let(::mapToken)
 
     override suspend fun create(

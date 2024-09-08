@@ -1,20 +1,19 @@
 package me.bumiller.mol.database.base
 
 import kotlinx.coroutines.test.runTest
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.present
 import me.bumiller.mol.database.repository.ExposedUserRepository
 import me.bumiller.mol.database.table.User
 import me.bumiller.mol.database.test.util.inMemoryDatabase
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
-import java.util.*
 
 @TestInstance(PER_CLASS)
 internal class ExposedUserRepositoryTest {
@@ -43,41 +42,41 @@ internal class ExposedUserRepositoryTest {
         }
 
         val byId = userRepository.getSpecific(
-            id = Optional.of(1L)
+            id = present(1L)
         )
         val byEmail = userRepository.getSpecific(
-            email = Optional.of("email-2")
+            email = present("email-2")
         )
         val byUsername = userRepository.getSpecific(
-            username = Optional.of("username-3")
+            username = present("username-3")
         )
         val byEmailAndId = userRepository.getSpecific(
-            id = Optional.of(1L),
-            email = Optional.of("email-1")
+            id = present(1L),
+            email = present("email-1")
         )
         val byEmailAndUsername = userRepository.getSpecific(
-            email = Optional.of("email-2"),
-            username = Optional.of("username-2")
+            email = present("email-2"),
+            username = present("username-2")
         )
         val byAll = userRepository.getSpecific(
-            email = Optional.of("email-3"),
-            username = Optional.of("username-3"),
-            id = Optional.of(3L)
+            email = present("email-3"),
+            username = present("username-3"),
+            id = present(3L)
         )
 
         val byIdFalse = userRepository.getSpecific(
-            id = Optional.of(5L)
+            id = present(5L)
         )
         val byEmailFalse = userRepository.getSpecific(
-            email = Optional.of("email-7")
+            email = present("email-7")
         )
         val byMismatch1 = userRepository.getSpecific(
-            id = Optional.of(1L),
-            username = Optional.of("username-2")
+            id = present(1L),
+            username = present("username-2")
         )
         val byMismatch2 = userRepository.getSpecific(
-            id = Optional.of(3L),
-            email = Optional.of("username-1")
+            id = present(3L),
+            email = present("username-1")
         )
 
         assertEquals(byId!!.id, 1L)

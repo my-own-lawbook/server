@@ -7,6 +7,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import me.bumiller.mol.common.present
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.data.TwoFactorTokenService
@@ -348,7 +349,7 @@ class AuthServiceImplTest {
 
         authService.validateEmailWithToken(UUID.randomUUID())
 
-        coVerify(exactly = 1) { userService.update(user.id, any(), any(), any(), Optional.of(true)) }
+        coVerify(exactly = 1) { userService.update(user.id, any(), any(), any(), present(true)) }
     }
 
     @Test

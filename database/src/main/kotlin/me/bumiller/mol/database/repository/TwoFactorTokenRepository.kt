@@ -1,5 +1,7 @@
 package me.bumiller.mol.database.repository
 
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.TwoFactorToken.Entity
@@ -24,8 +26,8 @@ interface TwoFactorTokenRepository : IEntityRepository<Long, Model> {
      * @return The entity matching all given criteria, or null
      */
     suspend fun getSpecific(
-        id: Optional<Long> = Optional.empty(),
-        token: Optional<UUID> = Optional.empty()
+        id: Optional<Long> = empty(),
+        token: Optional<UUID> = empty()
     ): Model?
 
 }

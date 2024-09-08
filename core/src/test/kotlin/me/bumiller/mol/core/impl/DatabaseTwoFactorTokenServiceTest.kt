@@ -6,6 +6,9 @@ import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
+import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.database.repository.TwoFactorTokenRepository
 import me.bumiller.mol.database.repository.UserRepository
@@ -68,16 +71,16 @@ class DatabaseTwoFactorTokenServiceTest {
         coEvery { mockTokenRepository.getSpecific(capture(idSlot), capture(tokenSlot)) } returns tokens.first()
 
         tokenService.getSpecific(null, uuid)
-        assertEquals(Optional.empty<Long>(), idSlot.captured)
-        assertEquals(Optional.of(uuid), tokenSlot.captured)
+        assertEquals(empty<Long>(), idSlot.captured)
+        assertEquals(present(uuid), tokenSlot.captured)
 
         tokenService.getSpecific()
-        assertEquals(Optional.empty<Long>(), idSlot.captured)
-        assertEquals(Optional.empty<UUID>(), tokenSlot.captured)
+        assertEquals(empty<Long>(), idSlot.captured)
+        assertEquals(empty<UUID>(), tokenSlot.captured)
 
         tokenService.getSpecific(1L, uuid)
-        assertEquals(Optional.of(1L), idSlot.captured)
-        assertEquals(Optional.of(uuid), tokenSlot.captured)
+        assertEquals(present(1L), idSlot.captured)
+        assertEquals(present(uuid), tokenSlot.captured)
     }
 
     @Test

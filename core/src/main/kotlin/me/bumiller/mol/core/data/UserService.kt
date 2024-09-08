@@ -1,8 +1,9 @@
 package me.bumiller.mol.core.data
 
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
-import java.util.*
 
 /**
  * Interface to perform common operations on user
@@ -68,10 +69,10 @@ interface UserService {
      */
     suspend fun update(
         userId: Long,
-        email: Optional<String> = Optional.empty(),
-        username: Optional<String> = Optional.empty(),
-        password: Optional<String> = Optional.empty(),
-        isEmailVerified: Optional<Boolean> = Optional.empty()
+        email: Optional<String> = empty(),
+        username: Optional<String> = empty(),
+        password: Optional<String> = empty(),
+        isEmailVerified: Optional<Boolean> = empty()
     ): User?
 
 }

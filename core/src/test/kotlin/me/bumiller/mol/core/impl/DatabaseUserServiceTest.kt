@@ -1,10 +1,16 @@
 package me.bumiller.mol.core.impl
 
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
+import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.database.table.User
@@ -14,7 +20,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.*
 import me.bumiller.mol.database.table.UserProfile.Model as UserProfileModel
 
 class DatabaseUserServiceTest {
@@ -75,15 +80,15 @@ class DatabaseUserServiceTest {
             id = 1L
         )
         assertEquals(
-            Optional.of(1L),
+            present(1L),
             idSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             emailSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             usernameSlot.captured
         )
 
@@ -91,15 +96,15 @@ class DatabaseUserServiceTest {
             email = "email"
         )
         assertEquals(
-            Optional.empty<Long>(),
+            empty<Long>(),
             idSlot.captured
         )
         assertEquals(
-            Optional.of("email"),
+            present("email"),
             emailSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             usernameSlot.captured
         )
 
@@ -108,15 +113,15 @@ class DatabaseUserServiceTest {
             id = 5L
         )
         assertEquals(
-            Optional.of(5L),
+            present(5L),
             idSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             emailSlot.captured
         )
         assertEquals(
-            Optional.of("username"),
+            present("username"),
             usernameSlot.captured
         )
 
@@ -125,15 +130,15 @@ class DatabaseUserServiceTest {
             id = 6L
         )
         assertEquals(
-            Optional.of(6L),
+            present(6L),
             idSlot.captured
         )
         assertEquals(
-            Optional.of("email"),
+            present("email"),
             emailSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             usernameSlot.captured
         )
     }
@@ -216,10 +221,10 @@ class DatabaseUserServiceTest {
 
         userService.update(
             userId = 1L,
-            email = Optional.of("email-1"),
-            username = Optional.empty(),
-            password = Optional.of("password-1"),
-            isEmailVerified = Optional.empty()
+            email = present("email-1"),
+            username = empty(),
+            password = present("password-1"),
+            isEmailVerified = empty()
         )
 
         coVerify { mockUserRepo.update(User.Model(1L, "email-1", user.username, "password-1", user.isEmailVerified, null)) }

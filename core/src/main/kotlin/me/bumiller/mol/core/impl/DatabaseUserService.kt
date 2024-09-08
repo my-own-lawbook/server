@@ -1,12 +1,13 @@
 package me.bumiller.mol.core.impl
 
-import me.bumiller.mol.database.repository.UserRepository
-import me.bumiller.mol.model.User
-import me.bumiller.mol.model.UserProfile
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.core.mapping.mapGenderString
 import me.bumiller.mol.core.mapping.mapUser
-import java.util.*
+import me.bumiller.mol.database.repository.UserRepository
+import me.bumiller.mol.model.User
+import me.bumiller.mol.model.UserProfile
 import me.bumiller.mol.database.table.User.Model as UserModel
 import me.bumiller.mol.database.table.UserProfile.Model as ProfileModel
 
@@ -19,9 +20,9 @@ internal class DatabaseUserService(
 
     override suspend fun getSpecific(id: Long?, email: String?, username: String?) = userRepository
         .getSpecific(
-            id = Optional.ofNullable(id),
-            email = Optional.ofNullable(email),
-            username = Optional.ofNullable(username)
+            id = presentWhenNotNull(id),
+            email = presentWhenNotNull(email),
+            username = presentWhenNotNull(username)
         )?.let(::mapUser)
 
     override suspend fun createUser(email: String, password: String, username: String): User {
@@ -63,10 +64,10 @@ internal class DatabaseUserService(
         val user = userRepository.getSpecific(userId) ?: return null
 
         val updated = user.copy(
-            email = email.orElse(user.email),
-            username = username.orElse(user.username),
-            password = password.orElse(user.password),
-            isEmailVerified = isEmailVerified.orElse(user.isEmailVerified)
+            email = email.getOr(user.email),
+            username = username.getOr(user.username),
+            password = password.getOr(user.password),
+            isEmailVerified = isEmailVerified.getOr(user.isEmailVerified)
         )
 
         return userRepository.update(updated)?.let(::mapUser)

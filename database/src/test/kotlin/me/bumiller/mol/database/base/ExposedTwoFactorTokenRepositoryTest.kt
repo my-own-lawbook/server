@@ -2,16 +2,14 @@ package me.bumiller.mol.database.base
 
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import me.bumiller.mol.common.present
 import me.bumiller.mol.database.repository.ExposedTwoFactorTokenRepository
 import me.bumiller.mol.database.repository.ExposedUserRepository
 import me.bumiller.mol.database.table.TwoFactorToken
 import me.bumiller.mol.database.table.User
-import me.bumiller.mol.database.table.UserProfile
 import me.bumiller.mol.database.test.util.inMemoryDatabase
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
@@ -78,25 +76,25 @@ internal class ExposedTwoFactorTokenRepositoryTest {
         }
 
         val byId = tokenRepository.getSpecific(
-            id = Optional.of(1L)
+            id = present(1L)
         )
         val byToken = tokenRepository.getSpecific(
-            token = Optional.of(UUID.fromString("653032ed-aea9-4817-802c-2030d6904aef"))
+            token = present(UUID.fromString("653032ed-aea9-4817-802c-2030d6904aef"))
         )
         val byAll = tokenRepository.getSpecific(
-            id = Optional.of(2L),
-            token = Optional.of(UUID.fromString("c8744bcb-1cc9-4b26-be8b-5d6f591ceaa5"))
+            id = present(2L),
+            token = present(UUID.fromString("c8744bcb-1cc9-4b26-be8b-5d6f591ceaa5"))
         )
 
         val byIdFalse = tokenRepository.getSpecific(
-            id = Optional.of(5L)
+            id = present(5L)
         )
         val byTokenFalse = tokenRepository.getSpecific(
-            token = Optional.of(UUID.randomUUID())
+            token = present(UUID.randomUUID())
         )
         val byMismatch = tokenRepository.getSpecific(
-            id = Optional.of(1L),
-            token = Optional.of(UUID.fromString("653032ed-aea9-4817-802c-2030d6904aef"))
+            id = present(1L),
+            token = present(UUID.fromString("653032ed-aea9-4817-802c-2030d6904aef"))
         )
 
         assertEquals(byId!!.id, 1L)

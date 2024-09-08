@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import me.bumiller.mol.common.isNotEmpty
+import me.bumiller.mol.common.present
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.data.TwoFactorTokenService
@@ -137,7 +138,7 @@ internal class AuthServiceImpl(
         tokenService.markAsUsed(token.id)
         return userService.update(
             userId = user.id,
-            isEmailVerified = Optional.of(true)
+            isEmailVerified = present(true)
         )!!
     }
 }

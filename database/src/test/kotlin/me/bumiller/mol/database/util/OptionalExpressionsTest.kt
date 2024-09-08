@@ -1,6 +1,8 @@
 package me.bumiller.mol.database.util
 
-import me.bumiller.mol.database.table.TwoFactorToken.Table.user
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
+import me.bumiller.mol.common.present
 import me.bumiller.mol.database.table.User
 import me.bumiller.mol.database.table.User.Table
 import me.bumiller.mol.database.test.util.inMemoryDatabase
@@ -10,7 +12,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OptionalExpressionsTest {
@@ -39,17 +40,17 @@ class OptionalExpressionsTest {
         }
 
         val all = Table.selectAll().where {
-            Table.email eqOpt Optional.empty()
+            Table.email eqOpt empty()
         }
         val byEmail = Table.selectAll().where {
-            Table.email eqOpt Optional.of("email2")
+            Table.email eqOpt present("email2")
         }
         val byMixed = Table.selectAll().where {
-            (Table.email eqOpt Optional.of("email3")) and
-                    (Table.username eqOpt Optional.of("username3"))
+            (Table.email eqOpt present("email3")) and
+                    (Table.username eqOpt present("username3"))
         }
         val byInvalid = Table.selectAll().where {
-            Table.email eqOpt Optional.of("eksops")
+            Table.email eqOpt present("eksops")
         }
 
         assertEquals(users.size, all.count().toInt())

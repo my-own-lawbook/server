@@ -1,49 +1,101 @@
 package me.bumiller.mol.common
 
 /**
- * Helper class that is similar to a java optional but allows for null to be set
+ * Custom implementation of [java.util.Optional] in a more kotlin-idiomatic way. This also explicitly allows for storing null values.
  *
- * @param T The type that is kept in this box class
+ * @param T The type to encapsulate
  */
-class NullableOptional<T> private constructor(
-
-    private val value: T?,
-
-    private val isPresent: Boolean
-
-) {
+sealed class Optional<T> {
 
     /**
-     * Returns the value if it is present or throws an exception when it is empty
+     * The value is present
      *
-     * @return The value
-     * @throws IllegalStateException If the value is not present
+     * @param value The encapsulated value
      */
-    fun value(): T? =
-        if (isPresent) value else throw IllegalStateException("Tried to get the value of an empty NullableOptional!")
+    data class Present<T>(internal val value: T) : Optional<T>()
 
     /**
-     * Whether the value is present
+     * The value is not present
      */
-    fun isPresent(): Boolean = isPresent
+    class Empty<T> : Optional<T>()
 
-    companion object {
+    /**
+     * Gets the value of this optional.
+     *
+     * @return The encapsulated value
+     * @throws NoSuchElementException If the value is not present
+     */
+    fun get(): T = when (this) {
+        is Empty -> throw NoSuchElementException("This optional instance is empty")
+        is Present -> value
+    }
 
-        /**
-         * The empty instance
-         */
-        val empty = NullableOptional(null, false)
+    /**
+     * Gets the value of this optional, or another default value
+     *
+     * @param default The default value
+     */
+    fun getOr(default: T): T = when (this) {
+        is Empty -> default
+        is Present -> value
+    }
 
-        /**
-         * Creates a [NullableOptional] that has a value
-         */
-        fun <T> present(value: T?) = NullableOptional(value, true)
+    /**
+     * Gets the value or null
+     *
+     * @return The value or null
+     */
+    fun getOrNull(): T? = when (this) {
+        is Empty -> null
+        is Present -> value
+    }
 
-        /**
-         * Creates a [NullableOptional] off a nullable value. When [value] is null, [NullableOptional.empty] is returned, else a present instance.
-         */
-        fun <T> ofNullable(value: T?) = if (value == null) empty else NullableOptional(value, false)
+    /**
+     * Gets whether the value is present
+     */
+    val isPresent: Boolean
+        get() = this is Present
 
+    override fun equals(other: Any?): Boolean = when (other) {
+        is Optional<*> -> when (this) {
+            is Empty -> when (other) {
+                is Empty<*> -> true
+                is Present<*> -> false
+            }
+
+            is Present -> when (other) {
+                is Empty<*> -> false
+                is Present<*> -> other.value == this.value
+            }
+        }
+
+        else -> false
     }
 
 }
+
+/**
+ * Creates an [Optional.Present] instance
+ *
+ * @param value The value to encapsulate
+ * @return The optional
+ */
+fun <T> present(value: T): Optional<T> = Optional.Present(value)
+
+/**
+ * Returns an empty instance when the given [value] is null, else a present instance.
+ *
+ * @param value The passed value
+ * @return [Optional.Empty] if [value] is null, else [Optional.Present] with [value]
+ */
+fun <T> presentWhenNotNull(value: T?): Optional<T> = when (value) {
+    null -> Optional.Empty()
+    else -> Optional.Present(value)
+}
+
+/**
+ * Creates an [Optional.Empty] instance
+ *
+ * @return The optional
+ */
+fun <T> empty(): Optional<T> = Optional.Empty()
