@@ -69,4 +69,19 @@ interface AuthService {
      */
     suspend fun logoutUser(userId: Long, vararg tokens: UUID)
 
+    /**
+     * Will set a user to have their email validated based on the [tokenUUID].
+     * Will also update [TwoFactorToken.used]
+     *
+     * Will fail (throw) if any of the following cases occurs:
+     * - The token is not found/invalid/expired/already used
+     * - No user could be found for the token
+     * - The token is not an email-verification-token
+     *
+     * @param tokenUUID The UUID of the token submitted by a user
+     * @return The user that has had their email verification status updated
+     * @throws IllegalArgumentException If any of the above states occur
+     */
+    suspend fun validateEmailWithToken(tokenUUID: UUID): User
+
 }

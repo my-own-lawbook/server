@@ -52,4 +52,23 @@ internal class DatabaseUserService(
 
     override suspend fun deleteUser(userId: Long) =
         userRepository.delete(userId)?.let(::mapUser)
+
+    override suspend fun update(
+        userId: Long,
+        email: Optional<String>,
+        username: Optional<String>,
+        password: Optional<String>,
+        isEmailVerified: Optional<Boolean>
+    ): User? {
+        val user = userRepository.getSpecific(userId) ?: return null
+
+        val updated = user.copy(
+            email = email.orElse(user.email),
+            username = username.orElse(user.username),
+            password = password.orElse(user.password),
+            isEmailVerified = isEmailVerified.orElse(user.isEmailVerified)
+        )
+
+        return userRepository.update(updated)?.let(::mapUser)
+    }
 }

@@ -2,6 +2,7 @@ package me.bumiller.mol.core.data
 
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
+import java.util.*
 
 /**
  * Interface to perform common operations on user
@@ -54,5 +55,23 @@ interface UserService {
      * @return The user that was deleted, or null if no user with [userId] was found.
      */
     suspend fun deleteUser(userId: Long): User?
+
+    /**
+     * Updates the specified (non-null) attributes of the user for [userId]
+     *
+     * @param userId The id of the user
+     * @param email The new email
+     * @param username The new username
+     * @param password The new password
+     * @param isEmailVerified The new password verified status
+     * @return The updated user, or null if it was not found
+     */
+    suspend fun update(
+        userId: Long,
+        email: Optional<String> = Optional.empty(),
+        username: Optional<String> = Optional.empty(),
+        password: Optional<String> = Optional.empty(),
+        isEmailVerified: Optional<Boolean> = Optional.empty()
+    ): User?
 
 }

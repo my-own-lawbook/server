@@ -119,4 +119,27 @@ internal class AuthServiceImpl(
                 tokenService.markAsUsed(tokenModel.id)
         }
     }
+
+    override suspend fun validateEmailWithToken(tokenUUID: UUID): User {
+        val now = Clock.System.now()
+
+        val token = tokenService.getSpecific(token = tokenUUID)
+        require(token != null) { "Could not find a token for the passed id" }
+        val user = token.additionalInfo?.let { userService.getSpecific(email = it) }
+
+        require(token.type == TwoFactorTokenType.EmailConfirm) { "The passed token is not an email-verification-token" }
+        require(token.expiringAt != null) { "The passed token does not have an expiry date set" }
+        require(token.expiringAt!! > now) { "The passed token is already expired" }
+        require(!token.used) { "The passed token has already been used" }
+        require(user != null) { "No user could be found for the passed token" }
+        require(user.isEmailVerified) { "The user for the token already has their email verified" }
+
+        tokenService.markAsUsed(token.id)
+        userService.update(
+            userId = user.id,
+            isEmailVerified = Optional.of(true)
+        )
+
+        return user
+    }
 }
