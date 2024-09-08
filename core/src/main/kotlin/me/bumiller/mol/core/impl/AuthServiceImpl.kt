@@ -75,7 +75,7 @@ internal class AuthServiceImpl(
 
     override suspend fun getAuthenticatedUser(email: String?, username: String?, password: String): User? {
         val validArgs = listOfNotNull(email, username).size == 1
-        if (!validArgs) throw IllegalArgumentException("Both email and username were passed.")
+        if (!validArgs) throw IllegalArgumentException("Both or neither of email and username were passed.")
 
         val user = userService.getSpecific(email = email, username = username)
 
