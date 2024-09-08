@@ -1,9 +1,6 @@
 package me.bumiller.mol.core.impl
 
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
-import io.mockk.slot
+import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -199,6 +196,47 @@ class DatabaseUserServiceTest {
         assertEquals(models[0].username, deleted?.username)
         assertEquals(models[0].id, deleted?.id)
         assertEquals(models[0].password, deleted?.password)
+    }
+
+    @Test
+    fun `update returns null when user is not found`() = runTest {
+        coEvery { mockUserRepo.getSpecific(1L) } returns null
+
+        val returned = userService.update(1L)
+
+        assertNull(returned)
+    }
+
+    val user = User.Model(1L, "email", "username", "password", true, null)
+
+    @Test
+    fun `update properly maps optionals to default value`() = runTest {
+        coEvery { mockUserRepo.getSpecific(1L) } returns user
+        coEvery { mockUserRepo.update(any()) } returns user
+
+        userService.update(
+            userId = 1L,
+            email = Optional.of("email-1"),
+            username = Optional.empty(),
+            password = Optional.of("password-1"),
+            isEmailVerified = Optional.empty()
+        )
+
+        coVerify { mockUserRepo.update(User.Model(1L, "email-1", user.username, "password-1", user.isEmailVerified, null)) }
+    }
+
+    @Test
+    fun `update returns the user`() = runTest {
+        coEvery { mockUserRepo.getSpecific(1L) } returns user
+        coEvery { mockUserRepo.update(any()) } returns user
+
+        val returned = userService.update(1L)
+
+        assertEquals(user.id, returned?.id)
+        assertEquals(user.email, returned?.email)
+        assertEquals(user.username, returned?.username)
+        assertEquals(user.password, returned?.password)
+        assertEquals(user.isEmailVerified, returned?.isEmailVerified)
     }
 
 }
