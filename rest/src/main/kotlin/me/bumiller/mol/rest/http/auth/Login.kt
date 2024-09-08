@@ -13,16 +13,14 @@ import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.http.bad
 import me.bumiller.mol.rest.http.response.user.TokenResponse
-import me.bumiller.mol.rest.validation.receiveOptional
-import me.bumiller.mol.rest.validation.validateTwoFactorTokenValid
-import me.bumiller.mol.rest.validation.validateUUID
+import me.bumiller.mol.rest.validation.*
 import org.koin.ktor.ext.inject
 
 /**
  * Sets up the routes:
  *
- * POST /login/: Logging in with credentials
- * POST /login/refresh/: Logging in with a refresh token
+ * - POST /login/: Logging in with credentials
+ * - POST /login/refresh/: Logging in with a refresh token
  */
 internal fun Route.login() {
     val authService by inject<AuthService>()
@@ -34,29 +32,34 @@ internal fun Route.login() {
     }
 }
 
-private suspend inline fun <reified Body : Any> ApplicationCall.validated(): Body {
-    val tokenService by inject<TwoFactorTokenService>()
+//
+// Request bodies
+//
 
-    return receiveOptional<Body>()?.apply {
-        when (this) {
-            is LoginCredentialsRequest -> validate()
-            is LoginRefreshRequest -> validate(tokenService)
-        }
-    } ?: bad()
-}
-
+/**
+ * Contains the fields required by a request to POST /auth/login/
+ */
 @Serializable
 private data class LoginCredentialsRequest(
 
+    /**
+     * The email
+     */
     val email: Optional<String> = empty(),
 
+    /**
+     * The username
+     */
     val username: Optional<String> = empty(),
 
+    /**
+     * The password
+     */
     val password: String
 
-) {
+) : Validatable {
 
-    fun validate() {
+    override suspend fun ValidationScope.validate() {
         listOf(email, username).map(Optional<*>::isPresent).distinct().size.let { size ->
             if (size == 1) bad("Only either 'email' or 'username' must be passed!")
         }
@@ -64,6 +67,35 @@ private data class LoginCredentialsRequest(
 
 }
 
+/**
+ * Contains the fields required by a request to POST /auth/login/refresh/
+ */
+@Serializable
+private data class LoginRefreshRequest(
+
+    /**
+     * The refresh token
+     */
+    val token: String
+
+) : Validatable {
+
+    override suspend fun ValidationScope.validate() {
+        token.validateUUID()
+        token.toUUID().validateTwoFactorTokenValid(tokenService, TwoFactorTokenType.RefreshToken)
+    }
+
+}
+
+//
+// Endpoint mappings
+//
+
+/**
+ * Sets up the route to POST /auth/login/
+ *
+ * Allows to log in using email/username and password to authenticate.
+ */
 private fun Route.loginWithCredentials(authService: AuthService) = post {
     val body = call.validated<LoginCredentialsRequest>()
 
@@ -74,20 +106,11 @@ private fun Route.loginWithCredentials(authService: AuthService) = post {
     } else call.respond(HttpStatusCode.Unauthorized)
 }
 
-@Serializable
-private data class LoginRefreshRequest(
-
-    val token: String
-
-) {
-
-    suspend fun validate(tokenService: TwoFactorTokenService) {
-        token.validateUUID()
-        token.toUUID().validateTwoFactorTokenValid(tokenService, TwoFactorTokenType.RefreshToken)
-    }
-
-}
-
+/**
+ * Sets up the route to POST /auth/login/refresh/
+ *
+ * Allows to authenticate using a previously acquired refresh token
+ */
 private fun Route.loginWithRefreshToken(tokenService: TwoFactorTokenService, authService: AuthService) = post("refresh/") {
     val uuid = call.validated<LoginRefreshRequest>().token.toUUID()
     val token = tokenService.getSpecific(token = uuid)!!

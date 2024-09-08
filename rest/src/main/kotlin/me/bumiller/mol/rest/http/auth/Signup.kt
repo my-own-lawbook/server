@@ -10,7 +10,6 @@ import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.TwoFactorTokenType
-import me.bumiller.mol.model.http.bad
 import me.bumiller.mol.model.http.notFoundIdentifier
 import me.bumiller.mol.rest.http.response.user.UserWithoutProfileResponse
 import me.bumiller.mol.rest.validation.*
@@ -35,44 +34,89 @@ internal fun Route.signup() {
     }
 }
 
+//
+// Request bodies
+//
+
 /**
- * Configures the request validation for the signup routes
+ * Contains the fields required by the request to POST /auth/signup/.
  */
-private suspend inline fun <reified Body : Any> ApplicationCall.validated(): Body {
-    val userService by application.inject<UserService>()
-    val twoFactorTokenService by application.inject<TwoFactorTokenService>()
-
-    return receiveOptional<Body>()?.apply {
-        when (this) {
-            is CreateUserRequest -> {
-                email.validateEmail()
-                username.validateUsername()
-                password.validatePassword()
-                email.validateEmailUnique(userService)
-                username.validateUsernameUnique(userService)
-            }
-            is RequestEmailTokenRequest -> {
-                email.validateEmail()
-            }
-            is SubmitEmailTokenRequest -> {
-                token.validateUUID()
-                token.toUUID().validateTwoFactorTokenValid(twoFactorTokenService, TwoFactorTokenType.EmailConfirm)
-            }
-        }
-    } ?: bad()
-}
-
 @Serializable
 private data class CreateUserRequest(
 
+    /**
+     * The username
+     */
     val username: String,
 
+    /**
+     * The email
+     */
     val email: String,
 
+    /**
+     * The raw password
+     */
     val password: String
 
-)
+): Validatable {
 
+    override suspend fun ValidationScope.validate() {
+        email.validateEmail()
+        username.validateUsername()
+        password.validatePassword()
+        email.validateEmailUnique(userService)
+        username.validateUsernameUnique(userService)
+    }
+
+}
+
+/**
+ * Contains the fields required by the request to POST /auth/signup/email-verify/
+ */
+@Serializable
+private data class RequestEmailTokenRequest(
+
+    /**
+     * The email to send the token to
+     */
+    val email: String
+
+): Validatable {
+    override suspend fun ValidationScope.validate() {
+        email.validateEmail()
+    }
+}
+
+/**
+ * Contains the fields required by a request to PATCH /auth/signup/email-verify/
+ */
+@Serializable
+private data class SubmitEmailTokenRequest(
+
+    /**
+     * The token that was sent to the email address
+     */
+    val token: String
+
+): Validatable {
+
+    override suspend fun ValidationScope.validate() {
+        token.validateUUID()
+        token.toUUID().validateTwoFactorTokenValid(tokenService, TwoFactorTokenType.EmailConfirm)
+    }
+
+}
+
+//
+// Endpoint mappings
+//
+
+/**
+ * Sets up the POST /auth/signup/ endpoint.
+ *
+ * Allows to create a new user entry.
+ */
 private fun Route.createUser(authService: AuthService) = post {
     val body = call.validated<CreateUserRequest>()
 
@@ -80,11 +124,11 @@ private fun Route.createUser(authService: AuthService) = post {
     call.respond(HttpStatusCode.Created, UserWithoutProfileResponse.create(createdUser))
 }
 
-@Serializable
-private data class RequestEmailTokenRequest(
-    val email: String
-)
-
+/**
+ * Sets up the POST /auth/signup/email-verify/
+ *
+ * Allows to request an email-verify-token to a specific email address
+ */
 private fun Route.requestEmailToken(userService: UserService, authService: AuthService) = post("email-verify/") {
     val email = call.validated<RequestEmailTokenRequest>().email
 
@@ -96,11 +140,11 @@ private fun Route.requestEmailToken(userService: UserService, authService: AuthS
     call.respond(HttpStatusCode.Accepted)
 }
 
-@Serializable
-private data class SubmitEmailTokenRequest(
-    val token: String
-)
-
+/**
+ * Sets up the route PATCH auth/signup/email-verify/
+ *
+ * Allows to submit an email-verify-token sent to an email address.
+ */
 private fun Route.submitEmailToken(
     tokenService: TwoFactorTokenService,
     authService: AuthService,
