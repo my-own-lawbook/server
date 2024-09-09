@@ -27,7 +27,7 @@ internal fun Route.signup() {
     val userService by inject<UserService>()
     val tokenService by inject<TwoFactorTokenService>()
 
-    route("/signup/") {
+    route("signup/") {
         createUser(authService)
         requestEmailToken(userService, authService)
         submitEmailToken(tokenService, authService, userService)
