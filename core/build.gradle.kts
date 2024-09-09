@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.kotlin.datetime)
     implementation(libs.java.bcrypt)
     implementation(libs.java.jwt)
+    implementation(libs.h2)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

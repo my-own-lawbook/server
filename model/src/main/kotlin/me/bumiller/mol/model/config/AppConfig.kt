@@ -40,6 +40,31 @@ data class AppConfig(
     /**
      * Password to the database
      */
-    val databasePassword: String
+    val databasePassword: String,
+
+    /**
+     * SMTP server domain
+     */
+    val mailSmtpServer: String,
+
+    /**
+     * SMTP port
+     */
+    val mailSmtpPort: Int,
+
+    /**
+     * Whether to do SSL
+     */
+    val mailDoSsl: Boolean,
+
+    /**
+     * Mail address
+     */
+    val mailUsername: String,
+
+    /**
+     * Mail password
+     */
+    val mailPassword: String
 
 )

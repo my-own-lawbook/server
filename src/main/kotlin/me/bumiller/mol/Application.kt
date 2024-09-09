@@ -25,6 +25,11 @@ private fun Application.jwtConfig(): AppConfig = environment.config.run {
         emailTokenDuration = property("mol.security.email.token.duration").getString().toLong().seconds,
         databaseUrl = property("mol.database.url").getString(),
         databaseUser = property("mol.database.user").getString(),
-        databasePassword = property("mol.database.password").getString()
+        databasePassword = property("mol.database.password").getString(),
+        mailSmtpServer = property("mol.mail.host").getString(),
+        mailSmtpPort = property("mol.mail.port").getString().toInt(),
+        mailDoSsl = property("mol.mail.ssl").getString().toBoolean(),
+        mailUsername = property("mol.mail.from").getString(),
+        mailPassword = property("mol.mail.password").getString()
     )
 }
