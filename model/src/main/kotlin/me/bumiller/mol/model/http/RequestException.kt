@@ -93,6 +93,13 @@ fun conflictUnique(field: String, value: String): Nothing {
 }
 
 /**
+ * Will throw an [RequestException] with status 500.
+ */
+fun internal() : Nothing {
+    throw RequestException(500, "")
+}
+
+/**
  * Default error body for a [RequestException] for nice format of the HTTP-body.
  */
 data class DefaultErrorBody(
