@@ -1,10 +1,12 @@
 package me.bumiller.mol.rest.response.user
 
+import kotlinx.serialization.Serializable
 import me.bumiller.mol.model.User
 
 /**
  * Response class that contains a user with its profile
  */
+@Serializable
 data class UserWithProfileResponse(
 
     val id: Long,
