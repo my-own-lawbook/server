@@ -1,8 +1,12 @@
 package me.bumiller.mol.model
 
+import kotlinx.serialization.Serializable
+import me.bumiller.mol.model.serialization.GenderSerializer
+
 /**
  * Model for a gender selection made by the user
  */
+@Serializable(with = GenderSerializer::class)
 sealed class Gender(
 
     val serializedName: String

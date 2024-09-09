@@ -12,11 +12,16 @@ internal class GenderSerializer: KSerializer<Gender> {
     override val descriptor = PrimitiveSerialDescriptor("gender", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): Gender {
-        val str = decoder.decodeString()
-        return
+        return when (val str = decoder.decodeString()) {
+            "male" -> Gender.Male
+            "female" -> Gender.Female
+            "other" -> Gender.Other
+            "disclosed" -> Gender.Disclosed
+            else -> throw IllegalStateException("Unknown gender: '$str'")
+        }
     }
 
     override fun serialize(encoder: Encoder, value: Gender) {
-        TODO("Not yet implemented")
+        encoder.encodeString(value.serializedName)
     }
 }
