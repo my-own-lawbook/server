@@ -3,7 +3,7 @@ package me.bumiller.mol.model
 /**
  * Model for a gender selection made by the user
  */
-enum class Gender(
+sealed class Gender(
 
     val serializedName: String
 
@@ -12,21 +12,21 @@ enum class Gender(
     /**
      * Male gender
      */
-    Male("male"),
+    data object Male: Gender("male")
 
     /**
      * Female gender
      */
-    Female("female"),
+    data object Female: Gender("female")
 
     /**
      * Other gender
      */
-    Other("other"),
+    data object Other: Gender("other")
 
     /**
      * User does not want to disclose
      */
-    Disclosed("disclosed")
+    data object Disclosed: Gender("disclosed")
 
 }

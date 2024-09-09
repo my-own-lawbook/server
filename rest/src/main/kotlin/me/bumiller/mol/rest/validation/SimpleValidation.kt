@@ -1,6 +1,10 @@
 package me.bumiller.mol.rest.validation
 
 import io.ktor.server.plugins.requestvalidation.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import me.bumiller.mol.common.toUUIDSafe
 import me.bumiller.mol.model.http.badFormat
 import java.util.regex.Pattern
@@ -56,3 +60,22 @@ internal fun String.validatePassword() =
 internal fun String.validateUUID() =
     if (toUUIDSafe() == null) badFormat("uuid", this)
     else null
+
+private val ProfileNameRegex = Pattern.compile(
+    "^[a-zA-Z]{2,}$"
+)
+
+/**
+ * Validates whether a string is a uuid
+ */
+internal fun String.validateProfileName() =
+    if (!ProfileNameRegex.matcher(this).matches()) badFormat("name", this)
+    else null
+
+internal fun LocalDate.validateOnlyPast() {
+    val utcLocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+    val utcLocalDate = LocalDate(utcLocalDateTime.year, utcLocalDateTime.month, utcLocalDateTime.dayOfMonth)
+    val isFuture = utcLocalDate >= this
+
+    if(isFuture) badFormat("'date in past'", toString())
+}
