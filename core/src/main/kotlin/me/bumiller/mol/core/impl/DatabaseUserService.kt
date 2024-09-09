@@ -1,5 +1,6 @@
 package me.bumiller.mol.core.impl
 
+import kotlinx.datetime.LocalDate
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.UserService
@@ -7,6 +8,7 @@ import me.bumiller.mol.core.mapping.mapGenderString
 import me.bumiller.mol.core.mapping.mapUser
 import me.bumiller.mol.database.repository.UserProfileRepository
 import me.bumiller.mol.database.repository.UserRepository
+import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
 import me.bumiller.mol.database.table.User.Model as UserModel
@@ -74,5 +76,25 @@ internal class DatabaseUserService(
         )
 
         return userRepository.update(updated)?.let(::mapUser)
+    }
+
+    override suspend fun updateProfile(
+        userId: Long,
+        firstName: Optional<String>,
+        lastName: Optional<String>,
+        birthday: Optional<LocalDate>,
+        gender: Optional<Gender>
+    ): User? {
+        val profile = userRepository.getSpecific(id = userId)?.profile ?: return null
+
+        val updated = profile.copy(
+            firstName = firstName.getOr(profile.firstName),
+            lastName = lastName.getOr(profile.lastName),
+            birthday = birthday.getOr(profile.birthday),
+            gender = gender.getOrNull()?.serializedName ?: profile.gender
+        )
+
+        profileRepository.update(updated)
+        return userRepository.getSpecific(id = userId)?.let(::mapUser)
     }
 }

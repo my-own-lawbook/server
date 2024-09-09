@@ -1,7 +1,9 @@
 package me.bumiller.mol.core.data
 
+import kotlinx.datetime.LocalDate
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
+import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
 
@@ -73,6 +75,24 @@ interface UserService {
         username: Optional<String> = empty(),
         password: Optional<String> = empty(),
         isEmailVerified: Optional<Boolean> = empty()
+    ): User?
+
+    /**
+     * Updates the specified attributes of the users profile for [userId]
+     *
+     * @param userId The id of the user
+     * @param firstName The first name
+     * @param lastName The last name
+     * @param birthday The birthday
+     * @param gender The gender
+     * @return The updated user, or null if it was not found
+     */
+    suspend fun updateProfile(
+        userId: Long,
+        firstName: Optional<String>,
+        lastName: Optional<String>,
+        birthday: Optional<LocalDate>,
+        gender: Optional<Gender>
     ): User?
 
 }

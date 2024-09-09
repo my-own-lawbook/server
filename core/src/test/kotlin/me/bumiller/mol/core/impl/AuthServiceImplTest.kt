@@ -16,12 +16,14 @@ import me.bumiller.mol.email.EmailService
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.User
+import me.bumiller.mol.model.config.AppConfig
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.*
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
 
 class AuthServiceImplTest {
 
@@ -32,6 +34,8 @@ class AuthServiceImplTest {
 
     lateinit var authService: AuthService
 
+    private val mockConfig = AppConfig("as394g843m3g", 5.minutes, 30.days, 5.minutes, "", "", "", "", 1, true, "", "")
+
     @BeforeEach
     fun setup() {
         userService = mockk()
@@ -39,7 +43,7 @@ class AuthServiceImplTest {
         encryptor = mockk()
         emailService = mockk()
 
-        authService = AuthServiceImpl(userService, tokenService, encryptor, emailService)
+        authService = AuthServiceImpl(userService, tokenService, encryptor, emailService, mockConfig)
 
         coEvery { userService.createUser(any(), any(), any()) } returns user
         coEvery { encryptor.encrypt(any()) } returns ""
@@ -49,7 +53,7 @@ class AuthServiceImplTest {
 
     @Test
     fun `createNewUser throws for duplicate email`() = runTest {
-        coEvery { userService.getSpecific(any(),  any(), any()) } returns mockk()
+        coEvery { userService.getSpecific(any(), any(), any()) } returns mockk()
 
         assertThrows<IllegalStateException> {
             authService.createNewUser("email", "", "", false)
@@ -173,7 +177,7 @@ class AuthServiceImplTest {
         coEvery { tokenService.create(any(), any(), any(), any(), any()) } returns token
 
         val subjectOfJwt = authService.loginUser(1L).jwt.let { jwt ->
-            JWT.require(Algorithm.HMAC256(AuthServiceImpl.JWT_SIGNING_SECRET))
+            JWT.require(Algorithm.HMAC256(mockConfig.jwtSecret))
                 .build()
                 .verify(jwt)
                 .subject
@@ -199,7 +203,12 @@ class AuthServiceImplTest {
         val tokenIdSlots = mutableListOf<Long>()
 
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
-        coEvery { tokenService.getSpecific(any(), any()) } answers { c -> tokens.find { it.token == (c.invocation.args[1] as UUID) }!! }
+        coEvery {
+            tokenService.getSpecific(
+                any(),
+                any()
+            )
+        } answers { c -> tokens.find { it.token == (c.invocation.args[1] as UUID) }!! }
         coEvery { tokenService.markAsUsed(capture(tokenIdSlots)) } returns null
 
         authService.logoutUser(user.id, *tokens.map(TwoFactorToken::token).toTypedArray())
@@ -248,10 +257,28 @@ class AuthServiceImplTest {
     fun `validateEmailWithToken throws for invalid states of expiringAt`() = runTest {
         val now = Clock.System.now()
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now.minus(10.days), TwoFactorTokenType.EmailConfirm, false, user)
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID(),
+            null,
+            now,
+            now.minus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user
+        )
         val token2 =
             TwoFactorToken(2L, UUID.randomUUID(), null, now, null, TwoFactorTokenType.EmailConfirm, false, user)
-        val token3 = TwoFactorToken(3L, UUID.randomUUID(), null, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user)
+        val token3 = TwoFactorToken(
+            3L,
+            UUID.randomUUID(),
+            null,
+            now,
+            now.plus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user
+        )
 
         coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2, token3)
 
@@ -271,7 +298,16 @@ class AuthServiceImplTest {
     fun `validateEmailWithToken throws for already used tokens`() = runTest {
         val now = Clock.System.now()
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, true, user)
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID(),
+            null,
+            now,
+            now.plus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            true,
+            user
+        )
         val token2 =
             TwoFactorToken(2L, UUID.randomUUID(), null, now, null, TwoFactorTokenType.EmailConfirm, false, user)
 
@@ -290,7 +326,16 @@ class AuthServiceImplTest {
 
         coEvery { userService.getSpecific(any(), any(), any()) }.returnsMany(null, user)
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user)
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID(),
+            null,
+            now,
+            now.plus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user
+        )
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
@@ -307,7 +352,16 @@ class AuthServiceImplTest {
 
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID(),
+            user.email,
+            now,
+            now.plus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user.copy(isEmailVerified = false)
+        )
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
@@ -326,7 +380,16 @@ class AuthServiceImplTest {
         coEvery { tokenService.markAsUsed(any()) } returns token
         coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID(),
+            user.email,
+            now,
+            now.plus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user.copy(isEmailVerified = false)
+        )
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
@@ -343,7 +406,16 @@ class AuthServiceImplTest {
         coEvery { tokenService.markAsUsed(any()) } returns token
         coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID(),
+            user.email,
+            now,
+            now.plus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user.copy(isEmailVerified = false)
+        )
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
@@ -360,7 +432,16 @@ class AuthServiceImplTest {
         coEvery { tokenService.markAsUsed(any()) } returns token
         coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), user.email, now, now.plus(10.days), TwoFactorTokenType.EmailConfirm, false, user.copy(isEmailVerified = false))
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID(),
+            user.email,
+            now,
+            now.plus(10.days),
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user.copy(isEmailVerified = false)
+        )
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 

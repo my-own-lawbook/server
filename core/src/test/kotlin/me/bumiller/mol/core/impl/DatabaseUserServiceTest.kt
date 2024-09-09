@@ -1,9 +1,6 @@
 package me.bumiller.mol.core.impl
 
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
-import io.mockk.slot
+import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -12,6 +9,7 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.database.repository.UserProfileRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.database.table.User
 import me.bumiller.mol.model.Gender
@@ -25,14 +23,16 @@ import me.bumiller.mol.database.table.UserProfile.Model as UserProfileModel
 class DatabaseUserServiceTest {
 
     lateinit var mockUserRepo: UserRepository
+    lateinit var mockProfileRepo: UserProfileRepository
 
     lateinit var userService: UserService
 
     @BeforeEach
     fun setup() {
         mockUserRepo = mockk()
+        mockProfileRepo = mockk()
 
-        userService = DatabaseUserService(mockUserRepo)
+        userService = DatabaseUserService(mockUserRepo, mockProfileRepo)
     }
 
     val models = (1..10).map {
@@ -168,18 +168,25 @@ class DatabaseUserServiceTest {
         assertNull(result)
     }
 
+    val userNoProfile = User.Model(1L, "email", "username", "password", true, null)
+    val userWithProfile = userNoProfile.copy(
+        profile = UserProfileModel(1L, LocalDate(2000, 1, 1), "firstname", "lastname", "male")
+    )
+
     @Test
     fun `createProfile returns user with added profile`() = runTest {
         coEvery { mockUserRepo.update(any()) } answers { t -> t.invocation.args.first() as User.Model }  // Returns argument
 
-        val user = models.first()
-        coEvery { mockUserRepo.getSpecific(1L) } returns user
+        coEvery { mockUserRepo.getSpecific(1L) } returns userNoProfile
+        coEvery { mockProfileRepo.create(any()) } returns userWithProfile.profile!!
 
         val profile = UserProfile(1L, LocalDate(2000, 1, 1), Gender.Male, "firstname", "lastname")
-        val userWithProfile = userService.createProfile(1L, profile)
+        val updatedUser = userService.createProfile(1L, profile)
 
-        assertEquals(models.first().email, userWithProfile?.email)
-        assertEquals(profile, userWithProfile?.profile)
+        coVerify(exactly = 1) { mockProfileRepo.create(any()) }
+
+        assertEquals(userNoProfile.email, updatedUser?.email)
+        assertEquals(profile, updatedUser?.profile)
     }
 
     @Test
@@ -242,6 +249,35 @@ class DatabaseUserServiceTest {
         assertEquals(user.username, returned?.username)
         assertEquals(user.password, returned?.password)
         assertEquals(user.isEmailVerified, returned?.isEmailVerified)
+    }
+
+    @Test
+    fun `updateProfile returns null when user not found`() = runTest {
+        coEvery { mockUserRepo.getSpecific(any<Long>()) } returns null
+
+        val returned = userService.updateProfile(1L, empty(), empty(), empty(), empty())
+        assertNull(returned)
+    }
+
+    @Test
+    fun `updateProfile properly uses optional arguments`() = runTest {
+        val userModelSlot = slot<UserProfileModel>()
+
+        coEvery { mockUserRepo.getSpecific(any<Long>()) } returns userWithProfile
+        coEvery { mockProfileRepo.update(capture(userModelSlot)) } returns userWithProfile.profile
+
+        userService.updateProfile(
+            userId = 1L,
+            firstName = empty(),
+            lastName = present("lastname-1"),
+            birthday = empty(),
+            gender = present(Gender.Disclosed)
+        )
+
+        assertEquals(userWithProfile.profile?.firstName, userModelSlot.captured.firstName)
+        assertEquals("lastname-1", userModelSlot.captured.lastName)
+        assertEquals(userWithProfile.profile?.birthday, userModelSlot.captured.birthday)
+        assertEquals("disclosed", userModelSlot.captured.gender)
     }
 
 }
