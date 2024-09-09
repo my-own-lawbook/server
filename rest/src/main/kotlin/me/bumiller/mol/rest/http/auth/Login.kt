@@ -12,6 +12,7 @@ import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.http.bad
+import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.response.user.TokenResponse
 import me.bumiller.mol.rest.validation.*
 import org.koin.ktor.ext.inject
@@ -113,7 +114,7 @@ private fun Route.loginWithCredentials(authService: AuthService) = post {
  */
 private fun Route.loginWithRefreshToken(tokenService: TwoFactorTokenService, authService: AuthService) = post("refresh/") {
     val uuid = call.validated<LoginRefreshRequest>().token.toUUID()
-    val token = tokenService.getSpecific(token = uuid)!!
+    val token = tokenService.getSpecific(token = uuid) ?: internal()
 
     tokenService.markAsUsed(token.id)
 

@@ -109,7 +109,7 @@ private fun Route.createProfile(userService: UserService) = post {
 
     val profile = UserProfile(user.id, body.birthday, body.gender, body.firstName, body.lastName)
 
-    val updatedUser = userService.createProfile(user.id, profile)!!
+    val updatedUser = userService.createProfile(user.id, profile) ?: internal()
 
     call.respond(HttpStatusCode.OK, UserWithProfileResponse.create(updatedUser))
 }

@@ -10,6 +10,7 @@ import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.TwoFactorTokenType
+import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.model.http.notFoundIdentifier
 import me.bumiller.mol.rest.response.user.UserWithoutProfileResponse
 import me.bumiller.mol.rest.validation.*
@@ -151,7 +152,7 @@ private fun Route.submitEmailToken(
     userService: UserService
 ) = patch("email-verify/") {
     val tokenUUID = call.validated<SubmitEmailTokenRequest>().token.toUUID()
-    val token = tokenService.getSpecific(token = tokenUUID)!!
+    val token = tokenService.getSpecific(token = tokenUUID) ?: internal()
     val user = userService.getSpecific(id = token.user.id)
 
     if (user != null) {
