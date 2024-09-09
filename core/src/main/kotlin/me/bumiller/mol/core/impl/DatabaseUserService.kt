@@ -5,6 +5,7 @@ import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.core.mapping.mapGenderString
 import me.bumiller.mol.core.mapping.mapUser
+import me.bumiller.mol.database.repository.UserProfileRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
@@ -12,7 +13,8 @@ import me.bumiller.mol.database.table.User.Model as UserModel
 import me.bumiller.mol.database.table.UserProfile.Model as ProfileModel
 
 internal class DatabaseUserService(
-    val userRepository: UserRepository
+    val userRepository: UserRepository,
+    val profileRepository: UserProfileRepository
 ) : UserService {
 
     override suspend fun getAll(): List<User> = userRepository.getAll()
@@ -38,16 +40,17 @@ internal class DatabaseUserService(
     }
 
     override suspend fun createProfile(userId: Long, profile: UserProfile): User? {
-        val model = userRepository.getSpecific(userId) ?: return null
-        val updated = model.copy(
-            profile = ProfileModel(
-                id = userId,
-                birthday = profile.birthday,
-                firstName = profile.firstName,
-                lastName = profile.lastName,
-                gender = mapGenderString(profile.gender)
-            )
-        )
+        val user = userRepository.getSpecific(userId) ?: return null
+
+        val profileModel = ProfileModel(
+            id = userId,
+            birthday = profile.birthday,
+            firstName = profile.firstName,
+            lastName = profile.lastName,
+            gender = mapGenderString(profile.gender)
+        ).let { profileRepository.create(it) }
+
+        val updated = user.copy(profile =profileModel)
         return userRepository.update(updated)?.let(::mapUser)
     }
 

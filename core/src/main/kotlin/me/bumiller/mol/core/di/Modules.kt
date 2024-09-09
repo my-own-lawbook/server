@@ -14,7 +14,7 @@ import org.koin.dsl.module
  * The module providing data services
  */
 val dataServiceModule = module {
-    single<UserService> { DatabaseUserService(get()) }
+    single<UserService> { DatabaseUserService(get(), get()) }
     single<TwoFactorTokenService> { DatabaseTwoFactorTokenService(get(), get()) }
 }
 
