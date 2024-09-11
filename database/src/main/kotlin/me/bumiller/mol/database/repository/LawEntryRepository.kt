@@ -18,6 +18,17 @@ import org.jetbrains.exposed.sql.and
 interface LawEntryRepository : IEntityRepository<Long, Model> {
 
     /**
+     * Use this instead of [IEntityRepository.create].
+     *
+     * Creates a new [Model]
+     *
+     * @param model The model to take the fields from
+     * @param parentBookId The id of th parent book
+     * @return The created model, or null if the book could not be found
+     */
+    suspend fun create(model: Model, parentBookId: Long): Model?
+
+    /**
      * Updates the parent book of the entry
      *
      * @param entryId The id of the entry of which to change the parent book
@@ -57,6 +68,14 @@ internal class ExposedLawEntryRepository :
     }
 
     override fun map(entity: Entity): Model = entity.asModel
+
+    override suspend fun create(model: Model, parentBookId: Long): Model? {
+        val book = LawBook.Entity.findById(parentBookId) ?: return null
+
+        return Entity.new {
+            populate(model, book)
+        }.let(::map)
+    }
 
     override suspend fun updateParentBook(entryId: Long, parentBookId: Long): Model? = suspendTransaction {
         val parentBook = LawBook.Entity.findById(parentBookId)
