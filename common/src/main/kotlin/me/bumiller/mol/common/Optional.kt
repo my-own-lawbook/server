@@ -45,6 +45,42 @@ sealed class Optional<T> {
     }
 
     /**
+     * Maps the value to another one
+     *
+     * @param mapper The conversion lambda
+     * @return A new optional of type [R]
+     */
+    suspend fun <R> mapSuspend(mapper: suspend (T) -> R): Optional<R> = when (this) {
+        is Empty -> Empty()
+        is Present -> Present(mapper(value))
+    }
+
+    /**
+     * Executes the given call with the value if this is present
+     *
+     * @param call The call
+     */
+    fun ifPresent(call: (T) -> Unit) = if (this is Present) call(value) else Unit
+
+    /**
+     * Executes the given call with the value if this is present
+     *
+     * @param call The call
+     */
+    suspend fun ifPresentSuspend(call: suspend (T) -> Unit) = if (this is Present) call(value) else Unit
+
+    /**
+     * Maps the value to another one
+     *
+     * @param mapper The conversion lambda
+     * @return A new optional of type [R]
+     */
+    fun <R> map(mapper: (T) -> R): Optional<R> = when (this) {
+        is Empty -> Empty()
+        is Present -> Present(mapper(value))
+    }
+
+    /**
      * Gets the value or null
      *
      * @return The value or null
@@ -74,6 +110,10 @@ sealed class Optional<T> {
         }
 
         else -> false
+    }
+
+    override fun hashCode(): Int {
+        return isPresent.hashCode()
     }
 
 }
