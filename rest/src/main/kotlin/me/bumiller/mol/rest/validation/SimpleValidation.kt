@@ -75,7 +75,7 @@ internal fun String.validateProfileName() =
 internal fun LocalDate.validateOnlyPast() {
     val utcLocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
     val utcLocalDate = LocalDate(utcLocalDateTime.year, utcLocalDateTime.month, utcLocalDateTime.dayOfMonth)
-    val isFuture = utcLocalDate <= this
+    val isFuture = utcLocalDate >= this
 
     if(isFuture) badFormat("'date in past'", toString())
 }
