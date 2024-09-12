@@ -1,6 +1,7 @@
 package me.bumiller.mol.core.impl
 
 import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.allNonNullOrNull
 import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.mapping.mapBook
@@ -45,30 +46,37 @@ internal class DatabaseLawContentService(
             key = key,
             name = name,
             description = description,
-            creator = user
+            creator = user,
+            members = listOf()
         )
 
         return bookRepository.create(book, user.id)!!
             .let(::mapBook)
     }
 
+    @Suppress("NAME_SHADOWING")
     override suspend fun updateBook(
         bookId: Long,
         key: Optional<String>,
         name: Optional<String>,
         description: Optional<String>,
-        creatorId: Optional<Long>
+        creatorId: Optional<Long>,
+        memberIds: Optional<List<Long>>
     ): LawBook? {
         val book = bookRepository.getSpecific(bookId) ?: return null
         val creator = creatorId.mapSuspend {
             userRepository.getSpecific(creatorId)
+        }
+        val members = memberIds.mapSuspend { memberIds ->
+            memberIds.map { memberId -> userRepository.getSpecific(memberId) }
         }
 
         val updatedBook = book.copy(
             key = key.getOr(book.key),
             name = name.getOr(book.name),
             description = description.getOr(book.description),
-            creator = creator.getOr(book.creator) ?: return null
+            creator = creator.getOr(book.creator) ?: return null,
+            members = members.getOr(book.members).allNonNullOrNull() ?: return null
         )
 
         return bookRepository.update(updatedBook)

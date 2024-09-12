@@ -30,7 +30,12 @@ data class LawBook(
     /**
      * The user that created and owns this law-book.
      */
-    val creator: User
+    val creator: User,
+
+    /**
+     * The members of this law-book that can access it
+     */
+    val members: List<User>
 
 
 )

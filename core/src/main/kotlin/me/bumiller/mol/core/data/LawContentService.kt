@@ -64,6 +64,7 @@ interface LawContentService {
         name: Optional<String> = empty(),
         description: Optional<String> = empty(),
         creatorId: Optional<Long> = empty(),
+        memberIds: Optional<List<Long>> = empty()
     ): LawBook?
 
     /**
