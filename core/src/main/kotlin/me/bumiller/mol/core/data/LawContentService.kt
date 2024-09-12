@@ -138,7 +138,7 @@ interface LawContentService {
         id: Optional<Long> = empty(),
         index: Optional<String> = empty(),
         parentEntryId: Optional<Long> = empty()
-    ): LawSection
+    ): LawSection?
 
     /**
      * Creates a new [LawSection]
@@ -154,7 +154,7 @@ interface LawContentService {
         name: String,
         content: String,
         parentEntryId: Long
-    ): LawSection
+    ): LawSection?
 
     /**
      * Updates a specific [LawSection]
@@ -166,7 +166,7 @@ interface LawContentService {
      * @param parentEntryId The id of the parent entry
      * @return The updated [LawSection], or null if it was not found or the entry was not found or the index was already present in the entry
      */
-    suspend fun updateEntry(
+    suspend fun updateSection(
         sectionId: Long,
         index: Optional<String> = empty(),
         name: Optional<String> = empty(),

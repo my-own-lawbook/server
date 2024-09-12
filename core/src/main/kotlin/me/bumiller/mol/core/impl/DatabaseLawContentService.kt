@@ -5,6 +5,7 @@ import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.mapping.mapBook
 import me.bumiller.mol.core.mapping.mapEntry
+import me.bumiller.mol.core.mapping.mapSection
 import me.bumiller.mol.database.repository.LawBookRepository
 import me.bumiller.mol.database.repository.LawEntryRepository
 import me.bumiller.mol.database.repository.LawSectionRepository
@@ -14,6 +15,7 @@ import me.bumiller.mol.model.LawEntry
 import me.bumiller.mol.model.LawSection
 import me.bumiller.mol.database.table.LawBook.Model as LawBookModel
 import me.bumiller.mol.database.table.LawEntry.Model as LawEntryModel
+import me.bumiller.mol.database.table.LawSection.Model as LawSectionModel
 
 internal class DatabaseLawContentService(
     val bookRepository: LawBookRepository,
@@ -109,7 +111,9 @@ internal class DatabaseLawContentService(
         name: Optional<String>,
         parentBookId: Optional<Long>
     ): LawEntry? {
-        bookRepository.getSpecific(parentBookId) ?: return null
+        if (parentBookId is Optional.Present) {
+            bookRepository.getSpecific(parentBookId.get()) ?: return null
+        }
         val entry = entryRepository.getSpecific(entryId) ?: return null
 
         val updatedEntry = entry.copy(
@@ -124,29 +128,56 @@ internal class DatabaseLawContentService(
             ?.let(::mapEntry)
     }
 
-    override suspend fun updateEntry(
+    override suspend fun updateSection(
         sectionId: Long,
         index: Optional<String>,
         name: Optional<String>,
         content: Optional<String>,
         parentEntryId: Optional<Long>
     ): LawSection? {
-        TODO("Not yet implemented")
+        if (parentEntryId is Optional.Present) {
+            entryRepository.getSpecific(parentEntryId) ?: return null
+        }
+        val section = sectionRepository.getSpecific(sectionId) ?: return null
+
+        val updatedSection = section.copy(
+            index = index.getOr(section.index),
+            name = index.getOr(section.name),
+            content = index.getOr(section.content)
+        )
+
+        if (parentEntryId is Optional.Present) {
+            sectionRepository.updateParentEntry(sectionId, parentEntryId.get()) ?: return null
+        }
+
+        return sectionRepository.update(updatedSection)?.let(::mapSection)
     }
 
     override suspend fun getSectionsByEntry(entryId: Long): List<LawSection>? {
-        TODO("Not yet implemented")
+        entryRepository.getSpecific(entryId) ?: return null
+
+        return sectionRepository.getForParentEntry(entryId)
+            .map(::mapSection)
     }
 
     override suspend fun getSpecificSection(
         id: Optional<Long>,
         index: Optional<String>,
         parentEntryId: Optional<Long>
-    ): LawSection {
-        TODO("Not yet implemented")
-    }
+    ): LawSection? = sectionRepository
+        .getSpecific(id, index, parentEntryId)?.let(::mapSection)
 
-    override suspend fun createSection(index: String, name: String, content: String, parentEntryId: Long): LawSection {
-        TODO("Not yet implemented")
+    override suspend fun createSection(index: String, name: String, content: String, parentEntryId: Long): LawSection? {
+        entryRepository.getSpecific(parentEntryId) ?: return null
+
+        val section = LawSectionModel(
+            id = -1,
+            index = index,
+            name = name,
+            content = content
+        )
+
+        return sectionRepository.create(section, parentEntryId)
+            ?.let(::mapSection)
     }
 }
