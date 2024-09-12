@@ -1,7 +1,5 @@
 package me.bumiller.mol.database.repository
 
-import me.bumiller.mol.common.Optional
-import me.bumiller.mol.common.empty
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.User.Entity
@@ -11,6 +9,8 @@ import me.bumiller.mol.database.table.UserProfile
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.and
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 
 /**
  * Repository to access the records in the users table
@@ -36,7 +36,7 @@ interface UserRepository : IEntityRepository<Long, Model> {
 internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     UserRepository {
 
-    override fun populateEntity(entity: Entity, model: Model, exists: Boolean): Entity = entity.apply {
+    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
         val profileEntity = model.profile?.id?.let(UserProfile.Entity::findById)
         populate(model, profileEntity)
     }

@@ -44,7 +44,7 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     LawBookRepository {
 
-    override fun populateEntity(entity: Entity, model: Model, exists: Boolean): Entity = entity.apply {
+    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
         val userEntity = User.Entity.findById(entity.creator.id)!!
         populate(model, userEntity)
     }
