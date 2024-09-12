@@ -11,6 +11,10 @@ import me.bumiller.mol.model.LawSection
  */
 interface LawContentService {
 
+    //
+    // Law-Books
+    //
+
     /**
      * Gets all the [LawBook]s
      *
@@ -39,6 +43,22 @@ interface LawContentService {
         key: String? = null,
         creatorId: Long? = null
     ): LawBook?
+
+    /**
+     * Gets the parent [LawBook] of a specific entry
+     *
+     * @param entryId The id of the entry
+     * @return The parent [LawBook], or null if the entry cannot be found
+     */
+    suspend fun getBookByEntry(entryId: Long): LawBook?
+
+    /**
+     * Gets all [LawBook]s for a specific user
+     *
+     * @param userId The id of the user
+     * @return All [LawBook]s the user is a member of
+     */
+    suspend fun getBooksForMember(userId: Long): List<LawBook>?
 
     /**
      * Creates a new [LawBook] and saves it to the database
@@ -74,6 +94,10 @@ interface LawContentService {
         memberIds: Optional<List<Long>> = empty()
     ): LawBook?
 
+    //
+    // Law-Entries
+    //
+
     /**
      * Gets all [LawEntry]s
      *
@@ -104,6 +128,14 @@ interface LawContentService {
     ): LawEntry?
 
     /**
+     * Gets the parent [LawEntry] for a specific section
+     *
+     * @param sectionId The id of the section
+     * @return The parent [LawEntry] of the specific section, or null if the section could not be found
+     */
+    suspend fun getEntryForSection(sectionId: Long): LawEntry?
+
+    /**
      * Creates a new [LawEntry]
      *
      * @param key The key
@@ -132,6 +164,10 @@ interface LawContentService {
         name: Optional<String> = empty(),
         parentBookId: Optional<Long> = empty()
     ): LawEntry?
+
+    //
+    // Law-Section
+    //
 
     /**
      * Gets all [LawSection]s

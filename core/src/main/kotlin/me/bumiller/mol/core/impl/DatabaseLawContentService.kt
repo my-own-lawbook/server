@@ -42,6 +42,14 @@ internal class DatabaseLawContentService(
             key = presentWhenNotNull(key)
         )?.let(::mapBook)
 
+    override suspend fun getBookByEntry(entryId: Long): LawBook? =
+        bookRepository.getForEntry(entryId)
+            ?.let(::mapBook)
+
+    override suspend fun getBooksForMember(userId: Long): List<LawBook>? =
+        bookRepository.getAllForMember(userId)
+            ?.map(::mapBook)
+
     override suspend fun createBook(key: String, name: String, description: String, creatorId: Long): LawBook? {
         val user = userRepository.getSpecific(creatorId) ?: return null
         val book = LawBookModel(
@@ -106,6 +114,10 @@ internal class DatabaseLawContentService(
             key = key,
             parentBookId = parentBookId,
         )?.let(::mapEntry)
+
+    override suspend fun getEntryForSection(sectionId: Long): LawEntry? =
+        entryRepository.getForSection(sectionId)
+            ?.let(::mapEntry)
 
     override suspend fun createEntry(key: String, name: String, parentBookId: Long): LawEntry? {
         bookRepository.getSpecific(parentBookId) ?: return null
