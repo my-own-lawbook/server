@@ -2,12 +2,12 @@ package me.bumiller.mol.core.impl
 
 import kotlinx.datetime.Instant
 import me.bumiller.mol.common.presentWhenNotNull
+import me.bumiller.mol.core.data.TwoFactorTokenService
+import me.bumiller.mol.core.mapping.mapToken
 import me.bumiller.mol.database.repository.TwoFactorTokenRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.TwoFactorTokenType
-import me.bumiller.mol.core.data.TwoFactorTokenService
-import me.bumiller.mol.core.mapping.mapToken
 import java.util.*
 import me.bumiller.mol.database.table.TwoFactorToken.Model as TwoFactorTokenModel
 
@@ -44,7 +44,7 @@ internal class DatabaseTwoFactorTokenService(
             user = user
         )
 
-        return tokenRepository.create(model).let(::mapToken)
+        return tokenRepository.create(model, user.id)!!.let(::mapToken)
     }
 
     override suspend fun markAsUsed(tokenId: Long): TwoFactorToken? {

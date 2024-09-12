@@ -48,7 +48,7 @@ internal class DatabaseLawContentService(
             creator = user
         )
 
-        return bookRepository.create(book)
+        return bookRepository.create(book, user.id)!!
             .let(::mapBook)
     }
 
@@ -101,8 +101,8 @@ internal class DatabaseLawContentService(
             name = name
         )
 
-        return entryRepository.create(entry, parentBookId)
-            ?.let(::mapEntry)
+        return entryRepository.create(entry)
+            .let(::mapEntry)
     }
 
     override suspend fun updateEntry(
@@ -177,7 +177,7 @@ internal class DatabaseLawContentService(
             content = content
         )
 
-        return sectionRepository.create(section, parentEntryId)
-            ?.let(::mapSection)
+        return sectionRepository.create(section)
+            .let(::mapSection)
     }
 }

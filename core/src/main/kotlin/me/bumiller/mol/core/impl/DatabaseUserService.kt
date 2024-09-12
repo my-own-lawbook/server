@@ -38,7 +38,7 @@ internal class DatabaseUserService(
             isEmailVerified = false,
             profile = null
         )
-        return userRepository.create(model).let(::mapUser)
+        return userRepository.create(model, null)!!.let(::mapUser)
     }
 
     override suspend fun createProfile(userId: Long, profile: UserProfile): User? {
