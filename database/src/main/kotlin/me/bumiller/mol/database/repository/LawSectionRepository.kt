@@ -5,6 +5,7 @@ import me.bumiller.mol.common.empty
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.LawEntry
+import me.bumiller.mol.database.table.LawSection
 import me.bumiller.mol.database.table.LawSection.Entity
 import me.bumiller.mol.database.table.LawSection.Model
 import me.bumiller.mol.database.table.LawSection.Table
@@ -16,6 +17,14 @@ import org.jetbrains.exposed.sql.and
  * Repository that grants access to the 'law_section' table in the database
  */
 interface LawSectionRepository : IEntityRepository<Long, Model> {
+
+    /**
+     * Creates a new [LawSection]
+     *
+     * @param model The model to take the data from
+     * @return The created [LawSection]
+     */
+    suspend fun create(model: Model): Model
 
     /**
      * Updates the parent entry of a [Model]
@@ -65,6 +74,10 @@ internal class ExposedLawSectionRepository :
             .singleOrNull()
             ?.asModel
     }
+
+    override suspend fun create(model: Model): Model = Entity.new {
+        populate(model)
+    }.asModel
 
     override suspend fun updateParentEntry(sectionId: Long, parentEntryId: Long): Model? = suspendTransaction {
         val parentEntry = LawEntry.Entity.findById(parentEntryId)

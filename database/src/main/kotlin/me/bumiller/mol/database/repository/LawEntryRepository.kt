@@ -5,6 +5,7 @@ import me.bumiller.mol.common.empty
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.LawBook
+import me.bumiller.mol.database.table.LawEntry
 import me.bumiller.mol.database.table.LawEntry.Entity
 import me.bumiller.mol.database.table.LawEntry.Model
 import me.bumiller.mol.database.table.LawEntry.Table
@@ -16,6 +17,14 @@ import org.jetbrains.exposed.sql.and
  * Repository that grants access to the 'law_entry' table
  */
 interface LawEntryRepository : IEntityRepository<Long, Model> {
+
+    /**
+     * Creates a new [LawEntry]
+     *
+     * @param model The model to take the data from
+     * @return The created model
+     */
+    suspend fun create(model: Model): Model
 
     /**
      * Updates the parent book of the entry
@@ -50,6 +59,10 @@ interface LawEntryRepository : IEntityRepository<Long, Model> {
 
 internal class ExposedLawEntryRepository :
     EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), LawEntryRepository {
+
+    override suspend fun create(model: Model): Model = Entity.new {
+        populate(model)
+    }.asModel
 
     override suspend fun updateParentBook(entryId: Long, parentBookId: Long): Model? = suspendTransaction {
         val parentBook = LawBook.Entity.findById(parentBookId)

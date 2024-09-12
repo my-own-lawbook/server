@@ -4,9 +4,11 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
+import me.bumiller.mol.database.table.User
 import me.bumiller.mol.database.table.User.Entity
 import me.bumiller.mol.database.table.User.Model
 import me.bumiller.mol.database.table.User.Table
+import me.bumiller.mol.database.table.UserProfile
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.and
@@ -15,6 +17,15 @@ import org.jetbrains.exposed.sql.and
  * Repository to access the records in the users table
  */
 interface UserRepository : IEntityRepository<Long, Model> {
+
+    /**
+     * Creates a new [User]
+     *
+     * @param model The model to take the data from
+     * @param profileId The id of the profile, or null
+     * @return The created [User], or null if the profile was not found
+     */
+    suspend fun create(model: Model, profileId: Long?): Model?
 
     /**
      * Gets a user from the table that matches all the given criteria.
@@ -34,6 +45,16 @@ interface UserRepository : IEntityRepository<Long, Model> {
 
 internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     UserRepository {
+
+    override suspend fun create(model: Model, profileId: Long?): Model? {
+        val profile = if (profileId == null) null
+        else UserProfile.Entity.findById(profileId) ?: return null
+
+        return Entity.new {
+            this.profile = profile
+            populate(model)
+        }.asModel
+    }
 
     override suspend fun getSpecific(id: Optional<Long>, username: Optional<String>, email: Optional<String>): Model? =
         suspendTransaction {
