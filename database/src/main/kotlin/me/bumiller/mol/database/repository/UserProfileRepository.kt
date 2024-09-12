@@ -12,11 +12,4 @@ import me.bumiller.mol.database.table.UserProfile.Table
 interface UserProfileRepository : IEntityRepository<Long, Model>
 
 internal class ExposedUserProfileRepository :
-    EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), UserProfileRepository {
-
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
-        populate(model)
-    }
-
-    override fun map(entity: Entity): Model = entity.asModel
-}
+    EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), UserProfileRepository

@@ -2,6 +2,7 @@ package me.bumiller.mol.database.table
 
 import kotlinx.datetime.LocalDate
 import me.bumiller.mol.database.base.BaseModel
+import me.bumiller.mol.database.base.ModelMappableEntity
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -54,17 +55,17 @@ object UserProfile {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id) {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
 
         var birthday by Table.birthday
         var firstName by Table.firstName
         var lastName by Table.lastName
         var gender by Table.gender
 
-        val asModel
+        override val asModel
             get() = Model(id.value, birthday, firstName, lastName, gender)
 
-        fun populate(model: Model) {
+        override fun populate(model: Model) {
             birthday = model.birthday
             firstName = model.firstName
             lastName = model.lastName

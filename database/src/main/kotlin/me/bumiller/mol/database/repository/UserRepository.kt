@@ -1,16 +1,15 @@
 package me.bumiller.mol.database.repository
 
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.User.Entity
 import me.bumiller.mol.database.table.User.Model
 import me.bumiller.mol.database.table.User.Table
-import me.bumiller.mol.database.table.UserProfile
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.and
-import me.bumiller.mol.common.Optional
-import me.bumiller.mol.common.empty
 
 /**
  * Repository to access the records in the users table
@@ -36,13 +35,6 @@ interface UserRepository : IEntityRepository<Long, Model> {
 internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     UserRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
-        val profileEntity = model.profile?.id?.let(UserProfile.Entity::findById)
-        populate(model, profileEntity)
-    }
-
-    override fun map(entity: Entity): Model = entity.asModel
-
     override suspend fun getSpecific(id: Optional<Long>, username: Optional<String>, email: Optional<String>): Model? =
         suspendTransaction {
             Entity.find {
@@ -51,7 +43,7 @@ internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Tab
                         (Table.email eqOpt email)
             }
                 .limit(1)
-                .map(::map)
+                .map { it.asModel }
                 .singleOrNull()
         }
 }

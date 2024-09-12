@@ -18,17 +18,6 @@ import org.jetbrains.exposed.sql.and
 interface LawEntryRepository : IEntityRepository<Long, Model> {
 
     /**
-     * Use this instead of [IEntityRepository.create].
-     *
-     * Creates a new [Model]
-     *
-     * @param model The model to take the fields from
-     * @param parentBookId The id of th parent book
-     * @return The created model, or null if the book could not be found
-     */
-    suspend fun create(model: Model, parentBookId: Long): Model?
-
-    /**
      * Updates the parent book of the entry
      *
      * @param entryId The id of the entry of which to change the parent book
@@ -62,41 +51,26 @@ interface LawEntryRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawEntryRepository :
     EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), LawEntryRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
-        val parentBook = LawBook.Entity.findById(entity.parentBook.id)!!
-        entity.populate(model, parentBook)
-    }
-
-    override fun map(entity: Entity): Model = entity.asModel
-
-    override suspend fun create(model: Model, parentBookId: Long): Model? {
-        val book = LawBook.Entity.findById(parentBookId) ?: return null
-
-        return Entity.new {
-            populate(model, book)
-        }.let(::map)
-    }
-
     override suspend fun updateParentBook(entryId: Long, parentBookId: Long): Model? = suspendTransaction {
         val parentBook = LawBook.Entity.findById(parentBookId)
         parentBook?.let {
             Entity.findByIdAndUpdate(entryId) {
                 it.parentBook = parentBook
             }
-        }?.let(::map)
+        }?.asModel
     }
 
     override suspend fun getSpecific(id: Optional<Long>, key: Optional<String>, parentBookId: Optional<Long>): Model? =
         suspendTransaction {
             Entity.find {
                 (Table.id eqOpt id) and (Table.key eqOpt key) and (Table.parentBook eqOpt parentBookId)
-            }.singleOrNull()?.let(::map)
+            }.singleOrNull()?.asModel
         }
 
     override suspend fun getForParentBook(parentBookId: Long): List<Model> = suspendTransaction {
         Entity.find {
             Table.parentBook eq parentBookId
-        }.map(::map)
+        }.map { it.asModel }
     }
 
 }

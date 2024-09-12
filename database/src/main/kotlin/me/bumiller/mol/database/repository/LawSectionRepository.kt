@@ -18,17 +18,6 @@ import org.jetbrains.exposed.sql.and
 interface LawSectionRepository : IEntityRepository<Long, Model> {
 
     /**
-     * Use this instead of [IEntityRepository.create]
-     *
-     * Creates a new [Model]
-     *
-     * @param model The model to take the data from
-     * @param parentEntryId The id of the parent entry
-     * @return The [Model], or null if the entry could not be found
-     */
-    suspend fun create(model: Model, parentEntryId: Long): Model?
-
-    /**
      * Updates the parent entry of a [Model]
      *
      * @param sectionId The id of the section to update
@@ -63,13 +52,6 @@ interface LawSectionRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawSectionRepository :
     EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), LawSectionRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
-        val parentEntry = LawEntry.Entity.findById(entity.parentEntry.id)!!
-        populate(model, parentEntry)
-    }
-
-    override fun map(entity: Entity) = entity.asModel
-
     override suspend fun getSpecific(
         id: Optional<Long>,
         index: Optional<String>,
@@ -81,15 +63,7 @@ internal class ExposedLawSectionRepository :
                     (Table.parentEntry eqOpt parentEntryId)
         }
             .singleOrNull()
-            ?.let(::map)
-    }
-
-    override suspend fun create(model: Model, parentEntryId: Long): Model? {
-        val entry = LawEntry.Entity.findById(parentEntryId) ?: return null
-
-        return Entity.new {
-            populate(model, entry)
-        }.let(::map)
+            ?.asModel
     }
 
     override suspend fun updateParentEntry(sectionId: Long, parentEntryId: Long): Model? = suspendTransaction {
@@ -98,13 +72,13 @@ internal class ExposedLawSectionRepository :
             Entity.findByIdAndUpdate(sectionId) {
                 it.parentEntry = parentEntry
             }
-        }?.let(::map)
+        }?.asModel
     }
 
     override suspend fun getForParentEntry(parentEntryId: Long): List<Model> = suspendTransaction {
         Entity.find {
             Table.parentEntry eq parentEntryId
         }
-            .map(::map)
+            .map { it.asModel }
     }
 }

@@ -1,6 +1,7 @@
 package me.bumiller.mol.database.table
 
 import me.bumiller.mol.database.base.BaseModel
+import me.bumiller.mol.database.base.ModelMappableEntity
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -36,21 +37,20 @@ object LawSection {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id) {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
 
         var index by Table.index
         var name by Table.name
         var content by Table.content
         var parentEntry by LawEntry.Entity referencedOn Table.parentEntry
 
-        fun populate(model: Model, parentEntry: LawEntry.Entity) {
+        override fun populate(model: Model) {
             index = model.index
             name = model.name
             content = model.content
-            this.parentEntry = parentEntry
         }
 
-        val asModel: Model
+        override val asModel: Model
             get() = Model(id.value, index, name, content)
 
         companion object : LongEntityClass<Entity>(Table)

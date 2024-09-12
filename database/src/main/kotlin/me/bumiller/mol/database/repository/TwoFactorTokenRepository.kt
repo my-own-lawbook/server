@@ -7,7 +7,6 @@ import me.bumiller.mol.database.base.IEntityRepository
 import me.bumiller.mol.database.table.TwoFactorToken.Entity
 import me.bumiller.mol.database.table.TwoFactorToken.Model
 import me.bumiller.mol.database.table.TwoFactorToken.Table
-import me.bumiller.mol.database.table.User
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.and
@@ -38,20 +37,13 @@ internal class ExposedTwoFactorTokenRepository :
         Entity
     ), TwoFactorTokenRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
-        val userEntity = User.Entity.findById(model.user.id)!!
-        populate(model, userEntity)
-    }
-
-    override fun map(entity: Entity): Model = entity.asModel
-
     override suspend fun getSpecific(id: Optional<Long>, token: Optional<UUID>): Model? = suspendTransaction {
         Entity.find {
             (Table.token eqOpt token) and
                     (Table.id eqOpt id)
         }
             .limit(1)
-            .map(::map)
+            .map { it.asModel }
             .singleOrNull()
     }
 }

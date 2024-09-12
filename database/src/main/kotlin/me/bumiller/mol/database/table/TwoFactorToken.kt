@@ -3,12 +3,12 @@ package me.bumiller.mol.database.table
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import me.bumiller.mol.database.base.BaseModel
+import me.bumiller.mol.database.base.ModelMappableEntity
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
-import org.jetbrains.exposed.sql.selectAll
 import java.util.*
 
 object TwoFactorToken {
@@ -80,7 +80,7 @@ object TwoFactorToken {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id) {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
 
         var user by User.Entity referencedOn Table.user
         var token by Table.token
@@ -90,17 +90,17 @@ object TwoFactorToken {
         var additionalContent by Table.additionalContent
         var type by Table.type
 
-        val asModel
+        override val asModel
             get() = Model(id.value, token, issuedAt, expiringAt, used, additionalContent, type, user.asModel)
 
-        fun populate(model: Model, userEntity: User.Entity) {
-            user = userEntity
+        override fun populate(model: Model) {
             issuedAt = model.issuedAt
             expiringAt = model.expiringAt
             used = model.used
             token = model.token
             type = model.type
             additionalContent = model.additionalContent
+            user = User.Entity.findById(model.user.id)!!
         }
 
         companion object : LongEntityClass<Entity>(Table)

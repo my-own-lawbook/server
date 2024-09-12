@@ -1,6 +1,7 @@
 package me.bumiller.mol.database.table
 
 import me.bumiller.mol.database.base.BaseModel
+import me.bumiller.mol.database.base.ModelMappableEntity
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -61,7 +62,7 @@ object User {
         val profileId = reference("profile_id", UserProfile.Table).nullable()
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id) {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
 
         var email by Table.email
         var username by Table.username
@@ -69,15 +70,15 @@ object User {
         var isEmailVerified by Table.isEmailVerified
         var profile by UserProfile.Entity optionalReferencedOn Table.profileId
 
-        val asModel
+        override val asModel
             get() = Model(id.value, email, username, password, isEmailVerified, profile?.asModel)
 
-        fun populate(model: Model, profileEntity: UserProfile.Entity?) {
+        override fun populate(model: Model) {
             email = model.email
             username = model.username
             password = model.password
             isEmailVerified = model.isEmailVerified
-            profile = profileEntity
+            profile = model.profile?.let { UserProfile.Entity.findById(it.id)!! }
         }
 
         companion object : LongEntityClass<Entity>(Table)
