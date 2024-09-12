@@ -9,6 +9,7 @@ import me.bumiller.mol.database.table.LawEntry
 import me.bumiller.mol.database.table.LawEntry.Entity
 import me.bumiller.mol.database.table.LawEntry.Model
 import me.bumiller.mol.database.table.LawEntry.Table
+import me.bumiller.mol.database.table.LawSection
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
 import org.jetbrains.exposed.sql.and
@@ -55,6 +56,14 @@ interface LawEntryRepository : IEntityRepository<Long, Model> {
      */
     suspend fun getForParentBook(parentBookId: Long): List<Model>
 
+    /**
+     * Gets the [LawEntry] that is the parent of a specific section
+     *
+     * @param sectionId The id of the section
+     * @return The [LawEntry] that is the parent of the section, or null if the section was not found
+     */
+    suspend fun getForSection(sectionId: Long): Model?
+
 }
 
 internal class ExposedLawEntryRepository :
@@ -85,5 +94,12 @@ internal class ExposedLawEntryRepository :
             Table.parentBook eq parentBookId
         }.map { it.asModel }
     }
+
+    override suspend fun getForSection(sectionId: Long): Model? =
+        LawSection.Entity.find {
+            LawSection.Table.id eq sectionId
+        }
+            .singleOrNull()
+            ?.parentEntry?.asModel
 
 }

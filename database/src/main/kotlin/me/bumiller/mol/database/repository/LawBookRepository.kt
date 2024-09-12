@@ -8,6 +8,7 @@ import me.bumiller.mol.database.table.LawBook
 import me.bumiller.mol.database.table.LawBook.Entity
 import me.bumiller.mol.database.table.LawBook.Model
 import me.bumiller.mol.database.table.LawBook.Table
+import me.bumiller.mol.database.table.LawEntry
 import me.bumiller.mol.database.table.User
 import me.bumiller.mol.database.util.eqOpt
 import me.bumiller.mol.database.util.suspendTransaction
@@ -50,6 +51,14 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
      */
     suspend fun getForCreator(creatorId: Long): List<Model>
 
+    /**
+     * Gets the [LawBook] that is the parent of a specific entry
+     *
+     * @param entryId The id of the entry
+     * @return The [LawBook] that is the parent of the entry or null if the entry was not found
+     */
+    suspend fun getForEntry(entryId: Long): Model?
+
 }
 
 internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
@@ -81,5 +90,13 @@ internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, 
         }
             .map { it.asModel }
     }
+
+    override suspend fun getForEntry(entryId: Long): Model? =
+        LawEntry.Entity.find {
+            LawEntry.Table.id eq entryId
+        }
+            .singleOrNull()
+            ?.parentBook?.asModel
+
 
 }
