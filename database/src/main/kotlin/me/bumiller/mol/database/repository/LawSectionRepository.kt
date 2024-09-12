@@ -63,7 +63,7 @@ interface LawSectionRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawSectionRepository :
     EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), LawSectionRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
+    override fun populateEntity(entity: Entity, model: Model, exists: Boolean): Entity = entity.apply {
         val parentEntry = LawEntry.Entity.findById(entity.parentEntry.id)!!
         populate(model, parentEntry)
     }

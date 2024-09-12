@@ -68,9 +68,10 @@ abstract class EntityRepository<Id : Comparable<Id>, Model : BaseModel<Id>, Enti
      *
      * @param entity The dao to populate
      * @param model The entity to take the traits from
+     * @param exists Whether the entity already exists, i.e. is being updated or just created. Useful when the [entity] will also be populated by values that are retrieved from the database.
      * @return The populated dao
      */
-    abstract fun populateEntity(entity: Entity, model: Model): Entity
+    abstract fun populateEntity(entity: Entity, model: Model, exists: Boolean): Entity
 
     /**
      * Map an entity to its corresponding model
@@ -90,7 +91,7 @@ abstract class EntityRepository<Id : Comparable<Id>, Model : BaseModel<Id>, Enti
 
     override suspend fun create(model: Model): Model = suspendTransaction {
         entityClass.new {
-            populateEntity(this, model)
+            populateEntity(this, model, false)
         }.let(::map)
     }
 
@@ -105,7 +106,7 @@ abstract class EntityRepository<Id : Comparable<Id>, Model : BaseModel<Id>, Enti
 
     override suspend fun update(model: Model): Model? = suspendTransaction {
         entityClass.findByIdAndUpdate(model.id) {
-            populateEntity(it, model)
+            populateEntity(it, model, false)
         }?.let(::map)
     }
 

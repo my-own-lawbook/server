@@ -14,7 +14,7 @@ interface UserProfileRepository : IEntityRepository<Long, Model>
 internal class ExposedUserProfileRepository :
     EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), UserProfileRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
+    override fun populateEntity(entity: Entity, model: Model, exists: Boolean): Entity = entity.apply {
         populate(model)
     }
 

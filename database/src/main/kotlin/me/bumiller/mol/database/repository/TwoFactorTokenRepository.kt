@@ -38,7 +38,7 @@ internal class ExposedTwoFactorTokenRepository :
         Entity
     ), TwoFactorTokenRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
+    override fun populateEntity(entity: Entity, model: Model, exists: Boolean): Entity = entity.apply {
         val userEntity = User.Entity.findById(model.user.id)!!
         populate(model, userEntity)
     }
