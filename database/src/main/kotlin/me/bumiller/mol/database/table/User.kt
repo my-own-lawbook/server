@@ -2,6 +2,7 @@ package me.bumiller.mol.database.table
 
 import me.bumiller.mol.database.base.BaseModel
 import me.bumiller.mol.database.base.ModelMappableEntity
+import me.bumiller.mol.database.table.crossref.LawBookMembersCrossref
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -69,6 +70,8 @@ object User {
         var password by Table.password
         var isEmailVerified by Table.isEmailVerified
         var profile by UserProfile.Entity optionalReferencedOn Table.profileId
+
+        var lawBooks by LawBook.Entity via LawBookMembersCrossref
 
         override val asModel
             get() = Model(id.value, email, username, password, isEmailVerified, profile?.asModel)

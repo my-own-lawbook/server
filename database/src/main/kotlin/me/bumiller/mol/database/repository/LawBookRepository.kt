@@ -59,6 +59,14 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
      */
     suspend fun getForEntry(entryId: Long): Model?
 
+    /**
+     * Gets all law-books the member is part of
+     *
+     * @param userId The id of the member
+     * @return All law-books the user is a member of, or null if the user was not found
+     */
+    suspend fun getAllForMember(userId: Long): List<Model>?
+
 }
 
 internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
@@ -98,5 +106,12 @@ internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, 
             .singleOrNull()
             ?.parentBook?.asModel
 
+    override suspend fun getAllForMember(userId: Long): List<Model>? =
+        User.Entity.find {
+            User.Table.id eq userId
+        }
+            .singleOrNull()
+            ?.lawBooks?.toList()
+            ?.map { it.asModel }
 
 }
