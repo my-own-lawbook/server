@@ -25,6 +25,9 @@ internal class DatabaseLawContentService(
     val userRepository: UserRepository
 ) : LawContentService {
 
+    override suspend fun getBooks(): List<LawBook> = bookRepository
+        .getAll().map(::mapBook)
+
     override suspend fun getBooksByCreator(userId: Long): List<LawBook>? {
         userRepository.getSpecific(userId) ?: return null
 
@@ -83,6 +86,9 @@ internal class DatabaseLawContentService(
             ?.let(::mapBook)
     }
 
+    override suspend fun getEntries(): List<LawEntry> = entryRepository
+        .getAll().map(::mapEntry)
+
     override suspend fun getEntriesByBook(bookId: Long): List<LawEntry>? {
         bookRepository.getSpecific(bookId) ?: return null
 
@@ -135,6 +141,9 @@ internal class DatabaseLawContentService(
         return entryRepository.update(updatedEntry)
             ?.let(::mapEntry)
     }
+
+    override suspend fun getSections(): List<LawSection> = sectionRepository
+        .getAll().map(::mapSection)
 
     override suspend fun updateSection(
         sectionId: Long,

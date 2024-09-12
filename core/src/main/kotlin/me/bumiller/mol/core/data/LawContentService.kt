@@ -12,6 +12,13 @@ import me.bumiller.mol.model.LawSection
 interface LawContentService {
 
     /**
+     * Gets all the [LawBook]s
+     *
+     * @return All [LawBook]s
+     */
+    suspend fun getBooks(): List<LawBook>
+
+    /**
      * Gets all the [LawBook]s created by a specific user
      *
      * @param userId The id of the creator
@@ -68,6 +75,13 @@ interface LawContentService {
     ): LawBook?
 
     /**
+     * Gets all [LawEntry]s
+     *
+     * @return All [LawEntry]s
+     */
+    suspend fun getEntries(): List<LawEntry>
+
+    /**
      * Gets all [LawEntry]s of a specific [LawBook]
      *
      * @param bookId The id of the book
@@ -118,6 +132,13 @@ interface LawContentService {
         name: Optional<String> = empty(),
         parentBookId: Optional<Long> = empty()
     ): LawEntry?
+
+    /**
+     * Gets all [LawSection]s
+     *
+     * @return All [LawSection]s
+     */
+    suspend fun getSections(): List<LawSection>
 
     /**
      * Gets all [LawSection]s of a specific [LawEntry]
