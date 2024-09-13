@@ -85,7 +85,12 @@ class DatabaseTwoFactorTokenServiceTest {
 
     @Test
     fun `create correctly maps arguments to created token`() = runTest {
-        coEvery { mockTokenRepository.create(any()) } answers { c -> c.invocation.args[0] as TwoFactorTokenModel }
+        coEvery {
+            mockTokenRepository.create(
+                any(),
+                any()
+            )
+        } answers { c -> c.invocation.args[0] as TwoFactorTokenModel }
         coEvery { mockUserRepository.getSpecific(any<Long>()) } returns userModel
 
         val time = Clock.System.now()

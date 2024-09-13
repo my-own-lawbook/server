@@ -1,6 +1,9 @@
 package me.bumiller.mol.core.impl
 
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -147,7 +150,7 @@ class DatabaseUserServiceTest {
     fun `createUser passes arguments and creates correct user model`() = runTest {
         val userModelSlot = slot<User.Model>()
 
-        coEvery { mockUserRepo.create(capture(userModelSlot)) } returns models.first()
+        coEvery { mockUserRepo.create(capture(userModelSlot), any()) } returns models.first()
 
         userService.createUser("email", "password", "username")
 
