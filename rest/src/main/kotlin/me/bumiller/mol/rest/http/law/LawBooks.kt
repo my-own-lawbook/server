@@ -7,6 +7,9 @@ import io.ktor.server.routing.*
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
+import me.bumiller.mol.rest.util.longOrBadRequest
+import me.bumiller.mol.rest.validation.hasReadAccess
+import me.bumiller.mol.rest.validation.validateThat
 import org.koin.ktor.ext.inject
 
 /**
@@ -25,6 +28,7 @@ internal fun Route.lawBooks() {
 
     route("law-books/") {
         getAll(lawContentService)
+        getById(lawContentService)
     }
 }
 
@@ -42,7 +46,21 @@ private fun Route.getAll(lawContentService: LawContentService) = get {
     val booksByMember = lawContentService.getBooksByCreator(user.id)!!
 
     val responses = (booksByCreator + booksByMember)
-        .map (LawBookResponse.Companion::create)
+        .map(LawBookResponse.Companion::create)
 
     call.respond(HttpStatusCode.OK, responses)
+}
+
+/**
+ * Endpoint to GET /law-books/:id that returns a specific law-book
+ */
+private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
+    val user = call.authenticatedUser()
+    val bookId = call.parameters.longOrBadRequest("id")
+
+    validateThat(user).hasReadAccess(lawBookId = bookId)
+
+    val book = lawContentService.getSpecificBook(id = bookId)!!
+    val response = LawBookResponse.create(book)
+    call.respond(HttpStatusCode.OK, response)
 }

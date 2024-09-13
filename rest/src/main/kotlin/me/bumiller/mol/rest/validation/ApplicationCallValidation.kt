@@ -1,6 +1,7 @@
 package me.bumiller.mol.rest.validation
 
 import io.ktor.server.application.*
+import io.ktor.util.pipeline.*
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.LawService
@@ -59,6 +60,9 @@ internal data class ValidatableWrapper<T>(val value: T, val scope: ValidationSco
 internal fun <T> ValidationScope.validateThat(value: T): ValidatableWrapper<T> =
     ValidatableWrapper(value, this)
 
+internal fun <T> PipelineContext<*, ApplicationCall>.validateThat(value: T): ValidatableWrapper<T> =
+    ValidatableWrapper(value, this.application.validationScope)
+
 internal fun <T> ValidationScope.validateThatOptional(value: Optional<T>): ValidatableWrapper<T>? =
     if(!value.isPresent) null
 else ValidatableWrapper(value.get(), this)
@@ -77,7 +81,7 @@ internal suspend inline fun <reified Body : Validatable> ApplicationCall.validat
 /**
  * Extension function that creates an application wide [ValidationScope]
  */
-private val Application.validationScope: ValidationScope
+internal val Application.validationScope: ValidationScope
     get() = object : ValidationScope {
 
         override val tokenService by inject<TwoFactorTokenService>()
