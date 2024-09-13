@@ -161,3 +161,15 @@ internal suspend fun ValidatableWrapper<String>.isUniqueEntryKey(bookId: Long) {
         conflictUnique("key", value)
     }
 }
+
+/**
+ * Throws a 409 in the case that a law-section with the index already exists in the same entry
+ */
+internal suspend fun ValidatableWrapper<String>.isUniqueSectionIndex(entryKey: Long) {
+    scope.lawContentService.getSpecificSection(
+        index = present(value),
+        parentEntryId = present(entryKey)
+    )?.let {
+        conflictUnique("index", value)
+    }
+}

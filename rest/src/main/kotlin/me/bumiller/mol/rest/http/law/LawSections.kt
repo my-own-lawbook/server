@@ -4,13 +4,15 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.rest.validation.hasReadAccess
-import me.bumiller.mol.rest.validation.validateThat
+import me.bumiller.mol.rest.validation.*
 import org.koin.ktor.ext.inject
 
 /**
@@ -31,8 +33,24 @@ internal fun Route.lawSections() {
     route("law-sections/") {
         getAll(lawContentService)
         getSpecific(lawContentService)
+        update(lawContentService)
     }
 }
+
+//
+// Request bodies
+//
+
+@Serializable
+private data class UpdateLawSectionRequest(
+
+    val index: Optional<String> = empty(),
+
+    val name: Optional<String> = empty(),
+
+    val content: Optional<String> = empty()
+
+) : Validatable
 
 //
 // Endpoints
@@ -62,6 +80,25 @@ private fun Route.getSpecific(lawContentService: LawContentService) = get("{sect
 
     val section = lawContentService.getSpecificSection(id = present(sectionId))!!
     val response = LawSectionResponse.create(section)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.update(lawContentService: LawContentService) = patch("{sectionId}/") {
+    val sectionId = call.parameters.longOrBadRequest("sectionId")
+    val body = call.validated<UpdateLawSectionRequest>()
+
+    validateThat(user).hasWriteAccess(lawSectionId = sectionId)
+    val entry = lawContentService.getEntryForSection(sectionId)!!
+    validateThatOptional(body.index)?.isUniqueSectionIndex(entry.id)
+
+    val updated = lawContentService.updateSection(
+        sectionId = sectionId,
+        index = body.index,
+        name = body.name,
+        content = body.content
+    )!!
+    val response = LawSectionResponse.create(updated)
 
     call.respond(HttpStatusCode.OK, response)
 }
