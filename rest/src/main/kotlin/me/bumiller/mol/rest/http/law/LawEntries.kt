@@ -4,11 +4,17 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
+import me.bumiller.mol.rest.validation.*
+import me.bumiller.mol.rest.validation.Validatable
+import me.bumiller.mol.rest.validation.ValidationScope
 import me.bumiller.mol.rest.validation.hasReadAccess
 import me.bumiller.mol.rest.validation.validateThat
 import org.koin.ktor.ext.inject
@@ -32,10 +38,30 @@ internal fun Route.lawEntries() {
     route("law-entries/") {
         getAll(lawContentService)
         getById(lawContentService)
+        update(lawContentService)
     }
     route("law-books/law-entries/") {
 
     }
+}
+
+//
+// Request-Bodies
+//
+
+@Serializable
+private data class UpdateLawEntryRequest(
+
+    val key: Optional<String> = empty(),
+
+    val name: Optional<String> = empty()
+
+): Validatable {
+
+    override suspend fun ValidationScope.validate() {
+        validateThatOptional(key)?.isUniqueEntryKey()
+    }
+
 }
 
 //
@@ -62,6 +88,22 @@ private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
 
     val entry = lawContentService.getSpecificEntry(id = present(entryId))!!
     val response = LawEntryResponse.create(entry)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.update(lawContentService: LawContentService) = patch("{id}/") {
+    val entryId = call.parameters.longOrBadRequest("id")
+    val body = call.validated<UpdateLawEntryRequest>()
+
+    validateThat(user).hasWriteAccess(lawEntryId = entryId)
+
+    val updated = lawContentService.updateEntry(
+        entryId = entryId,
+        key = body.key,
+        name = body.name
+    )!!
+    val response = LawEntryResponse.create(updated)
 
     call.respond(HttpStatusCode.OK, response)
 }

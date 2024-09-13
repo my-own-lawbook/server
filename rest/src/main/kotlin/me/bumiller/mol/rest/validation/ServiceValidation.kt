@@ -1,6 +1,7 @@
 package me.bumiller.mol.rest.validation
 
 import kotlinx.datetime.Clock
+import me.bumiller.mol.common.present
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.User
@@ -145,6 +146,15 @@ internal suspend fun ValidatableWrapper<User>.hasWriteAccess(
  */
 internal suspend fun ValidatableWrapper<String>.isUniqueBookKey() {
     scope.lawContentService.getSpecificBook(key = value)?.let {
+        conflictUnique("key", value)
+    }
+}
+
+/**
+ * Throws a 409 in the case that a law-entry with the key already exists
+ */
+internal suspend fun ValidatableWrapper<String>.isUniqueEntryKey() {
+    scope.lawContentService.getSpecificEntry(key = present(value))?.let {
         conflictUnique("key", value)
     }
 }
