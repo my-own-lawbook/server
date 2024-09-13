@@ -23,7 +23,7 @@ internal infix fun <T> Column<T>.eqOpt(matcher: Optional<T>) =
  * @param matcher The optional
  * @return The operator
  */
-@JvmName("eqOpt")
+@JvmName("eqOptNeg")
 internal infix fun <T> Column<T>.eqOptNeg(matcher: Optional<T>) =
     if (matcher.isPresent) this eq matcher.get()
     else Op.FALSE
