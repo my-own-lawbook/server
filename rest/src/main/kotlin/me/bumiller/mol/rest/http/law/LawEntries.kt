@@ -4,9 +4,13 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
+import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
+import me.bumiller.mol.rest.validation.hasReadAccess
+import me.bumiller.mol.rest.validation.validateThat
 import org.koin.ktor.ext.inject
 
 /**
@@ -27,6 +31,7 @@ internal fun Route.lawEntries() {
 
     route("law-entries/") {
         getAll(lawContentService)
+        getById(lawContentService)
     }
     route("law-books/law-entries/") {
 
@@ -46,6 +51,17 @@ private fun Route.getAll(lawContentService: LawContentService) = get {
         lawContentService.getEntriesByBook(book.id)!!
     }.flatten()
     val response = allEntries.map(LawEntryResponse.Companion::create)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
+    val entryId = call.parameters.longOrBadRequest("id")
+
+    validateThat(user).hasReadAccess(lawEntryId = entryId)
+
+    val entry = lawContentService.getSpecificEntry(id = present(entryId))!!
+    val response = LawEntryResponse.create(entry)
 
     call.respond(HttpStatusCode.OK, response)
 }
