@@ -94,6 +94,10 @@ internal class DatabaseLawContentService(
             ?.let(::mapBook)
     }
 
+    override suspend fun deleteBook(id: Long): LawBook? = bookRepository
+        .delete(id)
+        ?.let(::mapBook)
+
     override suspend fun getEntries(): List<LawEntry> = entryRepository
         .getAll().map(::mapEntry)
 
@@ -154,6 +158,10 @@ internal class DatabaseLawContentService(
             ?.let(::mapEntry)
     }
 
+    override suspend fun deleteEntry(id: Long): LawEntry? = entryRepository
+        .delete(id)
+        ?.let(::mapEntry)
+
     override suspend fun getSections(): List<LawSection> = sectionRepository
         .getAll().map(::mapSection)
 
@@ -181,6 +189,10 @@ internal class DatabaseLawContentService(
 
         return sectionRepository.update(updatedSection)?.let(::mapSection)
     }
+
+    override suspend fun deleteSection(id: Long): LawSection? = sectionRepository
+        .delete(id)
+        ?.let(::mapSection)
 
     override suspend fun getSectionsByEntry(entryId: Long): List<LawSection>? {
         entryRepository.getSpecific(entryId) ?: return null

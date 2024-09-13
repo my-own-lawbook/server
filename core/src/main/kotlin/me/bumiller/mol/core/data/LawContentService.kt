@@ -94,6 +94,14 @@ interface LawContentService {
         memberIds: Optional<List<Long>> = empty()
     ): LawBook?
 
+    /**
+     * Deletes a [LawBook]
+     *
+     * @param id The id of the book
+     * @return The deleted book, or null if it could not be found
+     */
+    suspend fun deleteBook(id: Long): LawBook?
+
     //
     // Law-Entries
     //
@@ -165,6 +173,14 @@ interface LawContentService {
         parentBookId: Optional<Long> = empty()
     ): LawEntry?
 
+    /**
+     * Deletes a [LawEntry]
+     *
+     * @param id The id of the entry
+     * @return The deleted [LawEntry] or null if it could not be found
+     */
+    suspend fun deleteEntry(id: Long): LawEntry?
+
     //
     // Law-Section
     //
@@ -231,5 +247,13 @@ interface LawContentService {
         content: Optional<String> = empty(),
         parentEntryId: Optional<Long> = empty()
     ): LawSection?
+
+    /**
+     * Deletes a [LawSection]
+     *
+     * @param id The id of the [LawSection]
+     * @return The deleted [LawSection], or null if it could not be found
+     */
+    suspend fun deleteSection(id: Long): LawSection?
 
 }
