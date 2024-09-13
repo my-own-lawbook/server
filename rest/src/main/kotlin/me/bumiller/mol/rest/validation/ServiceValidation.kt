@@ -50,7 +50,7 @@ internal suspend fun UUID.validateTwoFactorTokenValid(
     val token = twoFactorTokenService.getSpecific(token = this) ?: notFoundIdentifier("two-factor-token", toString())
 
     val typeMatching = (type != null && token.type == type) || type == null
-    val userMatching = (userId != null && token.user.id == token.user.id) || userId == null
+    val userMatching = (userId != null && token.user.id == userId) || userId == null
     val notExpired = token.expiringAt == null || (token.expiringAt!! > now)
     val notUsed = !token.used
 
