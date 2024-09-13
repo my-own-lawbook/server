@@ -11,6 +11,7 @@ import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
+import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.rest.validation.*
 import org.koin.ktor.ext.inject
 
@@ -83,8 +84,6 @@ private data class UpdateLawBookRequest(
  * Endpoint to GET /law-books/ that returns the law-books the user has access to
  */
 private fun Route.getAll(lawContentService: LawContentService) = get {
-    val user = call.authenticatedUser()
-
     val booksByCreator = lawContentService.getBooksByCreator(user.id)!!
     val booksByMember = lawContentService.getBooksByCreator(user.id)!!
 
@@ -98,7 +97,6 @@ private fun Route.getAll(lawContentService: LawContentService) = get {
  * Endpoint to GET /law-books/:id that returns a specific law-book
  */
 private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
-    val user = call.authenticatedUser()
     val bookId = call.parameters.longOrBadRequest("id")
 
     validateThat(user).hasReadAccess(lawBookId = bookId)
@@ -112,7 +110,6 @@ private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
  * Endpoint to POST /law-books/ that allows a user to add a new law-book
  */
 private fun Route.create(lawContentService: LawContentService) = post {
-    val user = call.authenticatedUser()
     val body = call.validated<CreateLawBookRequest>()
 
     val created = lawContentService.createBook(body.key, body.name, body.description, user.id)!!
@@ -125,7 +122,6 @@ private fun Route.create(lawContentService: LawContentService) = post {
  * Endpoint to PATCH /law-books/:id that allows a user to update an existing law-book
  */
 private fun Route.update(lawContentService: LawContentService) = patch("{id}/") {
-    val user = call.authenticatedUser()
     val body = call.validated<UpdateLawBookRequest>()
     val bookId = call.parameters.longOrBadRequest("id")
 
@@ -146,7 +142,6 @@ private fun Route.update(lawContentService: LawContentService) = patch("{id}/") 
  * Endpoint for DELETE /law-books/:id/ that allows a user to delete a law-book
  */
 private fun Route.delete(lawContentService: LawContentService) = delete("{id}/") {
-    val user = call.authenticatedUser()
     val bookId = call.parameters.longOrBadRequest("id")
 
     validateThat(user).hasWriteAccess(lawBookId = bookId)

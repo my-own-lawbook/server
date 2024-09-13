@@ -18,6 +18,7 @@ import me.bumiller.mol.model.http.notFound
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.user.UserProfileResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
+import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.rest.validation.*
 import org.koin.ktor.ext.inject
 
@@ -103,7 +104,6 @@ private data class UpdateProfileRequest(
  */
 private fun Route.createProfile(userService: UserService) = post {
     val body = call.validated<CreateProfileRequest>()
-    val user = call.authenticatedUser()
 
     if (user.profile != null) conflict("The authenticated user already has a profile set.")
 
@@ -118,8 +118,6 @@ private fun Route.createProfile(userService: UserService) = post {
  * Endpoint to /user/profile/ that lets the authenticated user update their profile
  */
 private fun Route.getProfile() = get {
-    val user = call.authenticatedUser()
-
     if (user.profile == null) notFound("The authenticated user does not have a profile set.")
     else call.respond(HttpStatusCode.OK, UserProfileResponse.create(user.profile!!))
 }
