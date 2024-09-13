@@ -5,6 +5,8 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
@@ -35,6 +37,7 @@ internal fun Route.lawBooks() {
         getAll(lawContentService)
         getById(lawContentService)
         create(lawContentService)
+        update(lawContentService)
     }
 }
 
@@ -55,6 +58,23 @@ private data class CreateLawBookRequest(
 
     override suspend fun ValidationScope.validate() {
         validateThat(key).isUniqueBookKey()
+    }
+
+}
+
+@Serializable
+private data class UpdateLawBookRequest(
+
+    val key: Optional<String> = empty(),
+
+    val name: Optional<String> = empty(),
+
+    val description: Optional<String> = empty()
+
+): Validatable {
+
+    override suspend fun ValidationScope.validate() {
+        validateThatOptional(key)?.isUniqueBookKey()
     }
 
 }
@@ -101,6 +121,27 @@ private fun Route.create(lawContentService: LawContentService) = post {
 
     val created = lawContentService.createBook(body.key, body.name, body.description, user.id)!!
     val response = LawBookResponse.create(created)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to PATCH /law-books/:id that allows a user to update an existing law-book
+ */
+private fun Route.update(lawContentService: LawContentService) = patch("{id}/") {
+    val user = call.authenticatedUser()
+    val body = call.validated<UpdateLawBookRequest>()
+    val bookId = call.parameters.longOrBadRequest("id")
+
+    validateThat(user).hasWriteAccess(lawBookId = bookId)
+
+    val updated = lawContentService.updateBook(
+        bookId = bookId,
+        key = body.key,
+        name = body.name,
+        description = body.description
+    )!!
+    val response = LawBookResponse.create(updated)
 
     call.respond(HttpStatusCode.OK, response)
 }
