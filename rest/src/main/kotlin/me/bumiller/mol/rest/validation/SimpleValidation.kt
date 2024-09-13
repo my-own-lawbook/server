@@ -24,8 +24,8 @@ private val EmailRegex = Pattern.compile(
  *
  * @return The [ValidationResult]
  */
-internal fun String.validateEmail() =
-    if (!EmailRegex.matcher(this).matches()) badFormat("email", this)
+internal fun ValidatableWrapper<String>.isEmail() =
+    if (!EmailRegex.matcher(value).matches()) badFormat("email", value)
     else null
 
 private val UsernameRegex = Pattern.compile(
@@ -37,8 +37,8 @@ private val UsernameRegex = Pattern.compile(
  *
  * @return The [ValidationResult]
  */
-internal fun String.validateUsername() =
-    if (!UsernameRegex.matcher(this).matches()) badFormat("username", this)
+internal fun ValidatableWrapper<String>.isUsername() =
+    if (!UsernameRegex.matcher(value).matches()) badFormat("username", value)
     else null
 
 private val PasswordRegex = Pattern.compile(
@@ -50,15 +50,15 @@ private val PasswordRegex = Pattern.compile(
  *
  * @return The [ValidationResult]
  */
-internal fun String.validatePassword() =
-    if (!UsernameRegex.matcher(this).matches()) badFormat("password", this)
+internal fun ValidatableWrapper<String>.isPassword() =
+    if (!UsernameRegex.matcher(value).matches()) badFormat("password", value)
     else null
 
 /**
  * Validates whether a string is a uuid
  */
-internal fun String.validateUUID() =
-    if (toUUIDSafe() == null) badFormat("uuid", this)
+internal fun ValidatableWrapper<String>.isUUID() =
+    if (value.toUUIDSafe() == null) badFormat("uuid", value)
     else null
 
 private val ProfileNameRegex = Pattern.compile(
@@ -68,14 +68,14 @@ private val ProfileNameRegex = Pattern.compile(
 /**
  * Validates whether a string is a uuid
  */
-internal fun String.validateProfileName() =
-    if (!ProfileNameRegex.matcher(this).matches()) badFormat("name", this)
+internal fun ValidatableWrapper<String>.isProfileName() =
+    if (!ProfileNameRegex.matcher(value).matches()) badFormat("name", value)
     else null
 
-internal fun LocalDate.validateOnlyPast() {
+internal fun ValidatableWrapper<LocalDate>.isInPast() {
     val utcLocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
     val utcLocalDate = LocalDate(utcLocalDateTime.year, utcLocalDateTime.month, utcLocalDateTime.dayOfMonth)
-    val isFuture = utcLocalDate >= this
+    val isFuture = utcLocalDate >= value
 
     if(isFuture) badFormat("'date in past'", toString())
 }

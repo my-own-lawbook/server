@@ -82,8 +82,8 @@ private data class LoginRefreshRequest(
 ) : Validatable {
 
     override suspend fun ValidationScope.validate() {
-        token.validateUUID()
-        token.toUUID().validateTwoFactorTokenValid(tokenService, TwoFactorTokenType.RefreshToken)
+        validateThat(token).isUUID()
+        validateThat(token.toUUID()).isTokenValid(TwoFactorTokenType.RefreshToken)
     }
 
 }

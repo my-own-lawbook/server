@@ -63,11 +63,11 @@ private data class CreateUserRequest(
 ): Validatable {
 
     override suspend fun ValidationScope.validate() {
-        email.validateEmail()
-        username.validateUsername()
-        password.validatePassword()
-        email.validateEmailUnique(userService)
-        username.validateUsernameUnique(userService)
+        validateThat(email).isEmail()
+        validateThat(username).isUsername()
+        validateThat(password).isPassword()
+        validateThat(email).isEmailUnique()
+        validateThat(username).isUsernameUnique()
     }
 
 }
@@ -85,7 +85,7 @@ private data class RequestEmailTokenRequest(
 
 ): Validatable {
     override suspend fun ValidationScope.validate() {
-        email.validateEmail()
+        validateThat(email).isEmail()
     }
 }
 
@@ -103,8 +103,8 @@ private data class SubmitEmailTokenRequest(
 ): Validatable {
 
     override suspend fun ValidationScope.validate() {
-        token.validateUUID()
-        token.toUUID().validateTwoFactorTokenValid(tokenService, TwoFactorTokenType.EmailConfirm)
+        validateThat(token).isUUID()
+        validateThat(token.toUUID()).isTokenValid(TwoFactorTokenType.EmailConfirm)
     }
 
 }

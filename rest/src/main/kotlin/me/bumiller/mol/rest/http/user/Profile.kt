@@ -61,9 +61,9 @@ private data class CreateProfileRequest(
 ) : Validatable {
 
     override suspend fun ValidationScope.validate() {
-        firstName.validateProfileName()
-        lastName.validateProfileName()
-        birthday.validateOnlyPast()
+        validateThat(firstName).isProfileName()
+        validateThat(lastName).isProfileName()
+        validateThat(birthday).isInPast()
     }
 
 }
@@ -87,9 +87,9 @@ private data class UpdateProfileRequest(
 ) : Validatable {
 
     override suspend fun ValidationScope.validate() {
-        firstName.getOrNull()?.validateProfileName()
-        lastName.getOrNull()?.validateProfileName()
-        birthday.getOrNull()?.validateOnlyPast()
+        validateThatOptional(firstName)?.isProfileName()
+        validateThatOptional(lastName)?.isProfileName()
+        validateThatOptional(birthday)?.isInPast()
     }
 
 }

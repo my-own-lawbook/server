@@ -1,6 +1,7 @@
 package me.bumiller.mol.rest.validation
 
 import io.ktor.server.application.*
+import me.bumiller.mol.common.Optional
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
@@ -32,14 +33,23 @@ internal interface ValidationScope {
 /**
  * Interface for any class that can have their contents validated
  */
-internal interface Validatable {
+internal fun interface Validatable {
 
     /**
      * Called when the object will be validated.
      */
-    suspend fun ValidationScope.validate() {}
+    suspend fun ValidationScope.validate()
 
 }
+
+internal data class ValidatableWrapper<T>(val value: T, val scope: ValidationScope)
+
+internal fun <T> ValidationScope.validateThat(value: T): ValidatableWrapper<T> =
+    ValidatableWrapper(value, this)
+
+internal fun <T> ValidationScope.validateThatOptional(value: Optional<T>): ValidatableWrapper<T>? =
+    if(!value.isPresent) null
+else ValidatableWrapper(value.get(), this)
 
 /**
  * Calls the [ApplicationCall.receiveOptional] method and automatically validates the [Body].
