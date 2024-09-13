@@ -46,12 +46,14 @@ internal interface ValidationScope {
 /**
  * Interface for any class that can have their contents validated
  */
-internal fun interface Validatable {
+internal interface Validatable {
 
     /**
      * Called when the object will be validated.
      */
-    suspend fun ValidationScope.validate()
+    suspend fun ValidationScope.validate(){
+        // Empty so that implementations can leave this method empty
+    }
 
 }
 
@@ -66,6 +68,10 @@ internal fun <T> PipelineContext<*, ApplicationCall>.validateThat(value: T): Val
 internal fun <T> ValidationScope.validateThatOptional(value: Optional<T>): ValidatableWrapper<T>? =
     if(!value.isPresent) null
 else ValidatableWrapper(value.get(), this)
+
+internal fun <T> PipelineContext<*, ApplicationCall>.validateThatOptional(value: Optional<T>): ValidatableWrapper<T>? =
+    if(!value.isPresent) null
+else ValidatableWrapper(value.get(), this.application.validationScope)
 
 /**
  * Calls the [ApplicationCall.receiveOptional] method and automatically validates the [Body].

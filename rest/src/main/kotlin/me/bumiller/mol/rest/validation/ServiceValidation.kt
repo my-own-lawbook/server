@@ -151,10 +151,13 @@ internal suspend fun ValidatableWrapper<String>.isUniqueBookKey() {
 }
 
 /**
- * Throws a 409 in the case that a law-entry with the key already exists
+ * Throws a 409 in the case that a law-entry with the key already exists in the same book
  */
-internal suspend fun ValidatableWrapper<String>.isUniqueEntryKey() {
-    scope.lawContentService.getSpecificEntry(key = present(value))?.let {
+internal suspend fun ValidatableWrapper<String>.isUniqueEntryKey(bookId: Long) {
+    scope.lawContentService.getSpecificEntry(
+        key = present(value),
+        parentBookId = present(bookId)
+    )?.let {
         conflictUnique("key", value)
     }
 }

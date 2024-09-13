@@ -54,13 +54,7 @@ private data class UpdateLawEntryRequest(
 
     val name: Optional<String> = empty()
 
-) : Validatable {
-
-    override suspend fun ValidationScope.validate() {
-        validateThatOptional(key)?.isUniqueEntryKey()
-    }
-
-}
+) : Validatable
 
 @Serializable
 private data class CreateLawEntryRequest(
@@ -69,13 +63,7 @@ private data class CreateLawEntryRequest(
 
     val name: String
 
-) : Validatable {
-
-    override suspend fun ValidationScope.validate() {
-        validateThat(key).isUniqueEntryKey()
-    }
-
-}
+) : Validatable
 
 //
 // Endpoints
@@ -110,6 +98,8 @@ private fun Route.update(lawContentService: LawContentService) = patch("{id}/") 
     val body = call.validated<UpdateLawEntryRequest>()
 
     validateThat(user).hasWriteAccess(lawEntryId = entryId)
+    val book = lawContentService.getBookByEntry(entryId)!!
+    validateThatOptional(body.key)?.isUniqueEntryKey(book.id)
 
     val updated = lawContentService.updateEntry(
         entryId = entryId,
@@ -147,6 +137,7 @@ private fun Route.create(lawContentService: LawContentService) = post {
     val bookId = call.parameters.longOrBadRequest("bookId")
     val body = call.validated<CreateLawEntryRequest>()
 
+    validateThat(body.key).isUniqueEntryKey(bookId)
     validateThat(user).hasWriteAccess(bookId)
 
     val created = lawContentService.createEntry(
