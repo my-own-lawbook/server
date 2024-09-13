@@ -38,6 +38,7 @@ internal fun Route.lawSections() {
     }
     route("law-entries/{entryId}/law-sections/") {
         getByEntry(lawContentService)
+        create(lawContentService)
     }
 }
 
@@ -53,6 +54,17 @@ private data class UpdateLawSectionRequest(
     val name: Optional<String> = empty(),
 
     val content: Optional<String> = empty()
+
+) : Validatable
+
+@Serializable
+private data class CreateLawSectionRequest(
+
+    val index: String,
+
+    val name: String,
+
+    val content: String
 
 ) : Validatable
 
@@ -124,6 +136,24 @@ private fun Route.getByEntry(lawContentService: LawContentService) = get {
     validateThat(user).hasReadAccess(lawEntryId = entryId)
     val sections = lawContentService.getSectionsByEntry(entryId)!!
     val response = sections.map(LawSectionResponse.Companion::create)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.create(lawContentService: LawContentService) = post {
+    val entryId = call.parameters.longOrBadRequest("entryId")
+    val body = call.validated<CreateLawSectionRequest>()
+
+    validateThat(user).hasReadAccess(lawEntryId = entryId)
+    validateThat(body.index).isUniqueSectionIndex(entryId)
+
+    val created = lawContentService.createSection(
+        index = body.index,
+        name = body.name,
+        content = body.content,
+        parentEntryId = entryId
+    )!!
+    val response = LawSectionResponse.create(created)
 
     call.respond(HttpStatusCode.OK, response)
 }
