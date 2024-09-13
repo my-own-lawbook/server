@@ -3,6 +3,8 @@ package me.bumiller.mol.rest.validation
 import io.ktor.server.application.*
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.core.AuthService
+import me.bumiller.mol.core.LawService
+import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.http.bad
@@ -27,6 +29,16 @@ internal interface ValidationScope {
      * The [AuthService]
      */
     val authService: AuthService
+
+    /**
+     * The [LawService]
+     */
+    val lawService: LawService
+
+    /**
+     * The [LawContentService]
+     */
+    val lawContentService: LawContentService
 
 }
 
@@ -73,5 +85,9 @@ private val Application.validationScope: ValidationScope
         override val userService by inject<UserService>()
 
         override val authService by inject<AuthService>()
+
+        override val lawService by inject<LawService>()
+
+        override val lawContentService by inject<LawContentService>()
 
     }

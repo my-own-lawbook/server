@@ -3,6 +3,7 @@ package me.bumiller.mol.rest.validation
 import kotlinx.datetime.Clock
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.TwoFactorTokenType
+import me.bumiller.mol.model.User
 import me.bumiller.mol.model.http.conflictUnique
 import me.bumiller.mol.model.http.notFoundIdentifier
 import java.util.*
@@ -47,4 +48,49 @@ internal suspend fun ValidatableWrapper<UUID>.isTokenValid(
     val notUsed = !token.used
 
     if (!typeMatching || !userMatching || !notExpired || !notUsed) notFoundIdentifier("two-factor-token", toString())
+}
+
+/**
+ * Throws a 404 in the case that a user is not a member or creator of all the provided law resources.
+ *
+ * @param lawBookId The id of the law-book
+ * @param lawEntryId The id of the law-entry
+ * @param lawSectionId The id of the law section
+ */
+internal suspend fun ValidatableWrapper<User>.hasReadAccess(
+    lawBookId: Long? = null,
+    lawEntryId: Long? = null,
+    lawSectionId: Long? = null
+) {
+    require(
+        listOfNotNull(
+            lawBookId,
+            lawEntryId,
+            lawSectionId
+        ).isNotEmpty()
+    ) { "The id of at least one law resource must be passed." }
+
+    when {
+        lawSectionId != null -> {
+            val entry = scope.lawContentService.getEntryForSection(lawSectionId)!!
+            val book = scope.lawContentService.getBookByEntry(entry.id)!!
+
+            val valid = book.creator.id == value.id || scope.lawService.isUserMemberOfSection(value.id, lawSectionId)
+            if (!valid) notFoundIdentifier("law-section", lawSectionId.toString())
+        }
+
+        lawEntryId != null -> {
+            val book = scope.lawContentService.getBookByEntry(lawEntryId)!!
+
+            val valid = book.creator.id == value.id || scope.lawService.isUserMemberOfEntry(value.id, lawEntryId)
+            if (!valid) notFoundIdentifier("law-entry", lawEntryId.toString())
+        }
+
+        lawBookId != null -> {
+            val book = scope.lawContentService.getSpecificBook(id = lawBookId)!!
+
+            val valid = book.creator.id == value.id || value.id in book.members.map(User::id)
+            if (!valid) notFoundIdentifier("law-book", lawBookId.toString())
+        }
+    }
 }
