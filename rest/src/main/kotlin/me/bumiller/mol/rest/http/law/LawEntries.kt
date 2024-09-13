@@ -42,7 +42,7 @@ internal fun Route.lawEntries() {
         delete(lawContentService)
     }
     route("law-books/law-entries/") {
-
+        getById(lawContentService)
     }
 }
 
@@ -116,6 +116,17 @@ private fun Route.delete(lawContentService: LawContentService) = delete("{id}/")
 
     val deleted = lawContentService.deleteEntry(entryId)!!
     val response = LawEntryResponse.create(deleted)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.getByBook(lawContentService: LawContentService) = get {
+    val bookId = call.parameters.longOrBadRequest("bookId")
+
+    validateThat(user).hasReadAccess(lawEntryId = bookId)
+
+    val entries = lawContentService.getEntriesByBook(bookId)!!
+    val response = entries.map(LawEntryResponse.Companion::create)
 
     call.respond(HttpStatusCode.OK, response)
 }
