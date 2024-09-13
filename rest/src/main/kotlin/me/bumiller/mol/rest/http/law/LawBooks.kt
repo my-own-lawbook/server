@@ -12,11 +12,6 @@ import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.validation.*
-import me.bumiller.mol.rest.validation.Validatable
-import me.bumiller.mol.rest.validation.ValidationScope
-import me.bumiller.mol.rest.validation.hasReadAccess
-import me.bumiller.mol.rest.validation.validateThat
-import me.bumiller.mol.rest.validation.validated
 import org.koin.ktor.ext.inject
 
 /**
@@ -38,6 +33,7 @@ internal fun Route.lawBooks() {
         getById(lawContentService)
         create(lawContentService)
         update(lawContentService)
+        delete(lawContentService)
     }
 }
 
@@ -54,7 +50,7 @@ private data class CreateLawBookRequest(
 
     val description: String
 
-): Validatable {
+) : Validatable {
 
     override suspend fun ValidationScope.validate() {
         validateThat(key).isUniqueBookKey()
@@ -71,7 +67,7 @@ private data class UpdateLawBookRequest(
 
     val description: Optional<String> = empty()
 
-): Validatable {
+) : Validatable {
 
     override suspend fun ValidationScope.validate() {
         validateThatOptional(key)?.isUniqueBookKey()
@@ -142,6 +138,21 @@ private fun Route.update(lawContentService: LawContentService) = patch("{id}/") 
         description = body.description
     )!!
     val response = LawBookResponse.create(updated)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint for DELETE /law-books/:id/ that allows a user to delete a law-book
+ */
+private fun Route.delete(lawContentService: LawContentService) = delete("{id}/") {
+    val user = call.authenticatedUser()
+    val bookId = call.parameters.longOrBadRequest("id")
+
+    validateThat(user).hasWriteAccess(lawBookId = bookId)
+
+    val deleted = lawContentService.deleteBook(bookId)!!
+    val response = LawBookResponse.create(deleted)
 
     call.respond(HttpStatusCode.OK, response)
 }
