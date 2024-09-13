@@ -4,9 +4,13 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
+import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
+import me.bumiller.mol.rest.validation.hasReadAccess
+import me.bumiller.mol.rest.validation.validateThat
 import org.koin.ktor.ext.inject
 
 /**
@@ -26,6 +30,7 @@ internal fun Route.lawSections() {
 
     route("law-sections/") {
         getAll(lawContentService)
+        getSpecific(lawContentService)
     }
 }
 
@@ -46,6 +51,17 @@ private fun Route.getAll(lawContentService: LawContentService) = get {
         lawContentService.getSectionsByEntry(entry.id)!!
     }.flatten()
     val response = sections.map(LawSectionResponse.Companion::create)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.getSpecific(lawContentService: LawContentService) = get("{sectionId}/") {
+    val sectionId = call.parameters.longOrBadRequest("sectionId")
+
+    validateThat(user).hasReadAccess(lawSectionId = sectionId)
+
+    val section = lawContentService.getSpecificSection(id = present(sectionId))!!
+    val response = LawSectionResponse.create(section)
 
     call.respond(HttpStatusCode.OK, response)
 }
