@@ -76,7 +76,7 @@ internal class DatabaseLawContentService(
     ): LawBook? {
         val book = bookRepository.getSpecific(bookId) ?: return null
         val creator = creatorId.mapSuspend {
-            userRepository.getSpecific(creatorId)
+            userRepository.getSpecific(it)
         }
         val members = memberIds.mapSuspend { memberIds ->
             memberIds.map { memberId -> userRepository.getSpecific(memberId) }
@@ -138,21 +138,14 @@ internal class DatabaseLawContentService(
     override suspend fun updateEntry(
         entryId: Long,
         key: Optional<String>,
-        name: Optional<String>,
-        parentBookId: Optional<Long>
+        name: Optional<String>
     ): LawEntry? {
-        if (parentBookId is Optional.Present) {
-            bookRepository.getSpecific(parentBookId.get()) ?: return null
-        }
         val entry = entryRepository.getSpecific(entryId) ?: return null
 
         val updatedEntry = entry.copy(
             key = key.getOr(entry.key),
             name = name.getOr(entry.name)
         )
-        if (parentBookId is Optional.Present) {
-            entryRepository.updateParentBook(entryId, parentBookId.get()) ?: return null
-        }
 
         return entryRepository.update(updatedEntry)
             ?.let(::mapEntry)
@@ -169,23 +162,15 @@ internal class DatabaseLawContentService(
         sectionId: Long,
         index: Optional<String>,
         name: Optional<String>,
-        content: Optional<String>,
-        parentEntryId: Optional<Long>
+        content: Optional<String>
     ): LawSection? {
-        if (parentEntryId is Optional.Present) {
-            entryRepository.getSpecific(parentEntryId) ?: return null
-        }
         val section = sectionRepository.getSpecific(sectionId) ?: return null
 
         val updatedSection = section.copy(
             index = index.getOr(section.index),
-            name = index.getOr(section.name),
-            content = index.getOr(section.content)
+            name = name.getOr(section.name),
+            content = content.getOr(section.content)
         )
-
-        if (parentEntryId is Optional.Present) {
-            sectionRepository.updateParentEntry(sectionId, parentEntryId.get()) ?: return null
-        }
 
         return sectionRepository.update(updatedSection)?.let(::mapSection)
     }

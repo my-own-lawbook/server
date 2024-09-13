@@ -163,14 +163,12 @@ interface LawContentService {
      * @param entryId The id of the entry
      * @param key The key
      * @param name The name
-     * @param parentBookId The id of the parent book
      * @return The updated [LawEntry], or null if it was not found or the book was not found or the key was already present in the book
      */
     suspend fun updateEntry(
         entryId: Long,
         key: Optional<String> = empty(),
-        name: Optional<String> = empty(),
-        parentBookId: Optional<Long> = empty()
+        name: Optional<String> = empty()
     ): LawEntry?
 
     /**
@@ -237,15 +235,13 @@ interface LawContentService {
      * @param index The index
      * @param name The name
      * @param content The content
-     * @param parentEntryId The id of the parent entry
      * @return The updated [LawSection], or null if it was not found or the entry was not found or the index was already present in the entry
      */
     suspend fun updateSection(
         sectionId: Long,
         index: Optional<String> = empty(),
         name: Optional<String> = empty(),
-        content: Optional<String> = empty(),
-        parentEntryId: Optional<Long> = empty()
+        content: Optional<String> = empty()
     ): LawSection?
 
     /**
