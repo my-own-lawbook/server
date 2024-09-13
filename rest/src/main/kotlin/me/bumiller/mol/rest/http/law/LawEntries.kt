@@ -9,6 +9,8 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.rest.http.PathBookId
+import me.bumiller.mol.rest.http.PathEntryId
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
@@ -37,7 +39,7 @@ internal fun Route.lawEntries() {
         update(lawContentService)
         delete(lawContentService)
     }
-    route("law-books/{bookId}/law-entries/") {
+    route("law-books/{$PathBookId}/law-entries/") {
         getById(lawContentService)
         create(lawContentService)
     }
@@ -82,8 +84,8 @@ private fun Route.getAll(lawContentService: LawContentService) = get {
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
-    val entryId = call.parameters.longOrBadRequest("id")
+private fun Route.getById(lawContentService: LawContentService) = get("{$PathEntryId}/") {
+    val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
     validateThat(user).hasReadAccess(lawEntryId = entryId)
 
@@ -93,8 +95,8 @@ private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.update(lawContentService: LawContentService) = patch("{id}/") {
-    val entryId = call.parameters.longOrBadRequest("id")
+private fun Route.update(lawContentService: LawContentService) = patch("{$PathEntryId}/") {
+    val entryId = call.parameters.longOrBadRequest(PathEntryId)
     val body = call.validated<UpdateLawEntryRequest>()
 
     validateThat(user).hasWriteAccess(lawEntryId = entryId)
@@ -111,8 +113,8 @@ private fun Route.update(lawContentService: LawContentService) = patch("{id}/") 
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.delete(lawContentService: LawContentService) = delete("{id}/") {
-    val entryId = call.parameters.longOrBadRequest("id")
+private fun Route.delete(lawContentService: LawContentService) = delete("{$PathEntryId}/") {
+    val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
     validateThat(user).hasWriteAccess(lawEntryId = entryId)
 
@@ -123,7 +125,7 @@ private fun Route.delete(lawContentService: LawContentService) = delete("{id}/")
 }
 
 private fun Route.getByBook(lawContentService: LawContentService) = get {
-    val bookId = call.parameters.longOrBadRequest("bookId")
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
 
     validateThat(user).hasReadAccess(lawEntryId = bookId)
 
@@ -134,7 +136,7 @@ private fun Route.getByBook(lawContentService: LawContentService) = get {
 }
 
 private fun Route.create(lawContentService: LawContentService) = post {
-    val bookId = call.parameters.longOrBadRequest("bookId")
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
     val body = call.validated<CreateLawEntryRequest>()
 
     validateThat(body.key).isUniqueEntryKey(bookId)

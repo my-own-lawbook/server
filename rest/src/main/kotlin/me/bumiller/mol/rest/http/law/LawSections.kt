@@ -9,6 +9,8 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.rest.http.PathEntryId
+import me.bumiller.mol.rest.http.PathSectionId
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
@@ -36,7 +38,7 @@ internal fun Route.lawSections() {
         update(lawContentService)
         deleteSpecific(lawContentService)
     }
-    route("law-entries/{entryId}/law-sections/") {
+    route("law-entries/{$PathEntryId}/law-sections/") {
         getByEntry(lawContentService)
         create(lawContentService)
     }
@@ -89,8 +91,8 @@ private fun Route.getAll(lawContentService: LawContentService) = get {
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.getSpecific(lawContentService: LawContentService) = get("{sectionId}/") {
-    val sectionId = call.parameters.longOrBadRequest("sectionId")
+private fun Route.getSpecific(lawContentService: LawContentService) = get("{$PathSectionId}/") {
+    val sectionId = call.parameters.longOrBadRequest(PathSectionId)
 
     validateThat(user).hasReadAccess(lawSectionId = sectionId)
 
@@ -100,8 +102,8 @@ private fun Route.getSpecific(lawContentService: LawContentService) = get("{sect
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.update(lawContentService: LawContentService) = patch("{sectionId}/") {
-    val sectionId = call.parameters.longOrBadRequest("sectionId")
+private fun Route.update(lawContentService: LawContentService) = patch("{$PathSectionId}/") {
+    val sectionId = call.parameters.longOrBadRequest(PathSectionId)
     val body = call.validated<UpdateLawSectionRequest>()
 
     validateThat(user).hasWriteAccess(lawSectionId = sectionId)
@@ -119,8 +121,8 @@ private fun Route.update(lawContentService: LawContentService) = patch("{section
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.deleteSpecific(lawContentService: LawContentService) = delete("{sectionId}/") {
-    val sectionId = call.parameters.longOrBadRequest("sectionId")
+private fun Route.deleteSpecific(lawContentService: LawContentService) = delete("{$PathSectionId}/") {
+    val sectionId = call.parameters.longOrBadRequest(PathSectionId)
 
     validateThat(user).hasWriteAccess(lawSectionId = sectionId)
 
@@ -131,7 +133,7 @@ private fun Route.deleteSpecific(lawContentService: LawContentService) = delete(
 }
 
 private fun Route.getByEntry(lawContentService: LawContentService) = get {
-    val entryId = call.parameters.longOrBadRequest("entryId")
+    val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
     validateThat(user).hasReadAccess(lawEntryId = entryId)
     val sections = lawContentService.getSectionsByEntry(entryId)!!
@@ -141,7 +143,7 @@ private fun Route.getByEntry(lawContentService: LawContentService) = get {
 }
 
 private fun Route.create(lawContentService: LawContentService) = post {
-    val entryId = call.parameters.longOrBadRequest("entryId")
+    val entryId = call.parameters.longOrBadRequest(PathEntryId)
     val body = call.validated<CreateLawSectionRequest>()
 
     validateThat(user).hasReadAccess(lawEntryId = entryId)

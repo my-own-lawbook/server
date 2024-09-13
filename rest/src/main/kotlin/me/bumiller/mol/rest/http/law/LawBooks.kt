@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
-import me.bumiller.mol.rest.plugins.authenticatedUser
+import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
@@ -96,8 +96,8 @@ private fun Route.getAll(lawContentService: LawContentService) = get {
 /**
  * Endpoint to GET /law-books/:id that returns a specific law-book
  */
-private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
-    val bookId = call.parameters.longOrBadRequest("id")
+private fun Route.getById(lawContentService: LawContentService) = get("{$PathBookId}/") {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
 
     validateThat(user).hasReadAccess(lawBookId = bookId)
 
@@ -121,9 +121,9 @@ private fun Route.create(lawContentService: LawContentService) = post {
 /**
  * Endpoint to PATCH /law-books/:id that allows a user to update an existing law-book
  */
-private fun Route.update(lawContentService: LawContentService) = patch("{id}/") {
+private fun Route.update(lawContentService: LawContentService) = patch("{$PathBookId}/") {
     val body = call.validated<UpdateLawBookRequest>()
-    val bookId = call.parameters.longOrBadRequest("id")
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
 
     validateThat(user).hasWriteAccess(lawBookId = bookId)
 
@@ -141,8 +141,8 @@ private fun Route.update(lawContentService: LawContentService) = patch("{id}/") 
 /**
  * Endpoint for DELETE /law-books/:id/ that allows a user to delete a law-book
  */
-private fun Route.delete(lawContentService: LawContentService) = delete("{id}/") {
-    val bookId = call.parameters.longOrBadRequest("id")
+private fun Route.delete(lawContentService: LawContentService) = delete("{$PathBookId}/") {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
 
     validateThat(user).hasWriteAccess(lawBookId = bookId)
 
