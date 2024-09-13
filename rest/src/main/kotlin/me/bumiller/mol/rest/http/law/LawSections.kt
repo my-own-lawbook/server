@@ -36,6 +36,9 @@ internal fun Route.lawSections() {
         update(lawContentService)
         deleteSpecific(lawContentService)
     }
+    route("law-entries/{entryId}/law-sections/") {
+        getByEntry(lawContentService)
+    }
 }
 
 //
@@ -111,6 +114,16 @@ private fun Route.deleteSpecific(lawContentService: LawContentService) = delete(
 
     val deleted = lawContentService.deleteSection(sectionId)!!
     val response = LawSectionResponse.create(deleted)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.getByEntry(lawContentService: LawContentService) = get {
+    val entryId = call.parameters.longOrBadRequest("entryId")
+
+    validateThat(user).hasReadAccess(lawEntryId = entryId)
+    val sections = lawContentService.getSectionsByEntry(entryId)!!
+    val response = sections.map(LawSectionResponse.Companion::create)
 
     call.respond(HttpStatusCode.OK, response)
 }
