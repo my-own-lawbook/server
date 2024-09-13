@@ -13,10 +13,6 @@ import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.rest.validation.*
-import me.bumiller.mol.rest.validation.Validatable
-import me.bumiller.mol.rest.validation.ValidationScope
-import me.bumiller.mol.rest.validation.hasReadAccess
-import me.bumiller.mol.rest.validation.validateThat
 import org.koin.ktor.ext.inject
 
 /**
@@ -41,8 +37,9 @@ internal fun Route.lawEntries() {
         update(lawContentService)
         delete(lawContentService)
     }
-    route("law-books/law-entries/") {
+    route("law-books/{bookId}/law-entries/") {
         getById(lawContentService)
+        create(lawContentService)
     }
 }
 
@@ -57,10 +54,25 @@ private data class UpdateLawEntryRequest(
 
     val name: Optional<String> = empty()
 
-): Validatable {
+) : Validatable {
 
     override suspend fun ValidationScope.validate() {
         validateThatOptional(key)?.isUniqueEntryKey()
+    }
+
+}
+
+@Serializable
+private data class CreateLawEntryRequest(
+
+    val key: String,
+
+    val name: String
+
+) : Validatable {
+
+    override suspend fun ValidationScope.validate() {
+        validateThat(key).isUniqueEntryKey()
     }
 
 }
@@ -127,6 +139,22 @@ private fun Route.getByBook(lawContentService: LawContentService) = get {
 
     val entries = lawContentService.getEntriesByBook(bookId)!!
     val response = entries.map(LawEntryResponse.Companion::create)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+private fun Route.create(lawContentService: LawContentService) = post {
+    val bookId = call.parameters.longOrBadRequest("bookId")
+    val body = call.validated<CreateLawEntryRequest>()
+
+    validateThat(user).hasWriteAccess(bookId)
+
+    val created = lawContentService.createEntry(
+        key = body.key,
+        name = body.name,
+        parentBookId = bookId
+    )!!
+    val response = LawEntryResponse.create(created)
 
     call.respond(HttpStatusCode.OK, response)
 }
