@@ -139,3 +139,12 @@ internal suspend fun ValidatableWrapper<User>.hasWriteAccess(
         }
     }
 }
+
+/**
+ * Throws a 409 in the case that a law-book with the key already exists
+ */
+internal suspend fun ValidatableWrapper<String>.isUniqueBookKey() {
+    scope.lawContentService.getSpecificBook(key = value)?.let {
+        conflictUnique("key", value)
+    }
+}

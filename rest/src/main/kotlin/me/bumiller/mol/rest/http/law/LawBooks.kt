@@ -4,12 +4,17 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
+import me.bumiller.mol.rest.validation.*
+import me.bumiller.mol.rest.validation.Validatable
+import me.bumiller.mol.rest.validation.ValidationScope
 import me.bumiller.mol.rest.validation.hasReadAccess
 import me.bumiller.mol.rest.validation.validateThat
+import me.bumiller.mol.rest.validation.validated
 import org.koin.ktor.ext.inject
 
 /**
@@ -29,7 +34,29 @@ internal fun Route.lawBooks() {
     route("law-books/") {
         getAll(lawContentService)
         getById(lawContentService)
+        create(lawContentService)
     }
+}
+
+//
+// Request-Bodies
+//
+
+@Serializable
+private data class CreateLawBookRequest(
+
+    val key: String,
+
+    val name: String,
+
+    val description: String
+
+): Validatable {
+
+    override suspend fun ValidationScope.validate() {
+        validateThat(key).isUniqueBookKey()
+    }
+
 }
 
 //
@@ -62,5 +89,18 @@ private fun Route.getById(lawContentService: LawContentService) = get("{id}/") {
 
     val book = lawContentService.getSpecificBook(id = bookId)!!
     val response = LawBookResponse.create(book)
+    call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to POST /law-books/ that allows a user to add a new law-book
+ */
+private fun Route.create(lawContentService: LawContentService) = post {
+    val user = call.authenticatedUser()
+    val body = call.validated<CreateLawBookRequest>()
+
+    val created = lawContentService.createBook(body.key, body.name, body.description, user.id)!!
+    val response = LawBookResponse.create(created)
+
     call.respond(HttpStatusCode.OK, response)
 }
