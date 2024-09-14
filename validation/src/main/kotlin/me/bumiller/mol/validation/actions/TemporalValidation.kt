@@ -13,7 +13,7 @@ import me.bumiller.mol.validation.ValidatableWrapper
 fun ValidatableWrapper<LocalDate>.isInPast() {
     val utcLocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
     val utcLocalDate = LocalDate(utcLocalDateTime.year, utcLocalDateTime.month, utcLocalDateTime.dayOfMonth)
-    val isFuture = utcLocalDate >= value
+    val isFuture = utcLocalDate <= value
 
     if (isFuture) badFormat("'date in past'", toString())
 }

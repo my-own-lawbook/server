@@ -18,6 +18,10 @@ dependencies {
     implementation(project(":model"))
     implementation(project(":core"))
     implementation(project(":common"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.mockk)
 }
 
 tasks.test {
