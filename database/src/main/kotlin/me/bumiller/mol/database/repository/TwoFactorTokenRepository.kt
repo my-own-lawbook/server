@@ -48,10 +48,10 @@ internal class ExposedTwoFactorTokenRepository :
         Entity
     ), TwoFactorTokenRepository {
 
-    override suspend fun create(model: Model, userId: Long): Model? {
-        val user = User.Entity.findById(userId) ?: return null
+    override suspend fun create(model: Model, userId: Long): Model? = suspendTransaction {
+        val user = User.Entity.findById(userId) ?: return@suspendTransaction null
 
-        return Entity.new {
+        Entity.new {
             this.user = user
             populate(model)
         }.asModel

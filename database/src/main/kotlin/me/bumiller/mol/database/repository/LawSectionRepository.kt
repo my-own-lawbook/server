@@ -75,9 +75,11 @@ internal class ExposedLawSectionRepository :
             ?.asModel
     }
 
-    override suspend fun create(model: Model): Model = Entity.new {
-        populate(model)
-    }.asModel
+    override suspend fun create(model: Model): Model = suspendTransaction {
+        Entity.new {
+            populate(model)
+        }.asModel
+    }
 
     override suspend fun updateParentEntry(sectionId: Long, parentEntryId: Long): Model? = suspendTransaction {
         val parentEntry = LawEntry.Entity.findById(parentEntryId)

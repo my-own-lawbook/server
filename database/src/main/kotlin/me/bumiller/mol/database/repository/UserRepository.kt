@@ -46,11 +46,11 @@ interface UserRepository : IEntityRepository<Long, Model> {
 internal class ExposedUserRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     UserRepository {
 
-    override suspend fun create(model: Model, profileId: Long?): Model? {
+    override suspend fun create(model: Model, profileId: Long?): Model? = suspendTransaction {
         val profile = if (profileId == null) null
-        else UserProfile.Entity.findById(profileId) ?: return null
+        else UserProfile.Entity.findById(profileId) ?: return@suspendTransaction null
 
-        return Entity.new {
+        Entity.new {
             this.profile = profile
             populate(model)
         }.asModel

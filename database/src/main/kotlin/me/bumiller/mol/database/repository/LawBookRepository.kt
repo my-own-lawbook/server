@@ -72,10 +72,10 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     LawBookRepository {
 
-    override suspend fun create(model: Model, creatorId: Long): Model? {
-        val user = User.Entity.findById(creatorId) ?: return null
+    override suspend fun create(model: Model, creatorId: Long): Model? = suspendTransaction {
+        val user = User.Entity.findById(creatorId) ?: return@suspendTransaction null
 
-        return Entity.new {
+        Entity.new {
             creator = user
             populate(model)
         }.asModel

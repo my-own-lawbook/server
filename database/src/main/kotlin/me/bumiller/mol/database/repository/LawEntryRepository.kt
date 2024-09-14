@@ -69,9 +69,11 @@ interface LawEntryRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawEntryRepository :
     EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), LawEntryRepository {
 
-    override suspend fun create(model: Model): Model = Entity.new {
-        populate(model)
-    }.asModel
+    override suspend fun create(model: Model): Model = suspendTransaction {
+        Entity.new {
+            populate(model)
+        }.asModel
+    }
 
     override suspend fun updateParentBook(entryId: Long, parentBookId: Long): Model? = suspendTransaction {
         val parentBook = LawBook.Entity.findById(parentBookId)
