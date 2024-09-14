@@ -21,6 +21,9 @@ dependencies {
     implementation(project(":model"))
     implementation(project(":common"))
     implementation(project(":validation"))
+
+    testImplementation(libs.bundles.ktor.test)
+    testImplementation(libs.bundles.test)
 }
 
 tasks.test {
