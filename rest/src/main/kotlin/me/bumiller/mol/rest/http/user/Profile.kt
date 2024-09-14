@@ -19,7 +19,9 @@ import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.user.UserProfileResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.rest.validation.*
+import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.actions.isInPast
+import me.bumiller.mol.validation.actions.isProfileName
 import org.koin.ktor.ext.inject
 
 /**

@@ -12,7 +12,10 @@ import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.rest.validation.*
+import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.actions.hasReadAccess
+import me.bumiller.mol.validation.actions.hasWriteAccess
+import me.bumiller.mol.validation.actions.isUniqueBookKey
 import org.koin.ktor.ext.inject
 
 /**

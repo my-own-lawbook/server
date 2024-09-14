@@ -11,8 +11,13 @@ repositories {
 
 dependencies {
     implementation(libs.bundles.ktor)
+    implementation(libs.bundles.koin)
+
+    implementation(libs.kotlin.datetime)
 
     implementation(project(":model"))
+    implementation(project(":core"))
+    implementation(project(":common"))
 }
 
 tasks.test {

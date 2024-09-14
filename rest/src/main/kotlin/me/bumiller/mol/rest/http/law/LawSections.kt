@@ -14,7 +14,13 @@ import me.bumiller.mol.rest.http.PathSectionId
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.rest.validation.*
+import me.bumiller.mol.validation.Validatable
+import me.bumiller.mol.validation.actions.hasReadAccess
+import me.bumiller.mol.validation.actions.hasWriteAccess
+import me.bumiller.mol.validation.actions.isUniqueSectionIndex
+import me.bumiller.mol.validation.validateThat
+import me.bumiller.mol.validation.validateThatOptional
+import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
 
 /**

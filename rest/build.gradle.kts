@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":database"))
     implementation(project(":email"))
     implementation(project(":common"))
+    implementation(project(":validation"))
 }
 
 tasks.test {
