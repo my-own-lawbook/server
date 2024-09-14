@@ -19,8 +19,6 @@ dependencies {
 
     implementation(project(":core"))
     implementation(project(":model"))
-    implementation(project(":database"))
-    implementation(project(":email"))
     implementation(project(":common"))
     implementation(project(":validation"))
 }

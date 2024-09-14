@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":email"))
     implementation(project(":model"))
     implementation(project(":rest"))
+    implementation(project(":core"))
 
     implementation("ch.qos.logback:logback-classic:1.5.7")
 }

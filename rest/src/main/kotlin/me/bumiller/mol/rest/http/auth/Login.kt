@@ -14,7 +14,6 @@ import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.http.bad
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.response.user.TokenResponse
-import me.bumiller.mol.rest.validation.*
 import me.bumiller.mol.validation.Validatable
 import me.bumiller.mol.validation.ValidationScope
 import me.bumiller.mol.validation.actions.isTokenValid
