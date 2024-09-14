@@ -4,7 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
-import me.bumiller.mol.common.isNotEmpty
+import me.bumiller.mol.common.ifNotEmpty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
@@ -35,7 +35,7 @@ internal class AuthServiceImpl(
         listOfNotNull(
             userService.getSpecific(email = email),
             userService.getSpecific(username = username)
-        ).isNotEmpty {
+        ).ifNotEmpty {
             throw IllegalStateException("Found users for '$email' or '$username' already existing.'")
         }
 

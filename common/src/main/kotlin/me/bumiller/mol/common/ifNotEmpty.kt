@@ -5,5 +5,5 @@ package me.bumiller.mol.common
  *
  * @param call The call
  */
-fun <T> List<T>.isNotEmpty(call: () -> Unit) =
+fun <T> List<T>.ifNotEmpty(call: () -> Unit) =
     if(isEmpty()) Unit else call()
