@@ -56,7 +56,7 @@ internal fun Route.lawEntries() {
 //
 
 @Serializable
-private data class UpdateLawEntryRequest(
+internal data class UpdateLawEntryRequest(
 
     val key: Optional<String> = empty(),
 
@@ -65,7 +65,7 @@ private data class UpdateLawEntryRequest(
 ) : Validatable
 
 @Serializable
-private data class CreateLawEntryRequest(
+internal data class CreateLawEntryRequest(
 
     val key: String,
 

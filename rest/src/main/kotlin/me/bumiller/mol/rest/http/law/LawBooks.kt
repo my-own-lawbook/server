@@ -46,7 +46,7 @@ internal fun Route.lawBooks() {
 //
 
 @Serializable
-private data class CreateLawBookRequest(
+internal data class CreateLawBookRequest(
 
     val key: String,
 
@@ -63,7 +63,7 @@ private data class CreateLawBookRequest(
 }
 
 @Serializable
-private data class UpdateLawBookRequest(
+internal data class UpdateLawBookRequest(
 
     val key: Optional<String> = empty(),
 

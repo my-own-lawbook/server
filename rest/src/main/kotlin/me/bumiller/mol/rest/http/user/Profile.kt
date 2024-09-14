@@ -49,7 +49,7 @@ internal fun Route.profile() {
  * Request body for a request to POST /user/profile/
  */
 @Serializable
-private data class CreateProfileRequest(
+internal data class CreateProfileRequest(
 
     @SerialName("first_name")
     val firstName: String,
@@ -75,7 +75,7 @@ private data class CreateProfileRequest(
  * Request body for a request to PATCH /user/profile/
  */
 @Serializable
-private data class UpdateProfileRequest(
+internal data class UpdateProfileRequest(
 
     @SerialName("first_name")
     val firstName: Optional<String> = empty(),

@@ -47,7 +47,7 @@ internal fun Route.signup() {
  * Contains the fields required by the request to POST /auth/signup/.
  */
 @Serializable
-private data class CreateUserRequest(
+internal data class CreateUserRequest(
 
     /**
      * The username
@@ -80,7 +80,7 @@ private data class CreateUserRequest(
  * Contains the fields required by the request to POST /auth/signup/email-verify/
  */
 @Serializable
-private data class RequestEmailTokenRequest(
+internal data class RequestEmailTokenRequest(
 
     /**
      * The email to send the token to
@@ -97,7 +97,7 @@ private data class RequestEmailTokenRequest(
  * Contains the fields required by a request to PATCH /auth/signup/email-verify/
  */
 @Serializable
-private data class SubmitEmailTokenRequest(
+internal data class SubmitEmailTokenRequest(
 
     /**
      * The token that was sent to the email address

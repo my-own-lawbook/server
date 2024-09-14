@@ -55,7 +55,7 @@ internal fun Route.lawSections() {
 //
 
 @Serializable
-private data class UpdateLawSectionRequest(
+internal data class UpdateLawSectionRequest(
 
     val index: Optional<String> = empty(),
 
@@ -66,7 +66,7 @@ private data class UpdateLawSectionRequest(
 ) : Validatable
 
 @Serializable
-private data class CreateLawSectionRequest(
+internal data class CreateLawSectionRequest(
 
     val index: String,
 

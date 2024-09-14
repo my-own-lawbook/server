@@ -47,7 +47,7 @@ internal fun Route.login() {
  * Contains the fields required by a request to POST /auth/login/
  */
 @Serializable
-private data class LoginCredentialsRequest(
+internal data class LoginCredentialsRequest(
 
     /**
      * The email
@@ -78,7 +78,7 @@ private data class LoginCredentialsRequest(
  * Contains the fields required by a request to POST /auth/login/refresh/
  */
 @Serializable
-private data class LoginRefreshRequest(
+internal data class LoginRefreshRequest(
 
     /**
      * The refresh token
