@@ -13,7 +13,6 @@ import me.bumiller.mol.rest.http.auth.CreateUserRequest
 import me.bumiller.mol.rest.http.auth.RequestEmailTokenRequest
 import me.bumiller.mol.rest.http.auth.SubmitEmailTokenRequest
 import me.bumiller.mol.rest.response.user.UserWithoutProfileResponse
-import me.bumiller.mol.test.Services
 import me.bumiller.mol.test.ktorEndpointTest
 import me.bumiller.mol.test.testClient
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,16 +37,16 @@ class SignupTest {
     )
 
     @Test
-    fun `POST auth_signup calls createNewUser with arguments and responds the user`() = ktorEndpointTest {
-        coEvery { Services.userService.getSpecific(any(), any(), any()) } returns null
-        coEvery { Services.authService.createNewUser(any(), any(), any()) } returns user
+    fun `POST auth_signup calls createNewUser with arguments and responds the user`() = ktorEndpointTest { services ->
+        coEvery { services.userService.getSpecific(any(), any(), any()) } returns null
+        coEvery { services.authService.createNewUser(any(), any(), any()) } returns user
 
         val res = testClient.post("/test/api/auth/signup/") {
             contentType(ContentType.Application.Json)
             setBody(CreateUserRequest("username", "email@email.com", "password"))
         }
 
-        coVerify(exactly = 1) { Services.authService.createNewUser("email@email.com", "username", "password") }
+        coVerify(exactly = 1) { services.authService.createNewUser("email@email.com", "username", "password") }
         assertEquals(201, res.status.value)
         assertEquals(
             UserWithoutProfileResponse(1L, "email@email.com", "username", false),
@@ -57,57 +56,57 @@ class SignupTest {
 
     @Test
     fun `POST auth_signup_email-verify only sends email when user is not yet verified and user has a profile set`() =
-        ktorEndpointTest {
-            coEvery { Services.userService.getSpecific(null, "email@email.com", null) } returnsMany listOf(
+        ktorEndpointTest { services ->
+            coEvery { services.userService.getSpecific(null, "email@email.com", null) } returnsMany listOf(
                 user,
                 user.copy(isEmailVerified = true),
                 user.copy(profile = null)
             )
-            coEvery { Services.authService.sendEmailVerification(any()) } returns token
+            coEvery { services.authService.sendEmailVerification(any()) } returns token
 
             val res1 = testClient.post("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(RequestEmailTokenRequest("email@email.com"))
             }
             assertEquals(202, res1.status.value)
-            coVerify(exactly = 1) { Services.authService.sendEmailVerification(any()) }
+            coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
 
             val res2 = testClient.post("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(RequestEmailTokenRequest("email@email.com"))
             }
             assertEquals(202, res2.status.value)
-            coVerify(exactly = 1) { Services.authService.sendEmailVerification(any()) }
+            coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
 
             val res3 = testClient.post("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(RequestEmailTokenRequest("email@email.com"))
             }
             assertEquals(202, res3.status.value)
-            coVerify(exactly = 1) { Services.authService.sendEmailVerification(any()) }
+            coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
 
         }
 
     @Test
     fun `PATCH auth_signup_email-verify calls validateEmailWithToken and returns 200 only if user is found`() =
-        ktorEndpointTest {
-            coEvery { Services.tokenService.getSpecific(any(), eq(uuid)) } returns token
-            coEvery { Services.userService.getSpecific(any(), any(), any()) } returnsMany listOf(user, null)
-            coEvery { Services.authService.validateEmailWithToken(uuid) } returns user
+        ktorEndpointTest { services ->
+            coEvery { services.tokenService.getSpecific(any(), eq(uuid)) } returns token
+            coEvery { services.userService.getSpecific(any(), any(), any()) } returnsMany listOf(user, null)
+            coEvery { services.authService.validateEmailWithToken(uuid) } returns user
 
             val res1 = testClient.patch("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(SubmitEmailTokenRequest(uuid.toStr()))
             }
             assertEquals(200, res1.status.value)
-            coVerify(exactly = 1) { Services.authService.validateEmailWithToken(uuid) }
+            coVerify(exactly = 1) { services.authService.validateEmailWithToken(uuid) }
 
             val res2 = testClient.patch("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(SubmitEmailTokenRequest(uuid.toStr()))
             }
             assertEquals(404, res2.status.value)
-            coVerify(exactly = 1) { Services.authService.validateEmailWithToken(uuid) }
+            coVerify(exactly = 1) { services.authService.validateEmailWithToken(uuid) }
         }
 
 }

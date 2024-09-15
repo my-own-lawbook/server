@@ -27,21 +27,21 @@ private val appConfig: AppConfig = mockk()
  *
  * Bundles together for a concise mocking-dsl in the [ktorEndpointTest].
  */
-object Services {
+data class Services(
 
-    val userService: UserService = mockk()
+    val userService: UserService = mockk(),
 
-    val tokenService: TwoFactorTokenService = mockk()
+    val tokenService: TwoFactorTokenService = mockk(),
 
-    val authService: AuthService = mockk()
+    val authService: AuthService = mockk(),
 
-    val encryptionService: EncryptionService = mockk()
+    val encryptionService: EncryptionService = mockk(),
 
-    val lawService: LawService = mockk()
+    val lawService: LawService = mockk(),
 
     val lawContentService: LawContentService = mockk()
 
-}
+)
 
 /**
  * Wrapper for a test that will execute requests to endpoints of the REST API.
@@ -49,13 +49,14 @@ object Services {
  * @param testContent The actual location for tests.
  */
 fun ktorEndpointTest(
-    testContent: suspend ApplicationTestBuilder.() -> Unit
+    testContent: suspend ApplicationTestBuilder.(Services) -> Unit
 ) = testApplication {
     every { appConfig.jwtSecret } returns "289499da-4592-4e7e-8f0b-a303d4c45ec8"
+    val services = Services()
 
     application {
         install(Koin) {
-            Services.run {
+            services.run {
                 modules(module {
                     single { userService }
                     single { tokenService }
@@ -70,7 +71,7 @@ fun ktorEndpointTest(
         restApi(appConfig, "test/api")
     }
 
-    testContent()
+    testContent(services)
 }
 
 /**
