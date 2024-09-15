@@ -14,7 +14,6 @@ import me.bumiller.mol.rest.http.auth.RequestEmailTokenRequest
 import me.bumiller.mol.rest.http.auth.SubmitEmailTokenRequest
 import me.bumiller.mol.rest.response.user.UserWithoutProfileResponse
 import me.bumiller.mol.test.ktorEndpointTest
-import me.bumiller.mol.test.testClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -37,11 +36,12 @@ class SignupTest {
     )
 
     @Test
-    fun `POST auth_signup calls createNewUser with arguments and responds the user`() = ktorEndpointTest { services ->
+    fun `POST auth_signup calls createNewUser with arguments and responds the user`() =
+        ktorEndpointTest { services, client ->
         coEvery { services.userService.getSpecific(any(), any(), any()) } returns null
         coEvery { services.authService.createNewUser(any(), any(), any()) } returns user
 
-        val res = testClient.post("/test/api/auth/signup/") {
+            val res = client.post("/test/api/auth/signup/") {
             contentType(ContentType.Application.Json)
             setBody(CreateUserRequest("username", "email@email.com", "password"))
         }
@@ -56,7 +56,7 @@ class SignupTest {
 
     @Test
     fun `POST auth_signup_email-verify only sends email when user is not yet verified and user has a profile set`() =
-        ktorEndpointTest { services ->
+        ktorEndpointTest { services, client ->
             coEvery { services.userService.getSpecific(null, "email@email.com", null) } returnsMany listOf(
                 user,
                 user.copy(isEmailVerified = true),
@@ -64,21 +64,21 @@ class SignupTest {
             )
             coEvery { services.authService.sendEmailVerification(any()) } returns token
 
-            val res1 = testClient.post("/test/api/auth/signup/email-verify/") {
+            val res1 = client.post("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(RequestEmailTokenRequest("email@email.com"))
             }
             assertEquals(202, res1.status.value)
             coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
 
-            val res2 = testClient.post("/test/api/auth/signup/email-verify/") {
+            val res2 = client.post("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(RequestEmailTokenRequest("email@email.com"))
             }
             assertEquals(202, res2.status.value)
             coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
 
-            val res3 = testClient.post("/test/api/auth/signup/email-verify/") {
+            val res3 = client.post("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(RequestEmailTokenRequest("email@email.com"))
             }
@@ -89,19 +89,19 @@ class SignupTest {
 
     @Test
     fun `PATCH auth_signup_email-verify calls validateEmailWithToken and returns 200 only if user is found`() =
-        ktorEndpointTest { services ->
+        ktorEndpointTest { services, client ->
             coEvery { services.tokenService.getSpecific(any(), eq(uuid)) } returns token
             coEvery { services.userService.getSpecific(any(), any(), any()) } returnsMany listOf(user, null)
             coEvery { services.authService.validateEmailWithToken(uuid) } returns user
 
-            val res1 = testClient.patch("/test/api/auth/signup/email-verify/") {
+            val res1 = client.patch("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(SubmitEmailTokenRequest(uuid.toStr()))
             }
             assertEquals(200, res1.status.value)
             coVerify(exactly = 1) { services.authService.validateEmailWithToken(uuid) }
 
-            val res2 = testClient.patch("/test/api/auth/signup/email-verify/") {
+            val res2 = client.patch("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
                 setBody(SubmitEmailTokenRequest(uuid.toStr()))
             }

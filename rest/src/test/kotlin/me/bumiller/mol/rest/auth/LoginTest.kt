@@ -13,7 +13,6 @@ import me.bumiller.mol.model.User
 import me.bumiller.mol.rest.http.auth.LoginRefreshRequest
 import me.bumiller.mol.rest.response.user.TokenResponse
 import me.bumiller.mol.test.ktorEndpointTest
-import me.bumiller.mol.test.testClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -27,12 +26,12 @@ class LoginTest {
         TwoFactorToken(1L, uuid, null, Clock.System.now(), null, TwoFactorTokenType.RefreshToken, false, user)
 
     @Test
-    fun `POST auth_login returns tokens when passed valid credentials`() = ktorEndpointTest { services ->
+    fun `POST auth_login returns tokens when passed valid credentials`() = ktorEndpointTest { services, client ->
         coEvery { services.authService.getAuthenticatedUser("email@domain.com", null, "password") } returns user
         coEvery { services.authService.getAuthenticatedUser(null, "username", "password") } returns user
         coEvery { services.authService.loginUser(1L) } returns AuthTokens("jwt", token)
 
-        val res1 = testClient.post("/test/api/auth/login/") {
+        val res1 = client.post("/test/api/auth/login/") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -46,7 +45,7 @@ class LoginTest {
         assertEquals(200, res1.status.value)
         assertEquals(uuid.toString(), res1.body<TokenResponse>().refreshToken)
 
-        val res2 = testClient.post("/test/api/auth/login/") {
+        val res2 = client.post("/test/api/auth/login/") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -62,11 +61,11 @@ class LoginTest {
     }
 
     @Test
-    fun `POST auth_login returns 401 for invalid credentials`() = ktorEndpointTest { services ->
+    fun `POST auth_login returns 401 for invalid credentials`() = ktorEndpointTest { services, client ->
         coEvery { services.authService.getAuthenticatedUser("email@domain.com", null, "password") } returns null
         coEvery { services.authService.getAuthenticatedUser(null, "username", "password") } returns null
 
-        val res1 = testClient.post("/test/api/auth/login/") {
+        val res1 = client.post("/test/api/auth/login/") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -79,7 +78,7 @@ class LoginTest {
         }
         assertEquals(401, res1.status.value)
 
-        val res2 = testClient.post("/test/api/auth/login/") {
+        val res2 = client.post("/test/api/auth/login/") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -94,8 +93,8 @@ class LoginTest {
     }
 
     @Test
-    fun `POST auth_login doesn't allow email and username at same time`() = ktorEndpointTest {
-        val res1 = testClient.post("/test/api/auth/login/") {
+    fun `POST auth_login doesn't allow email and username at same time`() = ktorEndpointTest { _, client ->
+        val res1 = client.post("/test/api/auth/login/") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -111,12 +110,12 @@ class LoginTest {
     }
 
     @Test
-    fun `POST auth_login_refresh marks token as used`() = ktorEndpointTest { services ->
+    fun `POST auth_login_refresh marks token as used`() = ktorEndpointTest { services, client ->
         coEvery { services.tokenService.getSpecific(any(), uuid) } returns token
         coEvery { services.tokenService.markAsUsed(1L) } returns token
         coEvery { services.authService.loginUser(1L) } returns AuthTokens("jsw", token)
 
-        testClient.post("/test/api/auth/login/refresh/") {
+        client.post("/test/api/auth/login/refresh/") {
             contentType(ContentType.Application.Json)
             setBody(LoginRefreshRequest(uuid.toString()))
         }
@@ -125,12 +124,12 @@ class LoginTest {
     }
 
     @Test
-    fun `POST auth_login_refresh returns tokens`() = ktorEndpointTest { services ->
+    fun `POST auth_login_refresh returns tokens`() = ktorEndpointTest { services, client ->
         coEvery { services.tokenService.getSpecific(any(), uuid) } returns token
         coEvery { services.authService.loginUser(1L) } returns AuthTokens("jwt", token)
         coEvery { services.tokenService.markAsUsed(1L) } returns token
 
-        val res = testClient.post("/test/api/auth/login/refresh/") {
+        val res = client.post("/test/api/auth/login/refresh/") {
             contentType(ContentType.Application.Json)
             setBody(LoginRefreshRequest(uuid.toString()))
         }
