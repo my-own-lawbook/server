@@ -55,7 +55,7 @@ object UserProfile {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {
 
         var birthday by Table.birthday
         var firstName by Table.firstName

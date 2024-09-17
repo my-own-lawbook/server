@@ -3,7 +3,7 @@ package me.bumiller.mol.database.base
 /**
  * Indicates that an entity has a related model it can provide and receive attributes from.
  */
-interface ModelMappableEntity<Id : Comparable<Id>, Model : BaseModel<Id>> {
+interface ModelMappableEntity<Model> {
 
     /**
      * The model representation of this entity

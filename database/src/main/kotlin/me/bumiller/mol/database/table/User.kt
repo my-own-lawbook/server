@@ -63,7 +63,7 @@ object User {
         val profileId = reference("profile_id", UserProfile.Table).nullable()
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {
 
         var email by Table.email
         var username by Table.username
@@ -71,7 +71,7 @@ object User {
         var isEmailVerified by Table.isEmailVerified
         var profile by UserProfile.Entity optionalReferencedOn Table.profileId
 
-        var lawBooks by LawBook.Entity via LawBookMembersCrossref
+        var lawBooks by LawBook.Entity via LawBookMembersCrossref.Table
 
         override val asModel
             get() = Model(id.value, email, username, password, isEmailVerified, profile?.asModel)
