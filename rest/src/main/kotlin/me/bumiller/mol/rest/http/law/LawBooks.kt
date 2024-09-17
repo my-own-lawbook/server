@@ -88,7 +88,7 @@ internal data class UpdateLawBookRequest(
  */
 private fun Route.getAll(lawContentService: LawContentService) = get {
     val booksByCreator = lawContentService.getBooksByCreator(user.id)!!
-    val booksByMember = lawContentService.getBooksByCreator(user.id)!!
+    val booksByMember = lawContentService.getBooksForMember(user.id)!!
 
     val responses = (booksByCreator + booksByMember)
         .map(LawBookResponse.Companion::create)
@@ -118,7 +118,7 @@ private fun Route.create(lawContentService: LawContentService) = post {
     val created = lawContentService.createBook(body.key, body.name, body.description, user.id)!!
     val response = LawBookResponse.create(created)
 
-    call.respond(HttpStatusCode.OK, response)
+    call.respond(HttpStatusCode.Created, response)
 }
 
 /**

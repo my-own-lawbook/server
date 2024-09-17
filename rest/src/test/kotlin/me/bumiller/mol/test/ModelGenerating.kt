@@ -34,13 +34,13 @@ fun userModel(key: Long) = User(
 
 fun userModels(count: Long) = (1L..count).map(::userModel)
 
-fun lawBookModel(key: Long) = LawBook(
+fun lawBookModel(key: Long, userCount: Int = 0, creator: User = userModel(key)) = LawBook(
     key,
     "key-$key",
     "name-$key",
     "description-$key",
-    userModel(key),
-    (key..key + 3).map(::userModel)
+    creator,
+    (key..<key + userCount).map(::userModel)
 )
 
 fun lawBookModels(count: Long, start: Long = 1L) = (start..<start + count).map(::lawBookModel)
