@@ -20,7 +20,7 @@ interface MemberService {
      *
      * @param bookId The id of the book to add the member to
      * @param userId The id of the user to add to the book
-     * @return The list of members in the book after the update, or null if the user or book was not found
+     * @return The list of members in the book after the update, or null if the user or book was not found, or if the user is the creator of the book.
      */
     suspend fun addMemberToBook(bookId: Long, userId: Long): List<User>?
 
