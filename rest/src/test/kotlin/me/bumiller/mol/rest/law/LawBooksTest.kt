@@ -9,6 +9,7 @@ import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.model.User
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
+import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.test.*
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -175,5 +176,141 @@ class LawBooksTest {
             )
         }
     }
+
+    @Test
+    fun `GET law-books_{id}_members checks user has read access`() = ktorEndpointTest(user) { services, client ->
+        val book = lawBookModel(1L).copy(creator = user2)
+
+        coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+
+        val res = client.get("/test/api/law-books/1/members/")
+
+        assertEquals(404, res.status.value)
+    }
+
+    @Test
+    fun `GET law-books_{id}_members returns members of book`() = ktorEndpointTest(user) { services, client ->
+        val book = lawBookModel(1L).copy(creator = user)
+
+        coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+        coEvery { services.memberService.getMembersInBook(1L) } returns userModels(4L).map {
+            it.copy(
+                profile = profileModel(
+                    1L
+                )
+            )
+        }
+
+        val res = client.get("/test/api/law-books/1/members/")
+
+        assertEquals(200, res.status.value)
+        val body = res.body<List<UserWithProfileResponse>>()
+
+        assertArrayEquals(arrayOf(1L, 2L, 3L, 4L), body.map(UserWithProfileResponse::id).sorted().toTypedArray())
+    }
+
+    @Test
+    fun `PUT law-books_{id}_members_{id} checks user has write access`() = ktorEndpointTest(user) { services, client ->
+        val book = lawBookModel(1L).copy(creator = user2)
+
+        coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+
+        val res = client.put("/test/api/law-books/1/members/")
+
+        assertEquals(404, res.status.value)
+    }
+
+    @Test
+    fun `PUT law-books_{id}_members_{id} checks to be added user exists`() =
+        ktorEndpointTest(user) { services, client ->
+            val book = lawBookModel(1L).copy(creator = user)
+
+            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+            coEvery { services.userService.getSpecific(5L, null, null) } returns null
+
+            val res = client.put("/test/api/law-books/1/members/5/")
+
+            assertEquals(404, res.status.value)
+        }
+
+    @Test
+    fun `PUT law-books_{id}_members_{id} returns 409 if the user to be added is the creator of the book`() =
+        ktorEndpointTest(user) { services, client ->
+            val book = lawBookModel(1L).copy(creator = user)
+
+            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+            coEvery { services.userService.getSpecific(1L, null, null) } returns user
+
+            val res = client.put("/test/api/law-books/1/members/1/")
+
+            assertEquals(409, res.status.value)
+        }
+
+    @Test
+    fun `PUT law-books_{id}_members_{id} calls addMemberToBook with correct arguments and returns the result`() =
+        ktorEndpointTest(user) { services, client ->
+            val book = lawBookModel(1L).copy(creator = user)
+            val toAddUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
+
+            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+            coEvery { services.userService.getSpecific(toAddUser.id, null, null) } returns toAddUser
+            coEvery { services.memberService.addMemberToBook(book.id, toAddUser.id) } returns listOf(toAddUser)
+
+            val res = client.put("/test/api/law-books/1/members/7/")
+
+            assertEquals(200, res.status.value)
+
+            val body = res.body<List<UserWithProfileResponse>>()
+            assertEquals(1, body.size)
+
+            coVerify(exactly = 1) { services.memberService.addMemberToBook(1L, 7L) }
+        }
+
+    @Test
+    fun `DELETE law-books_{id}_members_{id} checks user has write access`() =
+        ktorEndpointTest(user) { services, client ->
+            val book = lawBookModel(1L).copy(creator = user2)
+
+            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+
+            val res = client.delete("/test/api/law-books/1/members/")
+
+            assertEquals(404, res.status.value)
+        }
+
+    @Test
+    fun `DELETE law-books_{id}_members_{id} checks to be added user exists`() =
+        ktorEndpointTest(user) { services, client ->
+            val book = lawBookModel(1L).copy(creator = user)
+
+            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+            coEvery { services.userService.getSpecific(5L, null, null) } returns null
+
+            val res = client.delete("/test/api/law-books/1/members/5/")
+
+            assertEquals(404, res.status.value)
+        }
+
+    @Test
+    fun `DELETE law-books_{id}_members_{id} calls removeMemberFromBook with correct arguments and returns the result`() =
+        ktorEndpointTest(user) { services, client ->
+            val book = lawBookModel(1L).copy(creator = user)
+            val toRemoveUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
+
+            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+            coEvery { services.userService.getSpecific(toRemoveUser.id, null, null) } returns toRemoveUser
+            coEvery { services.memberService.removeMemberFromBook(book.id, toRemoveUser.id) } returns listOf(
+                toRemoveUser
+            )
+
+            val res = client.delete("/test/api/law-books/1/members/7/")
+
+            assertEquals(200, res.status.value)
+
+            val body = res.body<List<UserWithProfileResponse>>()
+            assertEquals(1, body.size)
+
+            coVerify(exactly = 1) { services.memberService.removeMemberFromBook(1L, 7L) }
+        }
 
 }

@@ -4,18 +4,16 @@ import kotlinx.serialization.Serializable
 import me.bumiller.mol.model.User
 
 /**
- * Response class that contains a user with its profile
+ * Response class that contains information about a user with its profile.
+ *
+ * Does not contain sensitive data, unlike [AuthUserWithProfileResponse] or [AuthUserWithoutProfileResponse].
  */
 @Serializable
 data class UserWithProfileResponse(
 
     val id: Long,
 
-    val email: String,
-
     val username: String,
-
-    val isEmailVerified: Boolean,
 
     val profile: UserProfileResponse
 
@@ -23,16 +21,8 @@ data class UserWithProfileResponse(
 
     companion object {
 
-        fun create(user: User): UserWithProfileResponse {
-            require(user.profile != null) { "user.profile cannot be null" }
-            return UserWithProfileResponse(
-                id = user.id,
-                email = user.email,
-                username = user.username,
-                isEmailVerified = user.isEmailVerified,
-                profile = UserProfileResponse.create(user.profile!!)
-            )
-        }
+        fun create(user: User) =
+            UserWithProfileResponse(user.id, user.username, UserProfileResponse.create(user.profile!!))
 
     }
 

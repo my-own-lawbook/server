@@ -17,6 +17,7 @@ import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.LawService
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.core.data.MemberService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.User
@@ -45,7 +46,9 @@ data class Services(
 
     val lawService: LawService = mockk(),
 
-    val lawContentService: LawContentService = mockk()
+    val lawContentService: LawContentService = mockk(),
+
+    val memberService: MemberService = mockk()
 
 )
 
@@ -83,6 +86,7 @@ fun ktorEndpointTest(
                     single { encryptionService }
                     single { lawService }
                     single { lawContentService }
+                    single { memberService }
                 })
             }
         }

@@ -12,7 +12,7 @@ import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.TwoFactorTokenType
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.model.http.notFoundIdentifier
-import me.bumiller.mol.rest.response.user.UserWithoutProfileResponse
+import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
 import me.bumiller.mol.validation.Validatable
 import me.bumiller.mol.validation.ValidationScope
 import me.bumiller.mol.validation.actions.*
@@ -126,7 +126,7 @@ private fun Route.createUser(authService: AuthService) = post {
     val body = call.validated<CreateUserRequest>()
 
     val createdUser = authService.createNewUser(body.email, body.username, body.password)
-    call.respond(HttpStatusCode.Created, UserWithoutProfileResponse.create(createdUser))
+    call.respond(HttpStatusCode.Created, AuthUserWithoutProfileResponse.create(createdUser))
 }
 
 /**

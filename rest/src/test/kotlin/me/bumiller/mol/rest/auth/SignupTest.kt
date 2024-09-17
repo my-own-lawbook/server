@@ -12,7 +12,7 @@ import me.bumiller.mol.model.*
 import me.bumiller.mol.rest.http.auth.CreateUserRequest
 import me.bumiller.mol.rest.http.auth.RequestEmailTokenRequest
 import me.bumiller.mol.rest.http.auth.SubmitEmailTokenRequest
-import me.bumiller.mol.rest.response.user.UserWithoutProfileResponse
+import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
 import me.bumiller.mol.test.ktorEndpointTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -49,8 +49,8 @@ class SignupTest {
         coVerify(exactly = 1) { services.authService.createNewUser("email@email.com", "username", "password") }
         assertEquals(201, res.status.value)
         assertEquals(
-            UserWithoutProfileResponse(1L, "email@email.com", "username", false),
-            res.body<UserWithoutProfileResponse>()
+            AuthUserWithoutProfileResponse(1L, "email@email.com", "username", false),
+            res.body<AuthUserWithoutProfileResponse>()
         )
     }
 
