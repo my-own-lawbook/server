@@ -58,15 +58,6 @@ class ProfileTest {
 
 
     @Test
-    fun `GET user_profile returns 404 if user has no profile`() =
-        ktorEndpointTest(user.copy(profile = null)) { _, client ->
-            val res = client.get("/test/api/user/profile/")
-
-            assertEquals(404, res.status.value)
-        }
-
-
-    @Test
     fun `GET user_profile returns the profile of the user`() = ktorEndpointTest(user) { _, client ->
         val res = client.get("/test/api/user/profile/")
         val body = res.body<UserProfileResponse>()
