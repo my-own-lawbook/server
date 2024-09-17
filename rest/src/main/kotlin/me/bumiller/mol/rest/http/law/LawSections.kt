@@ -152,7 +152,7 @@ private fun Route.create(lawContentService: LawContentService) = post {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
     val body = call.validated<CreateLawSectionRequest>()
 
-    validateThat(user).hasReadAccess(lawEntryId = entryId)
+    validateThat(user).hasWriteAccess(lawEntryId = entryId)
     validateThat(body.index).isUniqueSectionIndex(entryId)
 
     val created = lawContentService.createSection(

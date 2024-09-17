@@ -60,4 +60,4 @@ fun lawSectionModel(key: Long) = LawSection(
     "content-$key"
 )
 
-fun lawSectionModels(count: Long) = (1L..count).map(::lawSectionModel)
+fun lawSectionModels(count: Long, start: Long = 1L) = (start..<start + count).map(::lawSectionModel)
