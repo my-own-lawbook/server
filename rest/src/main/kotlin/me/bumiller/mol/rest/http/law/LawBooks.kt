@@ -52,6 +52,7 @@ internal fun Route.lawBooks() {
             getMembers(memberService)
             route("$PathUserId/") {
                 putMember(memberService, lawContentService)
+                removeMember(memberService)
             }
         }
     }
@@ -201,5 +202,19 @@ private fun Route.putMember(memberService: MemberService, lawContentService: Law
     }
 
     val members = memberService.addMemberToBook(bookId, userId)!!
+    call.respond(HttpStatusCode.OK, members)
+}
+
+/**
+ * Endpoint to DELETE /law-books/:id/members/:id/ that removes a user from the members of a law-book
+ */
+private fun Route.removeMember(memberService: MemberService) = delete {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+    val userId = call.parameters.longOrBadRequest(PathUserId)
+
+    validateThat(user).hasReadAccess(lawBookId = bookId)
+    validateThat(userId).userExists()
+
+    val members = memberService.removeMemberFromBook(bookId, userId)!!
     call.respond(HttpStatusCode.OK, members)
 }
