@@ -16,8 +16,8 @@ import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.model.http.notFound
 import me.bumiller.mol.rest.plugins.authenticatedUser
+import me.bumiller.mol.rest.response.user.AuthUserWithProfileResponse
 import me.bumiller.mol.rest.response.user.UserProfileResponse
-import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.validation.*
 import me.bumiller.mol.validation.actions.isInPast
@@ -113,7 +113,7 @@ private fun Route.createProfile(userService: UserService) = post {
 
     val updatedUser = userService.createProfile(user.id, profile) ?: internal()
 
-    call.respond(HttpStatusCode.OK, UserWithProfileResponse.create(updatedUser))
+    call.respond(HttpStatusCode.OK, AuthUserWithProfileResponse.create(updatedUser))
 }
 
 /**
@@ -140,6 +140,6 @@ private fun Route.updateProfile(userService: UserService) = patch {
     )
 
     if (updatedUser != null)
-        call.respond(HttpStatusCode.OK, UserWithProfileResponse.create(updatedUser))
+        call.respond(HttpStatusCode.OK, AuthUserWithProfileResponse.create(updatedUser))
     else internal()
 }

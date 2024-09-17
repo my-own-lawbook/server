@@ -7,7 +7,7 @@ import me.bumiller.mol.model.User
  * Response for endpoints that return data about a user without the users profile
  */
 @Serializable
-internal data class UserWithoutProfileResponse(
+internal data class AuthUserWithoutProfileResponse(
 
     val id: Long,
 
@@ -21,7 +21,8 @@ internal data class UserWithoutProfileResponse(
 
     companion object {
 
-        fun create(user: User) = UserWithoutProfileResponse(user.id, user.email, user.username, user.isEmailVerified)
+        fun create(user: User) =
+            AuthUserWithoutProfileResponse(user.id, user.email, user.username, user.isEmailVerified)
 
     }
 

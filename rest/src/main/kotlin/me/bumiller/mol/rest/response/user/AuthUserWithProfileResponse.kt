@@ -7,7 +7,7 @@ import me.bumiller.mol.model.User
  * Response class that contains a user with its profile
  */
 @Serializable
-data class UserWithProfileResponse(
+data class AuthUserWithProfileResponse(
 
     val id: Long,
 
@@ -23,9 +23,9 @@ data class UserWithProfileResponse(
 
     companion object {
 
-        fun create(user: User): UserWithProfileResponse {
+        fun create(user: User): AuthUserWithProfileResponse {
             require(user.profile != null) { "user.profile cannot be null" }
-            return UserWithProfileResponse(
+            return AuthUserWithProfileResponse(
                 id = user.id,
                 email = user.email,
                 username = user.username,

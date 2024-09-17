@@ -13,8 +13,8 @@ import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
 import me.bumiller.mol.rest.http.user.CreateProfileRequest
+import me.bumiller.mol.rest.response.user.AuthUserWithProfileResponse
 import me.bumiller.mol.rest.response.user.UserProfileResponse
-import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.test.ktorEndpointTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -47,7 +47,7 @@ class ProfileTest {
                 setBody(CreateProfileRequest("firstName", "lastName", Gender.Female, LocalDate(2000, 1, 2)))
             }
             assertEquals(200, res.status.value)
-            assertEquals(user.id, res.body<UserWithProfileResponse>().id)
+            assertEquals(user.id, res.body<AuthUserWithProfileResponse>().id)
 
             assertEquals(LocalDate(2000, 1, 2), profileSlot.captured.birthday)
             assertEquals(Gender.Female, profileSlot.captured.gender)
@@ -139,7 +139,7 @@ class ProfileTest {
                 }
             """.trimIndent()
             )
-        }.body<UserWithProfileResponse>()
+        }.body<AuthUserWithProfileResponse>()
 
 
         assertEquals(user.id, body.id)
