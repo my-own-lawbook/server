@@ -14,7 +14,6 @@ import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.UserProfile
 import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.model.http.internal
-import me.bumiller.mol.model.http.notFound
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.user.AuthUserWithProfileResponse
 import me.bumiller.mol.rest.response.user.UserProfileResponse
@@ -120,8 +119,7 @@ private fun Route.createProfile(userService: UserService) = post {
  * Endpoint to /user/profile/ that lets the authenticated user update their profile
  */
 private fun Route.getProfile() = get {
-    if (user.profile == null) notFound("The authenticated user does not have a profile set.")
-    else call.respond(HttpStatusCode.OK, UserProfileResponse.create(user.profile!!))
+    call.respond(HttpStatusCode.OK, UserProfileResponse.create(user.profile!!))
 }
 
 /**
