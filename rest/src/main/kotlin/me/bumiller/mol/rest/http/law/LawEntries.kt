@@ -46,7 +46,7 @@ internal fun Route.lawEntries() {
         delete(lawContentService)
     }
     route("law-books/{$PathBookId}/law-entries/") {
-        getById(lawContentService)
+        getByBook(lawContentService)
         create(lawContentService)
     }
 }
@@ -145,8 +145,8 @@ private fun Route.create(lawContentService: LawContentService) = post {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val body = call.validated<CreateLawEntryRequest>()
 
-    validateThat(body.key).isUniqueEntryKey(bookId)
     validateThat(user).hasWriteAccess(bookId)
+    validateThat(body.key).isUniqueEntryKey(bookId)
 
     val created = lawContentService.createEntry(
         key = body.key,

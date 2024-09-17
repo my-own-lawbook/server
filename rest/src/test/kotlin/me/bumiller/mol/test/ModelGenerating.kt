@@ -51,7 +51,7 @@ fun lawEntryModel(key: Long) = LawEntry(
     "name-$key"
 )
 
-fun lawEntryModels(count: Long) = (1L..count).map(::lawEntryModel)
+fun lawEntryModels(count: Long, start: Long = 1L) = (start..<start + count).map(::lawEntryModel)
 
 fun lawSectionModel(key: Long) = LawSection(
     key,
