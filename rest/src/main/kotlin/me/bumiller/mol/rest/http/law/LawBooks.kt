@@ -9,7 +9,9 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberService
+import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.rest.http.PathBookId
+import me.bumiller.mol.rest.http.PathUserId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
@@ -17,6 +19,7 @@ import me.bumiller.mol.validation.*
 import me.bumiller.mol.validation.actions.hasReadAccess
 import me.bumiller.mol.validation.actions.hasWriteAccess
 import me.bumiller.mol.validation.actions.isUniqueBookKey
+import me.bumiller.mol.validation.actions.userExists
 import org.koin.ktor.ext.inject
 
 /**
@@ -45,9 +48,10 @@ internal fun Route.lawBooks() {
         update(lawContentService)
         delete(lawContentService)
 
-        route("/$PathBookId") {
-            route("/members/") {
-                getMembers(memberService)
+        route("$PathBookId/members/") {
+            getMembers(memberService)
+            route("$PathUserId/") {
+                putMember(memberService, lawContentService)
             }
         }
     }
@@ -176,5 +180,26 @@ private fun Route.getMembers(memberService: MemberService) = get {
     validateThat(user).hasReadAccess(lawBookId = bookId)
 
     val members = memberService.getMembersInBook(bookId)!!
+    call.respond(HttpStatusCode.OK, members)
+}
+
+/**
+ * Endpoint to PUT /law-books/:id/members/:id/ that adds a new user to the members of a law-book
+ */
+private fun Route.putMember(memberService: MemberService, lawContentService: LawContentService) = put {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+    val userId = call.parameters.longOrBadRequest(PathUserId)
+
+    validateThat(user).hasWriteAccess(lawBookId = bookId)
+    validateThat(userId).userExists()
+
+    val book = lawContentService.getSpecificBook(id = bookId)!!
+
+    if (book.creator.id == userId) {
+        conflict("User with id '$userId' is the creator of book with id '${book.id}' and cannot be a member of its own book.")
+        // TODO: Also limit this behaviour via the MemberService
+    }
+
+    val members = memberService.addMemberToBook(bookId, userId)!!
     call.respond(HttpStatusCode.OK, members)
 }
