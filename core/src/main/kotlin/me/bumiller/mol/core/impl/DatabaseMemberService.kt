@@ -21,6 +21,7 @@ internal class DatabaseMemberService(
         val book = bookRepository.getSpecific(bookId) ?: return null
         val user = userRepository.getSpecific(userId) ?: return null
 
+        if (book.creator.id == user.id) return null
         if (user.id !in book.members.map(UserModel::id)) {
             val updatedModel = book.copy(
                 members = book.members + user
