@@ -48,8 +48,7 @@ private fun setupDatabase(appConfig: AppConfig) {
             LawBook.Table,
             LawEntry.Table,
             LawSection.Table,
-            LawBookMembersCrossref,
-            inBatch = true
+            LawBookMembersCrossref.Table
         )
     }
 }
