@@ -26,22 +26,34 @@ suspend fun ValidatableWrapper<User>.hasReadAccess(
 
     when {
         lawSectionId != null -> {
-            val entry = scope.lawContentService.getEntryForSection(lawSectionId)!!
-            val book = scope.lawContentService.getBookByEntry(entry.id)!!
+            val entry = scope.lawContentService.getEntryForSection(lawSectionId) ?: notFoundIdentifier(
+                "law-section",
+                lawSectionId.toString()
+            )
+            val book = scope.lawContentService.getBookByEntry(entry.id) ?: notFoundIdentifier(
+                "law-section",
+                lawSectionId.toString()
+            )
 
             val valid = book.creator.id == value.id || scope.lawService.isUserMemberOfSection(value.id, lawSectionId)
             if (!valid) notFoundIdentifier("law-section", lawSectionId.toString())
         }
 
         lawEntryId != null -> {
-            val book = scope.lawContentService.getBookByEntry(lawEntryId)!!
+            val book = scope.lawContentService.getBookByEntry(lawEntryId) ?: notFoundIdentifier(
+                "law-entry",
+                lawEntryId.toString()
+            )
 
             val valid = book.creator.id == value.id || scope.lawService.isUserMemberOfEntry(value.id, lawEntryId)
             if (!valid) notFoundIdentifier("law-entry", lawEntryId.toString())
         }
 
         lawBookId != null -> {
-            val book = scope.lawContentService.getSpecificBook(id = lawBookId)!!
+            val book = scope.lawContentService.getSpecificBook(id = lawBookId) ?: notFoundIdentifier(
+                "law-book",
+                lawBookId.toString()
+            )
 
             val valid = book.creator.id == value.id || value.id in book.members.map(User::id)
             if (!valid) notFoundIdentifier("law-book", lawBookId.toString())
@@ -71,22 +83,34 @@ suspend fun ValidatableWrapper<User>.hasWriteAccess(
 
     when {
         lawSectionId != null -> {
-            val entry = scope.lawContentService.getEntryForSection(lawSectionId)!!
-            val book = scope.lawContentService.getBookByEntry(entry.id)!!
+            val entry = scope.lawContentService.getEntryForSection(lawSectionId) ?: notFoundIdentifier(
+                "law-section",
+                lawSectionId.toString()
+            )
+            val book = scope.lawContentService.getBookByEntry(entry.id) ?: notFoundIdentifier(
+                "law-section",
+                lawSectionId.toString()
+            )
 
             val valid = book.creator.id == value.id
             if (!valid) notFoundIdentifier("law-section", lawSectionId.toString())
         }
 
         lawEntryId != null -> {
-            val book = scope.lawContentService.getBookByEntry(lawEntryId)!!
+            val book = scope.lawContentService.getBookByEntry(lawEntryId) ?: notFoundIdentifier(
+                "law-entry",
+                lawEntryId.toString()
+            )
 
             val valid = book.creator.id == value.id
             if (!valid) notFoundIdentifier("law-entry", lawEntryId.toString())
         }
 
         lawBookId != null -> {
-            val book = scope.lawContentService.getSpecificBook(id = lawBookId)!!
+            val book = scope.lawContentService.getSpecificBook(id = lawBookId) ?: notFoundIdentifier(
+                "law-book",
+                lawBookId.toString()
+            )
 
             val valid = book.creator.id == value.id
             if (!valid) notFoundIdentifier("law-book", lawBookId.toString())
