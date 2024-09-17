@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.core.data.MemberService
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
@@ -28,9 +29,14 @@ import org.koin.ktor.ext.inject
  * - PATCH /law-books/:id/: Perform a partial update on a law-book
  * - DELETE /law-books/:id/: Delete a law-book
  *
+ * - GET /law-books/:id/members/: Get all members of a law-book
+ * - PUT /law-books/:id/members/:id/: Add a member to a law-book
+ * - DELETE /law-books/:id/members/:id/: Delete a member from a law-book
+ *
  */
 internal fun Route.lawBooks() {
     val lawContentService by inject<LawContentService>()
+    val memberService by inject<MemberService>()
 
     route("law-books/") {
         getAll(lawContentService)
@@ -38,6 +44,12 @@ internal fun Route.lawBooks() {
         create(lawContentService)
         update(lawContentService)
         delete(lawContentService)
+
+        route("/$PathBookId") {
+            route("/members/") {
+                getMembers(memberService)
+            }
+        }
     }
 }
 
@@ -153,4 +165,16 @@ private fun Route.delete(lawContentService: LawContentService) = delete("{$PathB
     val response = LawBookResponse.create(deleted)
 
     call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint for GET /law-books/:id/members/ that gets all members for a law-book
+ */
+private fun Route.getMembers(memberService: MemberService) = get {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+
+    validateThat(user).hasReadAccess(lawBookId = bookId)
+
+    val members = memberService.getMembersInBook(bookId)!!
+    call.respond(HttpStatusCode.OK, members)
 }
