@@ -18,7 +18,7 @@ internal class DatabaseMemberService(
             ?.map(::mapUser)
 
     override suspend fun addMemberToBook(bookId: Long, userId: Long): List<User>? {
-        val book = bookRepository.getSpecific() ?: return null
+        val book = bookRepository.getSpecific(bookId) ?: return null
         val user = userRepository.getSpecific(userId) ?: return null
 
         if (user.id !in book.members.map(UserModel::id)) {
@@ -34,10 +34,10 @@ internal class DatabaseMemberService(
     }
 
     override suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User>? {
-        val book = bookRepository.getSpecific() ?: return null
+        val book = bookRepository.getSpecific(bookId) ?: return null
         val user = userRepository.getSpecific(userId) ?: return null
 
-        if (user.id !in book.members.map(UserModel::id)) {
+        if (user.id in book.members.map(UserModel::id)) {
             val updatedModel = book.copy(
                 members = book.members - user
             )
