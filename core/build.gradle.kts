@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm")
-    alias(libs.plugins.kotlin.kover)
 }
 
 group = "me.bumiller.mol"
@@ -18,14 +17,14 @@ dependencies {
     implementation(libs.java.jwt)
     implementation(libs.h2)
 
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.coroutines.test)
-
     implementation(project(":database"))
     implementation(project(":model"))
     implementation(project(":email"))
     implementation(project(":common"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
 }
 
 tasks.test {
