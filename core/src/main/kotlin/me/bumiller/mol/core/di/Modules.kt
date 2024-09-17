@@ -2,12 +2,10 @@ package me.bumiller.mol.core.di
 
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
+import me.bumiller.mol.core.data.MemberService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
-import me.bumiller.mol.core.impl.AuthServiceImpl
-import me.bumiller.mol.core.impl.BCryptEncryptionService
-import me.bumiller.mol.core.impl.DatabaseTwoFactorTokenService
-import me.bumiller.mol.core.impl.DatabaseUserService
+import me.bumiller.mol.core.impl.*
 import org.koin.dsl.module
 
 /**
@@ -16,6 +14,7 @@ import org.koin.dsl.module
 val dataServiceModule = module {
     single<UserService> { DatabaseUserService(get(), get()) }
     single<TwoFactorTokenService> { DatabaseTwoFactorTokenService(get(), get()) }
+    single<MemberService> { DatabaseMemberService(get(), get()) }
 }
 
 /**
