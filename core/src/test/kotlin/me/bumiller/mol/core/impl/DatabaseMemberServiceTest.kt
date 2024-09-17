@@ -125,6 +125,20 @@ class DatabaseMemberServiceTest {
     }
 
     @Test
+    fun `addMemberToBook returns null if it is tried to add the creator to the members`() = runTest {
+        val creator = userEntity(4L)
+        val toAddUser = userEntity(4L)
+        val book = lawBookEntity(1L).copy(creator = creator)
+
+        coEvery { bookRepository.getSpecific(book.id) } returns book
+        coEvery { userRepository.getSpecific(toAddUser.id) } returns toAddUser
+
+        val returned = memberService.addMemberToBook(book.id, toAddUser.id)
+
+        assertNull(returned)
+    }
+
+    @Test
     fun `removeMemberFromBook returns null if either book or user was not found`() = runTest {
         coEvery { bookRepository.getSpecific(1L) } returns null
 
