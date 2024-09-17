@@ -13,6 +13,7 @@ import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathUserId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
+import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.validation.*
@@ -48,9 +49,9 @@ internal fun Route.lawBooks() {
         update(lawContentService)
         delete(lawContentService)
 
-        route("$PathBookId/members/") {
+        route("{$PathBookId}/members/") {
             getMembers(memberService)
-            route("$PathUserId/") {
+            route("{$PathUserId}/") {
                 putMember(memberService, lawContentService)
                 removeMember(memberService)
             }
@@ -181,7 +182,8 @@ private fun Route.getMembers(memberService: MemberService) = get {
     validateThat(user).hasReadAccess(lawBookId = bookId)
 
     val members = memberService.getMembersInBook(bookId)!!
-    call.respond(HttpStatusCode.OK, members)
+    val response = members.map(UserWithProfileResponse::create)
+    call.respond(HttpStatusCode.OK, response)
 }
 
 /**
@@ -192,7 +194,7 @@ private fun Route.putMember(memberService: MemberService, lawContentService: Law
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
     validateThat(user).hasWriteAccess(lawBookId = bookId)
-    validateThat(userId).userExists()
+    validateThat(userId).userExists(true)
 
     val book = lawContentService.getSpecificBook(id = bookId)!!
 
@@ -202,7 +204,8 @@ private fun Route.putMember(memberService: MemberService, lawContentService: Law
     }
 
     val members = memberService.addMemberToBook(bookId, userId)!!
-    call.respond(HttpStatusCode.OK, members)
+    val response = members.map(UserWithProfileResponse::create)
+    call.respond(HttpStatusCode.OK, response)
 }
 
 /**
@@ -216,5 +219,6 @@ private fun Route.removeMember(memberService: MemberService) = delete {
     validateThat(userId).userExists()
 
     val members = memberService.removeMemberFromBook(bookId, userId)!!
-    call.respond(HttpStatusCode.OK, members)
+    val response = members.map(UserWithProfileResponse::create)
+    call.respond(HttpStatusCode.OK, response)
 }
