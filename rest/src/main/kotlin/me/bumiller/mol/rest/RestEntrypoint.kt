@@ -14,13 +14,13 @@ import me.bumiller.mol.rest.plugins.exceptionHandling
  * @param basePath The base path that will contain the endpoints. Defaults to '/api/v1'
  */
 fun Application.restApi(appConfig: AppConfig, basePath: String = "/api/v1/") {
-    setupPlugins(appConfig)
+    setupPlugins(appConfig, basePath)
     restRouting(basePath)
 }
 
-private fun Application.setupPlugins(appConfig: AppConfig) {
+private fun Application.setupPlugins(appConfig: AppConfig, basePath: String) {
     contentNegotiation()
     exceptionHandling()
     dataConversion()
-    authentication(appConfig)
+    authentication(appConfig, basePath)
 }

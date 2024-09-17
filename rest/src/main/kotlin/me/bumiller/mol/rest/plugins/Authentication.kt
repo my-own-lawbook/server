@@ -2,15 +2,24 @@ package me.bumiller.mol.rest.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.request.*
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.config.AppConfig
 import org.koin.ktor.ext.inject
 
-internal fun Application.authentication(appConfig: AppConfig) {
+/* Endpoints that can be accessed without having the profile set up.
+ * Adding the profile via POST /user/profile/ is required to prevent a soft-lock situation.
+ */
+private val allowedEndpointsWithoutProfile = mapOf(
+    HttpMethod.Post to "/user/profile/"
+)
+
+internal fun Application.authentication(appConfig: AppConfig, basePath: String) {
 
     val verifier = JWT
         .require(Algorithm.HMAC256(appConfig.jwtSecret))
@@ -25,8 +34,15 @@ internal fun Application.authentication(appConfig: AppConfig) {
             validate { credential ->
                 val user = userService.getSpecific(email = credential.subject)
 
-                if (user == null || !user.isEmailVerified) null
-                else UserPrincipalWrapper(user)
+                val badAuthentication =
+                    user == null || !user.isEmailVerified || (user.profile == null && !allowedEndpointsWithoutProfile.any { entry ->
+                        request.httpMethod == entry.key && request.uri.endsWith(
+                            "$basePath${entry.value}"
+                        )
+                    })
+
+                if (badAuthentication) null
+                else UserPrincipalWrapper(user!!)
             }
         }
     }
