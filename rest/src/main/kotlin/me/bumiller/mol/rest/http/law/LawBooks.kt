@@ -13,6 +13,7 @@ import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathUserId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
+import me.bumiller.mol.rest.response.user.BookRoleUserResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
@@ -24,19 +25,25 @@ import me.bumiller.mol.validation.actions.userExists
 import org.koin.ktor.ext.inject
 
 /**
- * Adds the endpoints to /:
+ * Adds the endpoints:
  *
- *
+ * Core endpoints for books:
  * - GET /law-books/: Get all law-books
  * - GET /law-books/:id/: Get a specific law-book
  * - POST /law-books/: Create a law-book
  * - PATCH /law-books/:id/: Perform a partial update on a law-book
  * - DELETE /law-books/:id/: Delete a law-book
  *
+ *
+ * Endpoints for book-members
  * - GET /law-books/:id/members/: Get all members of a law-book
  * - PUT /law-books/:id/members/:id/: Add a member to a law-book
  * - DELETE /law-books/:id/members/:id/: Delete a member from a law-book
  *
+ * Endpoints for book-roles
+ * - GET /law-books/:id/roles/: Get roles for each member of a law-book
+ * - GET /law-books/:id/roles/:id/: Get role for a specific member
+ * - PUT /law-books/:id/roles/:id/: Set role of a user in a law-book
  */
 internal fun Route.lawBooks() {
     val lawContentService by inject<LawContentService>()
@@ -55,6 +62,10 @@ internal fun Route.lawBooks() {
                 putMember(memberService, lawContentService)
                 removeMember(memberService)
             }
+        }
+
+        route("/{$PathBookId}/roles/") {
+            memberRoles(memberService)
         }
     }
 }
@@ -220,5 +231,24 @@ private fun Route.removeMember(memberService: MemberService) = delete {
 
     val members = memberService.removeMemberFromBook(bookId, userId)!!
     val response = members.map(UserWithProfileResponse::create)
+    call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to GET /law-books/:id/roles/ that gets all users and their role
+ */
+private fun Route.memberRoles(memberService: MemberService) = get {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+
+    validateThat(user).hasReadAccess(lawBookId = bookId)
+
+    val members = memberService.getMembersInBook(bookId)!!
+    val rolesForMembers = members.map { member ->
+        memberService.getMemberRole(member.id, bookId)!!
+    }
+    val response = members.zip(rolesForMembers) { member, role ->
+        BookRoleUserResponse.create(role.value, member)
+    }
+
     call.respond(HttpStatusCode.OK, response)
 }
