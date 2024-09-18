@@ -3,6 +3,7 @@ package me.bumiller.mol.core.impl
 import kotlinx.datetime.Instant
 import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.TwoFactorTokenService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.core.mapping.mapToken
 import me.bumiller.mol.database.repository.TwoFactorTokenRepository
 import me.bumiller.mol.database.repository.UserRepository
@@ -23,7 +24,7 @@ internal class DatabaseTwoFactorTokenService(
         .getSpecific(
             id = presentWhenNotNull(id),
             token = presentWhenNotNull(token)
-        )?.let(::mapToken)
+        )?.let(::mapToken) ?: throw ServiceException.TwoFactorTokenNotFound(id, token)
 
     override suspend fun create(
         type: TwoFactorTokenType,
@@ -31,8 +32,8 @@ internal class DatabaseTwoFactorTokenService(
         expiringAt: Instant?,
         issuedAt: Instant,
         additionalContent: String?
-    ): TwoFactorToken? {
-        val user = userRepository.getSpecific(userId) ?: return null
+    ): TwoFactorToken {
+        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
         val model = TwoFactorTokenModel(
             id = -1,
             token = UUID.randomUUID(),
@@ -47,9 +48,9 @@ internal class DatabaseTwoFactorTokenService(
         return tokenRepository.create(model, user.id)!!.let(::mapToken)
     }
 
-    override suspend fun markAsUsed(tokenId: Long): TwoFactorToken? {
-        val token = tokenRepository.getSpecific(tokenId) ?: return null
+    override suspend fun markAsUsed(tokenId: Long): TwoFactorToken {
+        val token = tokenRepository.getSpecific(tokenId) ?: throw ServiceException.TwoFactorTokenNotFound(id = tokenId)
         val updated = token.copy(used = true)
-        return tokenRepository.update(updated)?.let(::mapToken)
+        return tokenRepository.update(updated)!!.let(::mapToken)
     }
 }

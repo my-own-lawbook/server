@@ -2,8 +2,10 @@ package me.bumiller.mol.core.impl
 
 import kotlinx.datetime.LocalDate
 import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.present
 import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.core.mapping.mapGenderString
 import me.bumiller.mol.core.mapping.mapUser
 import me.bumiller.mol.database.repository.UserProfileRepository
@@ -27,9 +29,16 @@ internal class DatabaseUserService(
             id = presentWhenNotNull(id),
             email = presentWhenNotNull(email),
             username = presentWhenNotNull(username)
-        )?.let(::mapUser)
+        )?.let(::mapUser) ?: throw ServiceException.UserNotFound(id = id, email = email, username = username)
 
     override suspend fun createUser(email: String, password: String, username: String): User {
+        userRepository.getSpecific(email = present(email))?.let {
+            throw ServiceException.UserEmailNotUnique(email)
+        }
+        userRepository.getSpecific(username = present(username))?.let {
+            throw ServiceException.UserUsernameNotUnique(username = username)
+        }
+
         val model = UserModel(
             id = -1L,
             email = email,
@@ -41,8 +50,9 @@ internal class DatabaseUserService(
         return userRepository.create(model, null)!!.let(::mapUser)
     }
 
-    override suspend fun createProfile(userId: Long, profile: UserProfile): User? {
-        val user = userRepository.getSpecific(userId) ?: return null
+    override suspend fun createProfile(userId: Long, profile: UserProfile): User {
+        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
+        if (user.profile != null) throw ServiceException.UserProfileAlreadyPresent(userId = userId)
 
         val profileModel = ProfileModel(
             id = userId,
@@ -52,12 +62,14 @@ internal class DatabaseUserService(
             gender = mapGenderString(profile.gender)
         ).let { profileRepository.create(it) }
 
-        val updated = user.copy(profile =profileModel)
-        return userRepository.update(updated)?.let(::mapUser)
+        val updated = user.copy(profile = profileModel)
+        return userRepository.update(updated)!!
+            .let(::mapUser)
     }
 
     override suspend fun deleteUser(userId: Long) =
-        userRepository.delete(userId)?.let(::mapUser)
+        userRepository.delete(userId)
+            ?.let(::mapUser) ?: throw ServiceException.UserNotFound(id = userId)
 
     override suspend fun update(
         userId: Long,
@@ -65,8 +77,19 @@ internal class DatabaseUserService(
         username: Optional<String>,
         password: Optional<String>,
         isEmailVerified: Optional<Boolean>
-    ): User? {
-        val user = userRepository.getSpecific(userId) ?: return null
+    ): User {
+        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
+
+        email.ifPresentSuspend {
+            userRepository.getSpecific(email = email)?.let {
+                throw ServiceException.UserEmailNotUnique(email = email.get())
+            }
+        }
+        username.ifPresentSuspend {
+            userRepository.getSpecific(username = username)?.let {
+                throw ServiceException.UserUsernameNotUnique(username = username.get())
+            }
+        }
 
         val updated = user.copy(
             email = email.getOr(user.email),
@@ -75,7 +98,8 @@ internal class DatabaseUserService(
             isEmailVerified = isEmailVerified.getOr(user.isEmailVerified)
         )
 
-        return userRepository.update(updated)?.let(::mapUser)
+        return userRepository.update(updated)!!
+            .let(::mapUser)
     }
 
     override suspend fun updateProfile(
@@ -84,8 +108,9 @@ internal class DatabaseUserService(
         lastName: Optional<String>,
         birthday: Optional<LocalDate>,
         gender: Optional<Gender>
-    ): User? {
-        val profile = userRepository.getSpecific(id = userId)?.profile ?: return null
+    ): User {
+        val user = userRepository.getSpecific(id = userId) ?: throw ServiceException.UserNotFound(id = userId)
+        val profile = user.profile ?: throw ServiceException.UserProfileNotPresent(userId = userId)
 
         val updated = profile.copy(
             firstName = firstName.getOr(profile.firstName),
@@ -95,6 +120,7 @@ internal class DatabaseUserService(
         )
 
         profileRepository.update(updated)
-        return userRepository.getSpecific(id = userId)?.let(::mapUser)
+        return userRepository.getSpecific(id = userId)!!
+            .let(::mapUser)
     }
 }

@@ -4,12 +4,12 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
-import me.bumiller.mol.common.ifNotEmpty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.email.EmailService
 import me.bumiller.mol.model.AuthTokens
 import me.bumiller.mol.model.TwoFactorToken
@@ -32,13 +32,6 @@ internal class AuthServiceImpl(
         password: String,
         sendVerificationEmail: Boolean
     ): User {
-        listOfNotNull(
-            userService.getSpecific(email = email),
-            userService.getSpecific(username = username)
-        ).ifNotEmpty {
-            throw IllegalStateException("Found users for '$email' or '$username' already existing.'")
-        }
-
         val user = userService.createUser(email, encryptor.encrypt(password), username)
 
         if (sendVerificationEmail)
@@ -55,7 +48,7 @@ internal class AuthServiceImpl(
             expiringAt = now.plus(appConfig.emailTokenDuration),
             issuedAt = now,
             additionalContent = user.email
-        ) ?: throw IllegalStateException("Could not create an email-verification-token for the user.")
+        )
 
         emailService.sendEmailVerifyEmail(user, emailToken)
 
@@ -64,15 +57,17 @@ internal class AuthServiceImpl(
 
     override suspend fun getAuthenticatedUser(email: String?, username: String?, password: String): User? {
         val validArgs = listOfNotNull(email, username).size == 1
-        if (!validArgs) throw IllegalArgumentException("Both or neither of email and username were passed.")
+        require(validArgs) { "Both or neither of email and username were passed." }
 
-        val user = userService.getSpecific(email = email, username = username)
+        val user = try {
+            userService.getSpecific(email = email, username = username)
+        } catch (e: ServiceException.UserNotFound) {
+            return null
+        }
 
-        val authenticated = if (user != null) {
-            encryptor.verify(password, user.password)
-        } else false
+        val authenticated = encryptor.verify(password, user.password)
 
-        return if (authenticated) return user!!
+        return if (authenticated) return user
         else null
     }
 
@@ -82,14 +77,13 @@ internal class AuthServiceImpl(
         val expiringAtJwt = now.plus(appConfig.jwtDuration)
 
         val user = userService.getSpecific(id = userId)
-            ?: throw IllegalArgumentException("Did not find a user for id '$userId'.")
 
         val refreshToken = tokenService.create(
             type = TwoFactorTokenType.RefreshToken,
             userId = userId,
             expiringAt = expiringAtRefresh,
             issuedAt = now
-        ) ?: throw IllegalStateException("Could not create an email-verification-token for the user.")
+        )
 
         val jwt = JWT.create()
             .withExpiresAt(expiringAtJwt.toJavaInstant())
@@ -102,11 +96,10 @@ internal class AuthServiceImpl(
 
     override suspend fun logoutUser(userId: Long, vararg tokens: UUID) {
         val user = userService.getSpecific(id = userId)
-            ?: throw IllegalArgumentException("Did not find a user for id '$userId'.")
 
         tokens.forEach { token ->
             val tokenModel = tokenService.getSpecific(token = token)
-            if (tokenModel?.user?.id == user.id && tokenModel.type == TwoFactorTokenType.RefreshToken)
+            if (tokenModel.user.id == user.id && tokenModel.type == TwoFactorTokenType.RefreshToken)
                 tokenService.markAsUsed(tokenModel.id)
         }
     }
@@ -115,20 +108,23 @@ internal class AuthServiceImpl(
         val now = Clock.System.now()
 
         val token = tokenService.getSpecific(token = tokenUUID)
-        require(token != null) { "Could not find a token for the passed id" }
         val user = token.additionalInfo?.let { userService.getSpecific(email = it) }
 
-        require(token.type == TwoFactorTokenType.EmailConfirm) { "The passed token is not an email-verification-token" }
-        require(token.expiringAt != null) { "The passed token does not have an expiry date set" }
-        require(token.expiringAt!! > now) { "The passed token is already expired" }
-        require(!token.used) { "The passed token has already been used" }
-        require(user != null) { "No user could be found for the passed token" }
-        require(!user.isEmailVerified) { "The user for the token already has their email verified" }
+        if (token.type != TwoFactorTokenType.EmailConfirm)
+            throw ServiceException.InvalidTwoFactorTokenType(tokenUUID, TwoFactorTokenType.EmailConfirm)
+        if (token.expiringAt == null || token.expiringAt!! < now)
+            throw ServiceException.TwoFactorTokenExpired(tokenUUID, token.expiringAt)
+        if (token.used)
+            throw ServiceException.TwoFactorTokenUsed(tokenUUID)
+        if (user == null)
+            throw ServiceException.EmailTokenUserNotFound(tokenUUID)
+        if (user.isEmailVerified)
+            throw ServiceException.EmailTokenUserAlreadyVerified(tokenUUID)
 
         tokenService.markAsUsed(token.id)
         return userService.update(
             userId = user.id,
             isEmailVerified = present(true)
-        )!!
+        )
     }
 }

@@ -1,6 +1,7 @@
 package me.bumiller.mol.core.impl
 
 import me.bumiller.mol.core.data.MemberService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.core.mapping.mapUser
 import me.bumiller.mol.core.mapping.memberRoleFromString
 import me.bumiller.mol.core.mapping.memberRoleToString
@@ -17,55 +18,61 @@ internal class DatabaseMemberService(
     private val roleRepository: MemberRoleRepository
 ) : MemberService {
 
-    override suspend fun getMembersInBook(bookId: Long): List<User>? =
+    override suspend fun getMembersInBook(bookId: Long): List<User> =
         bookRepository.getSpecific(bookId)
-            ?.members
-            ?.map(::mapUser)
+            ?.members?.map(::mapUser) ?: throw ServiceException.LawBookNotFound(id = bookId)
 
-    override suspend fun addMemberToBook(bookId: Long, userId: Long): List<User>? {
-        val book = bookRepository.getSpecific(bookId) ?: return null
-        val user = userRepository.getSpecific(userId) ?: return null
+    override suspend fun addMemberToBook(bookId: Long, userId: Long): List<User> {
+        val book = bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
+        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
 
-        if (book.creator.id == user.id) return null
-        if (user.id !in book.members.map(UserModel::id)) {
-            val updatedModel = book.copy(
-                members = book.members + user
-            )
-            bookRepository.update(updatedModel)
-        }
+        if (book.creator.id == user.id) throw ServiceException.CreatorTriedAddedToBook
 
-        return bookRepository.getSpecific(bookId)
-            ?.members
-            ?.map(::mapUser)
+        if (user.id in book.members.map(UserModel::id)) throw ServiceException.UserAlreadyMemberOfBook(userId, bookId)
+
+        val updatedModel = book.copy(
+            members = book.members + user
+        )
+        bookRepository.update(updatedModel)
+
+        return bookRepository.getSpecific(bookId)!!
+            .members
+            .map(::mapUser)
     }
 
-    override suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User>? {
-        val book = bookRepository.getSpecific(bookId) ?: return null
-        val user = userRepository.getSpecific(userId) ?: return null
+    override suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User> {
+        val book = bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
+        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
 
-        if (user.id in book.members.map(UserModel::id)) {
-            val updatedModel = book.copy(
-                members = book.members - user
-            )
-            bookRepository.update(updatedModel)
-        }
+        if (user.id !in book.members.map(UserModel::id)) throw ServiceException.UserNotMemberOfBook(userId, bookId)
 
-        return bookRepository.getSpecific(bookId)
-            ?.members
-            ?.map(::mapUser)
+        val updatedModel = book.copy(
+            members = book.members - user
+        )
+        bookRepository.update(updatedModel)
+
+        return bookRepository.getSpecific(bookId)!!
+            .members
+            .map(::mapUser)
     }
 
-    override suspend fun getMemberRole(userId: Long, bookId: Long): MemberRole? =
-        roleRepository
-            .getMemberRole(userId, bookId)
-            ?.let(::memberRoleFromString)
+    override suspend fun getMemberRole(userId: Long, bookId: Long): MemberRole {
+        userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
+        val book = bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
 
-    override suspend fun setMemberRole(userId: Long, bookId: Long, role: MemberRole): Boolean {
-        val user = userRepository.getSpecific(userId) ?: return false
-        val book = bookRepository.getSpecific(bookId) ?: return false
+        if (userId !in book.members.map(UserModel::id)) throw ServiceException.UserNotMemberOfBook(userId, bookId)
+
+        return roleRepository
+            .getMemberRole(userId, bookId)!!
+            .let(::memberRoleFromString)
+    }
+
+    override suspend fun setMemberRole(userId: Long, bookId: Long, role: MemberRole) {
+        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
+        val book = bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
         val isUserMember = user.id in book.members.map(UserModel::id)
 
-        if (!isUserMember) return false
+        if (!isUserMember) throw ServiceException.UserNotMemberOfBook(userId, bookId)
 
         val currentRole = roleRepository.getMemberRole(user.id, book.id)!!.let(::memberRoleFromString)
 
@@ -83,10 +90,9 @@ internal class DatabaseMemberService(
                 }
             }
 
-            if (!otherMemberIsAdmin) return false
+            if (!otherMemberIsAdmin) throw ServiceException.BookNoAdminLeft(bookId)
         }
 
         roleRepository.setMemberRole(user.id, book.id, memberRoleToString(role))
-        return true
     }
 }

@@ -2,8 +2,10 @@ package me.bumiller.mol.core.impl
 
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.allNonNullOrNull
+import me.bumiller.mol.common.present
 import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.core.mapping.mapBook
 import me.bumiller.mol.core.mapping.mapEntry
 import me.bumiller.mol.core.mapping.mapSection
@@ -28,30 +30,37 @@ internal class DatabaseLawContentService(
     override suspend fun getBooks(): List<LawBook> = bookRepository
         .getAll().map(::mapBook)
 
-    override suspend fun getBooksByCreator(userId: Long): List<LawBook>? {
-        userRepository.getSpecific(userId) ?: return null
+    override suspend fun getBooksByCreator(userId: Long): List<LawBook> {
+        userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
 
         return bookRepository.getForCreator(userId)
             .map(::mapBook)
     }
 
-    override suspend fun getSpecificBook(id: Long?, key: String?, creatorId: Long?): LawBook? =
-        bookRepository.getSpecific(
+    override suspend fun getSpecificBook(id: Long?, key: String?, creatorId: Long?): LawBook {
+        if (creatorId != null) {
+            userRepository.getSpecific(id = creatorId) ?: throw ServiceException.UserNotFound(id = creatorId)
+        }
+
+        return bookRepository.getSpecific(
             id = presentWhenNotNull(id),
             creatorId = presentWhenNotNull(creatorId),
             key = presentWhenNotNull(key)
-        )?.let(::mapBook)
+        )?.let(::mapBook) ?: throw ServiceException.LawBookNotFound(id = id, key = key)
+    }
 
-    override suspend fun getBookByEntry(entryId: Long): LawBook? =
-        bookRepository.getForEntry(entryId)
-            ?.let(::mapBook)
+    override suspend fun getBookByEntry(entryId: Long): LawBook =
+        bookRepository.getForEntry(entryId)?.let(::mapBook) ?: throw ServiceException.LawEntryNotFound(id = entryId)
 
-    override suspend fun getBooksForMember(userId: Long): List<LawBook>? =
-        bookRepository.getAllForMember(userId)
-            ?.map(::mapBook)
+    override suspend fun getBooksForMember(userId: Long): List<LawBook> =
+        bookRepository.getAllForMember(userId)?.map(::mapBook) ?: throw ServiceException.UserNotFound(id = userId)
 
-    override suspend fun createBook(key: String, name: String, description: String, creatorId: Long): LawBook? {
-        val user = userRepository.getSpecific(creatorId) ?: return null
+    override suspend fun createBook(key: String, name: String, description: String, creatorId: Long): LawBook {
+        val user = userRepository.getSpecific(creatorId) ?: throw ServiceException.UserNotFound(id = creatorId)
+        bookRepository.getSpecific(key = present(key))?.let {
+            throw ServiceException.LawBookKeyNotUnique(key)
+        }
+
         val book = LawBookModel(
             id = -1,
             key = key,
@@ -73,8 +82,14 @@ internal class DatabaseLawContentService(
         description: Optional<String>,
         creatorId: Optional<Long>,
         memberIds: Optional<List<Long>>
-    ): LawBook? {
-        val book = bookRepository.getSpecific(bookId) ?: return null
+    ): LawBook {
+        val book = bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
+        key.ifPresentSuspend {
+            bookRepository.getSpecific(key = present(it))?.let {
+                throw ServiceException.LawBookKeyNotUnique(key.get())
+            }
+        }
+
         val creator = creatorId.mapSuspend {
             userRepository.getSpecific(it)
         }
@@ -86,23 +101,23 @@ internal class DatabaseLawContentService(
             key = key.getOr(book.key),
             name = name.getOr(book.name),
             description = description.getOr(book.description),
-            creator = creator.getOr(book.creator) ?: return null,
-            members = members.getOr(book.members).allNonNullOrNull() ?: return null
+            creator = creator.getOr(book.creator) ?: throw ServiceException.UserNotFound(id = creatorId.get()),
+            members = members.getOr(book.members).allNonNullOrNull() ?: throw ServiceException.UserNotFoundList(
+                memberIds.get()
+            )
         )
 
-        return bookRepository.update(updatedBook)
-            ?.let(::mapBook)
+        return bookRepository.update(updatedBook)!!.let(::mapBook)
     }
 
-    override suspend fun deleteBook(id: Long): LawBook? = bookRepository
-        .delete(id)
-        ?.let(::mapBook)
+    override suspend fun deleteBook(id: Long): LawBook = bookRepository
+        .delete(id)?.let(::mapBook) ?: throw ServiceException.LawBookNotFound(id = id)
 
     override suspend fun getEntries(): List<LawEntry> = entryRepository
         .getAll().map(::mapEntry)
 
-    override suspend fun getEntriesByBook(bookId: Long): List<LawEntry>? {
-        bookRepository.getSpecific(bookId) ?: return null
+    override suspend fun getEntriesByBook(bookId: Long): List<LawEntry> {
+        bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
 
         return entryRepository.getForParentBook(bookId)
             .map(::mapEntry)
@@ -112,19 +127,30 @@ internal class DatabaseLawContentService(
         id: Optional<Long>,
         key: Optional<String>,
         parentBookId: Optional<Long>
-    ): LawEntry? = entryRepository
-        .getSpecific(
+    ): LawEntry {
+        parentBookId.ifPresentSuspend {
+            bookRepository.getSpecific(id = parentBookId.get())?.let {
+                throw ServiceException.LawBookNotFound(id = parentBookId.get())
+            }
+        }
+
+        return entryRepository.getSpecific(
             id = id,
             key = key,
             parentBookId = parentBookId,
-        )?.let(::mapEntry)
+        )?.let(::mapEntry) ?: throw ServiceException.LawEntryNotFound(id = id.getOrNull(), key = key.getOrNull())
+    }
 
-    override suspend fun getEntryForSection(sectionId: Long): LawEntry? =
+    override suspend fun getEntryForSection(sectionId: Long): LawEntry =
         entryRepository.getForSection(sectionId)
-            ?.let(::mapEntry)
+            ?.let(::mapEntry) ?: throw ServiceException.LawSectionNotFound(id = sectionId)
 
-    override suspend fun createEntry(key: String, name: String, parentBookId: Long): LawEntry? {
-        bookRepository.getSpecific(parentBookId) ?: return null
+    override suspend fun createEntry(key: String, name: String, parentBookId: Long): LawEntry {
+        bookRepository.getSpecific(parentBookId) ?: throw ServiceException.LawBookNotFound(id = parentBookId)
+        entryRepository.getSpecific(key = present(key), parentBookId = present(parentBookId))?.let {
+            throw ServiceException.LawEntryKeyNotUnique(key)
+        }
+
         val entry = LawEntryModel(
             id = -1,
             key = key,
@@ -139,21 +165,27 @@ internal class DatabaseLawContentService(
         entryId: Long,
         key: Optional<String>,
         name: Optional<String>
-    ): LawEntry? {
-        val entry = entryRepository.getSpecific(entryId) ?: return null
+    ): LawEntry {
+        val entry = entryRepository.getSpecific(entryId) ?: throw ServiceException.LawEntryNotFound(id = entryId)
+        val parentBook = bookRepository.getForEntry(entryId)!!
+        key.ifPresentSuspend {
+            entryRepository.getSpecific(key = key, parentBookId = present(parentBook.id))?.let {
+                throw ServiceException.LawEntryKeyNotUnique(key.get())
+            }
+        }
 
         val updatedEntry = entry.copy(
             key = key.getOr(entry.key),
             name = name.getOr(entry.name)
         )
 
-        return entryRepository.update(updatedEntry)
-            ?.let(::mapEntry)
+        return entryRepository.update(updatedEntry)!!
+            .let(::mapEntry)
     }
 
-    override suspend fun deleteEntry(id: Long): LawEntry? = entryRepository
+    override suspend fun deleteEntry(id: Long): LawEntry = entryRepository
         .delete(id)
-        ?.let(::mapEntry)
+        ?.let(::mapEntry) ?: throw ServiceException.LawEntryNotFound(id = id)
 
     override suspend fun getSections(): List<LawSection> = sectionRepository
         .getAll().map(::mapSection)
@@ -163,8 +195,16 @@ internal class DatabaseLawContentService(
         index: Optional<String>,
         name: Optional<String>,
         content: Optional<String>
-    ): LawSection? {
-        val section = sectionRepository.getSpecific(sectionId) ?: return null
+    ): LawSection {
+        val section =
+            sectionRepository.getSpecific(sectionId) ?: throw ServiceException.LawSectionNotFound(id = sectionId)
+
+        val parentEntry = entryRepository.getForSection(sectionId)!!
+        index.ifPresentSuspend {
+            sectionRepository.getSpecific(index = index, parentEntryId = present(parentEntry.id))?.let {
+                throw ServiceException.LawSectionIndexNotUnique(index.get())
+            }
+        }
 
         val updatedSection = section.copy(
             index = index.getOr(section.index),
@@ -172,15 +212,16 @@ internal class DatabaseLawContentService(
             content = content.getOr(section.content)
         )
 
-        return sectionRepository.update(updatedSection)?.let(::mapSection)
+        return sectionRepository.update(updatedSection)!!
+            .let(::mapSection)
     }
 
-    override suspend fun deleteSection(id: Long): LawSection? = sectionRepository
+    override suspend fun deleteSection(id: Long): LawSection = sectionRepository
         .delete(id)
-        ?.let(::mapSection)
+        ?.let(::mapSection) ?: throw ServiceException.LawSectionNotFound(id = id)
 
-    override suspend fun getSectionsByEntry(entryId: Long): List<LawSection>? {
-        entryRepository.getSpecific(entryId) ?: return null
+    override suspend fun getSectionsByEntry(entryId: Long): List<LawSection> {
+        entryRepository.getSpecific(entryId) ?: throw ServiceException.LawEntryNotFound(id = entryId)
 
         return sectionRepository.getForParentEntry(entryId)
             .map(::mapSection)
@@ -190,11 +231,21 @@ internal class DatabaseLawContentService(
         id: Optional<Long>,
         index: Optional<String>,
         parentEntryId: Optional<Long>
-    ): LawSection? = sectionRepository
-        .getSpecific(id, index, parentEntryId)?.let(::mapSection)
+    ): LawSection {
+        parentEntryId.ifPresentSuspend {
+            entryRepository.getSpecific(it) ?: throw ServiceException.LawEntryNotFound(id = it)
+        }
 
-    override suspend fun createSection(index: String, name: String, content: String, parentEntryId: Long): LawSection? {
-        entryRepository.getSpecific(parentEntryId) ?: return null
+        return sectionRepository
+            .getSpecific(id, index, parentEntryId)?.let(::mapSection)
+            ?: throw ServiceException.LawSectionNotFound(id = id.getOrNull(), index = index.getOrNull())
+    }
+
+    override suspend fun createSection(index: String, name: String, content: String, parentEntryId: Long): LawSection {
+        entryRepository.getSpecific(parentEntryId) ?: throw ServiceException.LawEntryNotFound(id = parentEntryId)
+        sectionRepository.getSpecific(index = present(index), parentEntryId = present(parentEntryId))?.let {
+            throw ServiceException.LawSectionIndexNotUnique(index)
+        }
 
         val section = LawSectionModel(
             id = -1,
