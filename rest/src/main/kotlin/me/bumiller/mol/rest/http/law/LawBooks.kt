@@ -9,6 +9,8 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberService
+import me.bumiller.mol.model.MemberRole
+import me.bumiller.mol.model.http.badFormat
 import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.model.http.notFoundIdentifier
 import me.bumiller.mol.rest.http.PathBookId
@@ -109,6 +111,20 @@ internal data class UpdateLawBookRequest(
 
     override suspend fun ValidationScope.validate() {
         validateThatOptional(key)?.isUniqueBookKey()
+    }
+
+}
+
+@Serializable
+internal data class PutUserBookRoleRequest(
+
+    val role: Int
+
+) : Validatable {
+
+    override suspend fun ValidationScope.validate() {
+        val role = MemberRole.roles.find { it.value == role }
+        if (role != null) badFormat("role", role.toString())
     }
 
 }
@@ -275,4 +291,27 @@ private fun Route.memberRole(memberService: MemberService) = get {
     val response = BookRoleUserResponse.create(role.value, member)
 
     call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to GET /law-books/:id/roles/:id/ that gets a user and it's role.
+ *
+ * TODO: Check for illegal states
+ */
+private fun Route.putMemberRole(memberService: MemberService) = put {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+    val userId = call.parameters.longOrBadRequest(PathUserId)
+
+    validateThat(user).hasWriteAccess(lawBookId = bookId)
+    validateThat(userId).userExists(true)
+
+    val body = call.validated<PutUserBookRoleRequest>()
+
+    val members = memberService.getMembersInBook(bookId)!!
+    members.find { it.id == userId } ?: notFoundIdentifier("user", userId.toString())
+
+    val role = MemberRole.roles.find { it.value == body.role }!!
+    memberService.setMemberRole(userId, bookId, role)
+
+    call.respond(HttpStatusCode.NoContent)
 }
