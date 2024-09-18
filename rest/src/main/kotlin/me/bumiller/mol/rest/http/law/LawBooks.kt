@@ -10,6 +10,7 @@ import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberService
 import me.bumiller.mol.model.http.conflict
+import me.bumiller.mol.model.http.notFoundIdentifier
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathUserId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
@@ -66,6 +67,10 @@ internal fun Route.lawBooks() {
 
         route("/{$PathBookId}/roles/") {
             memberRoles(memberService)
+
+            route("{$PathUserId}/") {
+                memberRole(memberService)
+            }
         }
     }
 }
@@ -249,6 +254,25 @@ private fun Route.memberRoles(memberService: MemberService) = get {
     val response = members.zip(rolesForMembers) { member, role ->
         BookRoleUserResponse.create(role.value, member)
     }
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to GET /law-books/:id/roles/:id/ that gets a user and it's role
+ */
+private fun Route.memberRole(memberService: MemberService) = get {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+    val userId = call.parameters.longOrBadRequest(PathUserId)
+
+    validateThat(user).hasReadAccess(lawBookId = bookId)
+    validateThat(userId).userExists(true)
+
+    val members = memberService.getMembersInBook(bookId)!!
+    val member = members.find { it.id == userId } ?: notFoundIdentifier("user", userId.toString())
+
+    val role = memberService.getMemberRole(member.id, bookId)!!
+    val response = BookRoleUserResponse.create(role.value, member)
 
     call.respond(HttpStatusCode.OK, response)
 }
