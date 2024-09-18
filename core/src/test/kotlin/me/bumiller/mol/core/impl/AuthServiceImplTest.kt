@@ -12,6 +12,7 @@ import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.email.EmailService
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.TwoFactorTokenType
@@ -27,12 +28,12 @@ import kotlin.time.Duration.Companion.minutes
 
 class AuthServiceImplTest {
 
-    lateinit var userService: UserService
-    lateinit var tokenService: TwoFactorTokenService
-    lateinit var encryptor: EncryptionService
-    lateinit var emailService: EmailService
+    private lateinit var userService: UserService
+    private lateinit var tokenService: TwoFactorTokenService
+    private lateinit var encryptor: EncryptionService
+    private lateinit var emailService: EmailService
 
-    lateinit var authService: AuthService
+    private lateinit var authService: AuthService
 
     private val mockConfig = AppConfig("as394g843m3g", 5.minutes, 30.days, 5.minutes, "", "", "", "", 1, true, "", "")
 
@@ -51,34 +52,14 @@ class AuthServiceImplTest {
         coEvery { emailService.sendEmailVerifyEmail(any(), any()) } returns Unit
     }
 
-    @Test
-    fun `createNewUser throws for duplicate email`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns mockk()
+    private val user = User(1L, "", "", "", true, null)
 
-        assertThrows<IllegalStateException> {
-            authService.createNewUser("email", "", "", false)
-        }
-    }
-
-    @Test
-    fun `createNewUser throws for duplicate username`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns mockk()
-
-        assertThrows<IllegalStateException> {
-            authService.createNewUser("", "username", "", false)
-        }
-    }
-
-    val user = User(1L, "", "", "", true, null)
-
-    val uuid: UUID = UUID.randomUUID()
-    val now = Clock.System.now()
-    val token = TwoFactorToken(1L, uuid, "", now, now, TwoFactorTokenType.RefreshToken, false, user)
+    private val uuid: UUID = UUID.randomUUID()
+    private val now = Clock.System.now()
+    private val token = TwoFactorToken(1L, uuid, "", now, now, TwoFactorTokenType.RefreshToken, false, user)
 
     @Test
     fun `createNewUser returns the user`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns null
-
         val returned = authService.createNewUser("", "", "", false)
 
         assertEquals(user, returned)
@@ -86,23 +67,12 @@ class AuthServiceImplTest {
 
     @Test
     fun `createNewUser only calls email service when set to`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns null
-
         authService.createNewUser("", "", "", false)
         authService.createNewUser("", "", "", true)
         authService.createNewUser("", "", "", true)
 
         coVerify(exactly = 2) {
             emailService.sendEmailVerifyEmail(any(), any())
-        }
-    }
-
-    @Test
-    fun `sendEmailVerification throws for null token`() = runTest {
-        coEvery { tokenService.create(any(), any(), any(), any(), any()) } returns null
-
-        assertThrows<IllegalStateException> {
-            authService.sendEmailVerification(user)
         }
     }
 
@@ -121,15 +91,6 @@ class AuthServiceImplTest {
         assertThrows<IllegalArgumentException> {
             authService.getAuthenticatedUser(null, null, "")
         }
-    }
-
-    @Test
-    fun `getAuthenticatedUser returns null when no user found`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns null
-
-        val returned = authService.getAuthenticatedUser(null, "", "")
-
-        assertNull(returned)
     }
 
     @Test
@@ -153,22 +114,11 @@ class AuthServiceImplTest {
     }
 
     @Test
-    fun `loginUser throws when user not found`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns null
+    fun `getAuthenticatedUser returns null when user is not found`() = runTest {
+        coEvery { userService.getSpecific(any(), any(), any()) } throws ServiceException.UserNotFound(null, null, null)
 
-        assertThrows<IllegalArgumentException> {
-            authService.loginUser(1L)
-        }
-    }
-
-    @Test
-    fun `loginUser throws when token creation fails`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user
-        coEvery { tokenService.create(any(), any(), any(), any(), any()) } returns null
-
-        assertThrows<IllegalStateException> {
-            authService.loginUser(1L)
-        }
+        val returned = authService.getAuthenticatedUser("email", null, "password")
+        assertNull(returned)
     }
 
     @Test
@@ -209,24 +159,13 @@ class AuthServiceImplTest {
                 any()
             )
         } answers { c -> tokens.find { it.token == (c.invocation.args[1] as UUID) }!! }
-        coEvery { tokenService.markAsUsed(capture(tokenIdSlots)) } returns null
+        coEvery { tokenService.markAsUsed(capture(tokenIdSlots)) } returns token
 
         authService.logoutUser(user.id, *tokens.map(TwoFactorToken::token).toTypedArray())
 
         val allowedTokenIds = tokens.filter { it.user.id == user.id }.map { it.id }
         tokenIdSlots.forEach { markedId ->
             assertTrue(markedId in allowedTokenIds)
-        }
-    }
-
-    @Test
-    fun `validateEmailWithToken throws when token can't be found`() = runTest {
-        coEvery { tokenService.getSpecific(any(), any()) } returns null
-
-        assertThrows<IllegalArgumentException> {
-            authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("Could not find a token for the passed id", it.message)
         }
     }
 
@@ -241,15 +180,11 @@ class AuthServiceImplTest {
 
         coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2, token3)
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ServiceException.InvalidTwoFactorTokenType> {
             authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("The passed token is not an email-verification-token", it.message)
         }
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ServiceException.InvalidTwoFactorTokenType> {
             authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("The passed token is not an email-verification-token", it.message)
         }
     }
 
@@ -282,15 +217,11 @@ class AuthServiceImplTest {
 
         coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2, token3)
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ServiceException.TwoFactorTokenExpired> {
             authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("The passed token is already expired", it.message)
         }
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ServiceException.TwoFactorTokenExpired> {
             authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("The passed token does not have an expiry date set", it.message)
         }
     }
 
@@ -313,36 +244,8 @@ class AuthServiceImplTest {
 
         coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2)
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ServiceException.TwoFactorTokenUsed> {
             authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("The passed token has already been used", it.message)
-        }
-    }
-
-    @Test
-    fun `validateEmailWithToken throws for null user`() = runTest {
-        val now = Clock.System.now()
-
-        coEvery { userService.getSpecific(any(), any(), any()) }.returnsMany(null, user)
-
-        val token1 = TwoFactorToken(
-            1L,
-            UUID.randomUUID(),
-            null,
-            now,
-            now.plus(10.days),
-            TwoFactorTokenType.EmailConfirm,
-            false,
-            user
-        )
-
-        coEvery { tokenService.getSpecific(any(), any()) } returns token1
-
-        assertThrows<IllegalArgumentException> {
-            authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("No user could be found for the passed token", it.message)
         }
     }
 
@@ -365,10 +268,8 @@ class AuthServiceImplTest {
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ServiceException.EmailTokenUserAlreadyVerified> {
             authService.validateEmailWithToken(UUID.randomUUID())
-        }.let {
-            assertEquals("The user for the token already has their email verified", it.message)
         }
     }
 

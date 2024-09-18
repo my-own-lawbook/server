@@ -12,23 +12,24 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.database.repository.UserProfileRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.database.table.User
 import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.UserProfile
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import me.bumiller.mol.database.table.UserProfile.Model as UserProfileModel
 
 class DatabaseUserServiceTest {
 
-    lateinit var mockUserRepo: UserRepository
-    lateinit var mockProfileRepo: UserProfileRepository
+    private lateinit var mockUserRepo: UserRepository
+    private lateinit var mockProfileRepo: UserProfileRepository
 
-    lateinit var userService: UserService
+    private lateinit var userService: UserService
 
     @BeforeEach
     fun setup() {
@@ -38,7 +39,7 @@ class DatabaseUserServiceTest {
         userService = DatabaseUserService(mockUserRepo, mockProfileRepo)
     }
 
-    val models = (1..10).map {
+    private val models = (1..10).map {
         User.Model(
             it.toLong(),
             "email-$it",
@@ -148,6 +149,8 @@ class DatabaseUserServiceTest {
 
     @Test
     fun `createUser passes arguments and creates correct user model`() = runTest {
+        coEvery { mockUserRepo.getSpecific(any(), any(), any()) } returns null
+
         val userModelSlot = slot<User.Model>()
 
         coEvery { mockUserRepo.create(capture(userModelSlot), any()) } returns models.first()
@@ -161,18 +164,18 @@ class DatabaseUserServiceTest {
     }
 
     @Test
-    fun `createProfile returns null when user is not found`() = runTest {
+    fun `createProfile throws when user is not found`() = runTest {
         coEvery { mockUserRepo.getSpecific(1L) } returns null
 
         val mockProfile = mockk<UserProfile>()
 
-        val result = userService.createProfile(1L, mockProfile)
-
-        assertNull(result)
+        assertThrows<ServiceException.UserNotFound> {
+            userService.createProfile(1L, mockProfile)
+        }
     }
 
-    val userNoProfile = User.Model(1L, "email", "username", "password", true, null)
-    val userWithProfile = userNoProfile.copy(
+    private val userNoProfile = User.Model(1L, "email", "username", "password", true, null)
+    private val userWithProfile = userNoProfile.copy(
         profile = UserProfileModel(1L, LocalDate(2000, 1, 1), "firstname", "lastname", "male")
     )
 
@@ -188,17 +191,17 @@ class DatabaseUserServiceTest {
 
         coVerify(exactly = 1) { mockProfileRepo.create(any()) }
 
-        assertEquals(userNoProfile.email, updatedUser?.email)
-        assertEquals(profile, updatedUser?.profile)
+        assertEquals(userNoProfile.email, updatedUser.email)
+        assertEquals(profile, updatedUser.profile)
     }
 
     @Test
-    fun `deleteUser returns null when not found`() = runTest {
+    fun `deleteUser throws when not found`() = runTest {
         coEvery { mockUserRepo.delete(1L) } returns null
 
-        val deleted = userService.deleteUser(1L)
-
-        assertNull(deleted)
+        assertThrows<ServiceException.UserNotFound> {
+            userService.deleteUser(1L)
+        }
     }
 
     @Test
@@ -207,27 +210,28 @@ class DatabaseUserServiceTest {
 
         val deleted = userService.deleteUser(1L)
 
-        assertEquals(models[0].email, deleted?.email)
-        assertEquals(models[0].username, deleted?.username)
-        assertEquals(models[0].id, deleted?.id)
-        assertEquals(models[0].password, deleted?.password)
+        assertEquals(models[0].email, deleted.email)
+        assertEquals(models[0].username, deleted.username)
+        assertEquals(models[0].id, deleted.id)
+        assertEquals(models[0].password, deleted.password)
     }
 
     @Test
-    fun `update returns null when user is not found`() = runTest {
+    fun `update throws when user is not found`() = runTest {
         coEvery { mockUserRepo.getSpecific(1L) } returns null
 
-        val returned = userService.update(1L)
-
-        assertNull(returned)
+        assertThrows<ServiceException.UserNotFound> {
+            userService.update(1L)
+        }
     }
 
-    val user = User.Model(1L, "email", "username", "password", true, null)
+    private val user = User.Model(1L, "email", "username", "password", true, null)
 
     @Test
     fun `update properly maps optionals to default value`() = runTest {
         coEvery { mockUserRepo.getSpecific(1L) } returns user
         coEvery { mockUserRepo.update(any()) } returns user
+        coEvery { mockUserRepo.getSpecific(any(), any(), any()) } returns null
 
         userService.update(
             userId = 1L,
@@ -247,19 +251,20 @@ class DatabaseUserServiceTest {
 
         val returned = userService.update(1L)
 
-        assertEquals(user.id, returned?.id)
-        assertEquals(user.email, returned?.email)
-        assertEquals(user.username, returned?.username)
-        assertEquals(user.password, returned?.password)
-        assertEquals(user.isEmailVerified, returned?.isEmailVerified)
+        assertEquals(user.id, returned.id)
+        assertEquals(user.email, returned.email)
+        assertEquals(user.username, returned.username)
+        assertEquals(user.password, returned.password)
+        assertEquals(user.isEmailVerified, returned.isEmailVerified)
     }
 
     @Test
-    fun `updateProfile returns null when user not found`() = runTest {
+    fun `updateProfile throws when user not found`() = runTest {
         coEvery { mockUserRepo.getSpecific(any<Long>()) } returns null
 
-        val returned = userService.updateProfile(1L, empty(), empty(), empty(), empty())
-        assertNull(returned)
+        assertThrows<ServiceException.UserNotFound> {
+            userService.updateProfile(1L, empty(), empty(), empty(), empty())
+        }
     }
 
     @Test

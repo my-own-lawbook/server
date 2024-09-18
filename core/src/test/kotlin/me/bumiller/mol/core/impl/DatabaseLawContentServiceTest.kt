@@ -9,6 +9,7 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.database.repository.LawBookRepository
 import me.bumiller.mol.database.repository.LawEntryRepository
 import me.bumiller.mol.database.repository.LawSectionRepository
@@ -19,15 +20,16 @@ import me.bumiller.mol.test.util.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class DatabaseLawContentServiceTest {
 
-    lateinit var bookRepository: LawBookRepository
-    lateinit var entryRepository: LawEntryRepository
-    lateinit var sectionRepository: LawSectionRepository
-    lateinit var userRepository: UserRepository
+    private lateinit var bookRepository: LawBookRepository
+    private lateinit var entryRepository: LawEntryRepository
+    private lateinit var sectionRepository: LawSectionRepository
+    private lateinit var userRepository: UserRepository
 
-    lateinit var lawContentService: LawContentService
+    private lateinit var lawContentService: LawContentService
 
     @BeforeEach
     fun setup() {
@@ -50,12 +52,12 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `getBooksByCreator returns null if the user is not found`() = runTest {
+    fun `getBooksByCreator throws if the user is not found`() = runTest {
         coEvery { userRepository.getSpecific(any<Long>()) } returns null
 
-        val returned = lawContentService.getBooksByCreator(1L)
-
-        assertNull(returned)
+        assertThrows<ServiceException.UserNotFound> {
+            lawContentService.getBooksByCreator(1L)
+        }
     }
 
     @Test
@@ -68,7 +70,7 @@ class DatabaseLawContentServiceTest {
         val returned = lawContentService.getBooksByCreator(1L)
 
         coVerify(exactly = 1) { userRepository.getSpecific(1L) }
-        assertArrayEquals((1..3L).toList().toTypedArray(), returned?.map(LawBook::id)?.toTypedArray())
+        assertArrayEquals((1..3L).toList().toTypedArray(), returned.map(LawBook::id).toTypedArray())
     }
 
     @Test
@@ -77,13 +79,14 @@ class DatabaseLawContentServiceTest {
         val creatorIdSlots = mutableListOf<Optional<Long>>()
         val keySlots = mutableListOf<Optional<String>>()
 
+        coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
         coEvery {
             bookRepository.getSpecific(
                 capture(idSlots),
                 capture(creatorIdSlots),
                 capture(keySlots)
             )
-        } returns null
+        } returns lawBookEntity(1L)
 
         lawContentService.getSpecificBook(null, null, null)
         assertFalse(idSlots[0].isPresent)
@@ -107,19 +110,19 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `getSpecificBook returns null when it is not found`() = runTest {
+    fun `getSpecificBook throws when it is not found`() = runTest {
         coEvery { bookRepository.getSpecific(any(), any(), any()) } returns null
 
-        val returned = lawContentService.getSpecificBook()
-
-        assertNull(returned)
+        assertThrows<ServiceException.LawBookNotFound> {
+            lawContentService.getSpecificBook()
+        }
     }
 
     @Test
     fun `getBookByEntry calls repository method with right argument`() = runTest {
         val idSlots = mutableListOf<Long>()
 
-        coEvery { bookRepository.getForEntry(capture(idSlots)) } returns null
+        coEvery { bookRepository.getForEntry(capture(idSlots)) } returns lawBookEntity(1L)
 
         lawContentService.getBookByEntry(4L)
         lawContentService.getBookByEntry(8L)
@@ -133,19 +136,14 @@ class DatabaseLawContentServiceTest {
         coEvery { bookRepository.getForEntry(any()) } returns lawBookEntity(5L)
 
         val returned1 = lawContentService.getBookByEntry(4L)
-        assertEquals(5L, returned1?.id)
-
-        coEvery { bookRepository.getForEntry(any()) } returns null
-
-        val returned2 = lawContentService.getBookByEntry(4L)
-        assertNull(returned2)
+        assertEquals(5L, returned1.id)
     }
 
     @Test
     fun `getBooksForMember calls repository method with right argument`() = runTest {
         val idSlots = mutableListOf<Long>()
 
-        coEvery { bookRepository.getAllForMember(capture(idSlots)) } returns null
+        coEvery { bookRepository.getAllForMember(capture(idSlots)) } returns lawBookEntities(4)
 
         lawContentService.getBooksForMember(4L)
         lawContentService.getBooksForMember(8L)
@@ -159,27 +157,38 @@ class DatabaseLawContentServiceTest {
         coEvery { bookRepository.getAllForMember(any()) } returns lawBookEntities(9)
 
         val returned1 = lawContentService.getBooksForMember(4L)
-        assertEquals(9, returned1?.size)
+        assertEquals(9, returned1.size)
 
         coEvery { bookRepository.getAllForMember(any()) } returns emptyList()
 
         val returned2 = lawContentService.getBooksForMember(4L)
-        assertEquals(0, returned2?.size)
+        assertEquals(0, returned2.size)
     }
 
     @Test
-    fun `createBook returns null when user is not found`() = runTest {
+    fun `createBook throws when user is not found`() = runTest {
         coEvery { userRepository.getSpecific(any<Long>()) } returns null
 
-        val returned = lawContentService.createBook("", "", "", 1L)
+        assertThrows<ServiceException.UserNotFound> {
+            lawContentService.createBook("", "", "", 1L)
+        }
+    }
 
-        assertNull(returned)
+    @Test
+    fun `createBook throws when key is not unique`() = runTest {
+        coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
+        coEvery { bookRepository.getSpecific(any(), any(), any()) } returns lawBookEntity(1L)
+
+        assertThrows<ServiceException.LawBookKeyNotUnique> {
+            lawContentService.createBook("", "", "", 1L)
+        }
     }
 
     @Test
     fun `createBook calls repository with correctly created book model and user id and returns created book`() =
         runTest {
             coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(12L)
+            coEvery { bookRepository.getSpecific(any(), any(), any()) } returns null
 
             val bookSlot = slot<me.bumiller.mol.database.table.LawBook.Model>()
             val userIdSlot = slot<Long>()
@@ -198,17 +207,17 @@ class DatabaseLawContentServiceTest {
             assertEquals(12L, userIdSlot.captured)
             coVerify(exactly = 1) { bookRepository.create(any(), any()) }
 
-            assertEquals(-1L, returned?.id)
-            assertEquals("key153", returned?.key)
+            assertEquals(-1L, returned.id)
+            assertEquals("key153", returned.key)
         }
 
     @Test
-    fun `updateBook returns null when book is not found`() = runTest {
+    fun `updateBook throws when book is not found`() = runTest {
         coEvery { bookRepository.getSpecific(any<Long>()) } returns null
 
-        val returned = lawContentService.updateBook(1L)
-
-        assertNull(returned)
+        assertThrows<ServiceException.LawBookNotFound> {
+            lawContentService.updateBook(1L)
+        }
     }
 
     @Test
@@ -243,12 +252,12 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `deleteBook returns deleted book or null if not found`() = runTest {
+    fun `deleteBook returns deleted book or throws not found`() = runTest {
         coEvery { bookRepository.delete(any<Long>()) } returns null
 
-        val returned1 = lawContentService.deleteBook(1L)
-
-        assertNull(returned1)
+        assertThrows<ServiceException.LawBookNotFound> {
+            lawContentService.deleteBook(1L)
+        }
 
         coEvery { bookRepository.delete(any<Long>()) } returns lawBookEntity(1L)
 
@@ -267,12 +276,12 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `getEntriesByBook returns null if book not found`() = runTest {
+    fun `getEntriesByBook throws if book not found`() = runTest {
         coEvery { bookRepository.getSpecific(any<Long>()) } returns null
 
-        val returned = lawContentService.getEntriesByBook(1L)
-
-        assertNull(returned)
+        assertThrows<ServiceException.LawBookNotFound> {
+            lawContentService.getEntriesByBook(1L)
+        }
     }
 
     @Test
@@ -284,7 +293,7 @@ class DatabaseLawContentServiceTest {
         val returned = lawContentService.getEntriesByBook(1L)
 
         assertEquals(1L, idSlot.captured)
-        assertEquals(5, returned?.size)
+        assertEquals(5, returned.size)
     }
 
     @Test
@@ -293,6 +302,7 @@ class DatabaseLawContentServiceTest {
         val keySlots = mutableListOf<Optional<String>>()
         val parentIdSlots = mutableListOf<Optional<Long>>()
 
+        coEvery { bookRepository.getSpecific(any<Long>()) } returns null
         coEvery {
             entryRepository.getSpecific(
                 capture(idSlots),
@@ -323,11 +333,12 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `getEntryForSection returns from repository`() = runTest {
+    fun `getEntryForSection returns from repository or throws if null`() = runTest {
         coEvery { entryRepository.getForSection(any<Long>()) } returns null
 
-        val returned1 = lawContentService.getEntryForSection(1L)
-        assertNull(returned1)
+        assertThrows<ServiceException.LawSectionNotFound> {
+            lawContentService.getEntryForSection(1L)
+        }
 
         coEvery { entryRepository.getForSection(any<Long>()) } returns lawEntryEntity(34L)
 
@@ -338,6 +349,7 @@ class DatabaseLawContentServiceTest {
     @Test
     fun `createEntry correctly creates entry model and returns result`() = runTest {
         coEvery { bookRepository.getSpecific(any<Long>()) } returns lawBookEntity(22L)
+        coEvery { entryRepository.getSpecific(any(), any(), any()) } returns null
 
         val entrySlot = slot<me.bumiller.mol.database.table.LawEntry.Model>()
         coEvery { entryRepository.create(capture(entrySlot)) } returnsArgument 0
@@ -351,21 +363,24 @@ class DatabaseLawContentServiceTest {
         assertEquals(-1L, entrySlot.captured.id)
         assertEquals("key82", entrySlot.captured.key)
 
-        assertEquals(-1L, returned?.id)
-        assertEquals("key82", returned?.key)
+        assertEquals(-1L, returned.id)
+        assertEquals("key82", returned.key)
     }
 
     @Test
-    fun `updateEntry returns null if entry is not found`() = runTest {
+    fun `updateEntry throws if entry is not found`() = runTest {
         coEvery { entryRepository.getSpecific(any<Long>()) } returns null
 
-        val returned = lawContentService.updateEntry(1L)
-        assertNull(returned)
+        assertThrows<ServiceException.LawEntryNotFound> {
+            lawContentService.updateEntry(1L)
+        }
     }
 
     @Test
     fun `updateEntry correctly updates only passed arguments and returns result`() = runTest {
         coEvery { entryRepository.getSpecific(any<Long>()) } returns lawEntryEntity(4L)
+        coEvery { entryRepository.getSpecific(any(), any(), any()) } returns null
+        coEvery { bookRepository.getForEntry(any()) } returns lawBookEntity(1L)
         val entrySlot = slot<me.bumiller.mol.database.table.LawEntry.Model>()
 
         coEvery { entryRepository.update(capture(entrySlot)) } returnsArgument 0
@@ -375,19 +390,20 @@ class DatabaseLawContentServiceTest {
             key = present("key-8292")
         )
 
-        assertEquals("key-8292", returned?.key)
-        assertEquals("name-4", returned?.name)
+        assertEquals("key-8292", returned.key)
+        assertEquals("name-4", returned.name)
 
         assertEquals("key-8292", entrySlot.captured.key)
         assertEquals("name-4", entrySlot.captured.name)
     }
 
     @Test
-    fun `deleteEntry returns deleted entry`() = runTest {
+    fun `deleteEntry returns deleted entry or throws if not found`() = runTest {
         coEvery { entryRepository.delete(any<Long>()) } returns null
 
-        val returned1 = lawContentService.deleteEntry(1L)
-        assertNull(returned1)
+        assertThrows<ServiceException.LawEntryNotFound> {
+            lawContentService.deleteEntry(1L)
+        }
 
         coEvery { entryRepository.delete(any<Long>()) } returns lawEntryEntity(32L)
 
@@ -406,6 +422,8 @@ class DatabaseLawContentServiceTest {
     @Test
     fun `updateSection correctly updates only passed arguments and returns result`() = runTest {
         coEvery { sectionRepository.getSpecific(any<Long>()) } returns lawSectionEntity(78L)
+        coEvery { entryRepository.getForSection(any()) } returns lawEntryEntity(1L)
+        coEvery { sectionRepository.getSpecific(any(), any(), any()) } returns null
 
         val entitySlot = slot<LawSection.Model>()
         coEvery { sectionRepository.update(capture(entitySlot)) } returnsArgument 0
@@ -420,31 +438,33 @@ class DatabaseLawContentServiceTest {
         assertEquals("name-78", entitySlot.captured.name)
         assertEquals("content-234", entitySlot.captured.content)
 
-        assertEquals("index-593", returned?.index)
-        assertEquals("name-78", returned?.name)
-        assertEquals("content-234", returned?.content)
+        assertEquals("index-593", returned.index)
+        assertEquals("name-78", returned.name)
+        assertEquals("content-234", returned.content)
     }
 
     @Test
-    fun `deleteSection returns deleted section`() = runTest {
+    fun `deleteSection returns deleted section or throws if not found`() = runTest {
         coEvery { sectionRepository.delete(any<Long>()) } returns null
 
-        val returned1 = lawContentService.deleteSection(1L)
-        assertNull(returned1)
+        assertThrows<ServiceException.LawSectionNotFound> {
+            lawContentService.deleteSection(1L)
+        }
 
         coEvery { sectionRepository.delete(any<Long>()) } returns lawSectionEntity(34L)
 
         val returned2 = lawContentService.deleteSection(1L)
-        assertEquals(34L, returned2?.id)
+        assertEquals(34L, returned2.id)
     }
 
 
     @Test
-    fun `getSectionsByEntry returns null if entry was not found`() = runTest {
+    fun `getSectionsByEntry throws if entry was not found`() = runTest {
         coEvery { entryRepository.getSpecific(any<Long>()) } returns null
 
-        val returned = lawContentService.getSectionsByEntry(1L)
-        assertNull(returned)
+        assertThrows<ServiceException.LawEntryNotFound> {
+            lawContentService.getSectionsByEntry(1L)
+        }
     }
 
     @Test
@@ -453,7 +473,7 @@ class DatabaseLawContentServiceTest {
         coEvery { sectionRepository.getForParentEntry(any<Long>()) } returns lawSectionEntities(6)
 
         val returned = lawContentService.getSectionsByEntry(1L)
-        assertEquals(6, returned?.size)
+        assertEquals(6, returned.size)
     }
 
     @Test
@@ -482,20 +502,22 @@ class DatabaseLawContentServiceTest {
         assertFalse(indexSlot[1].isPresent)
         assertFalse(parentIdSlot[1].isPresent)
 
-        assertEquals(12L, returned?.id)
+        assertEquals(12L, returned.id)
     }
 
     @Test
-    fun `createSection returns null if parent entry was not found`() = runTest {
+    fun `createSection throws if parent entry was not found`() = runTest {
         coEvery { entryRepository.getSpecific(any<Long>()) } returns null
 
-        val returned = lawContentService.createSection("", "", "", 1L)
-        assertNull(returned)
+        assertThrows<ServiceException.LawEntryNotFound> {
+            lawContentService.createSection("", "", "", 1L)
+        }
     }
 
     @Test
     fun `createSection creates correct entity`() = runTest {
         coEvery { entryRepository.getSpecific(any<Long>()) } returns lawEntryEntity(3L)
+        coEvery { sectionRepository.getSpecific(any(), any(), any()) } returns null
 
         val entitySlot = slot<LawSection.Model>()
         coEvery { sectionRepository.create(capture(entitySlot)) } returnsArgument 0
@@ -507,9 +529,9 @@ class DatabaseLawContentServiceTest {
         assertEquals("name-3", entitySlot.captured.name)
         assertEquals("content-4", entitySlot.captured.content)
 
-        assertEquals("index-2", returned?.index)
-        assertEquals("name-3", returned?.name)
-        assertEquals("content-4", returned?.content)
+        assertEquals("index-2", returned.index)
+        assertEquals("name-3", returned.name)
+        assertEquals("content-4", returned.content)
     }
 
 }

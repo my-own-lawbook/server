@@ -10,6 +10,7 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.TwoFactorTokenService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.database.repository.TwoFactorTokenRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.database.table.TwoFactorToken
@@ -18,15 +19,16 @@ import me.bumiller.mol.model.TwoFactorTokenType
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.util.*
 import me.bumiller.mol.database.table.TwoFactorToken.Model as TwoFactorTokenModel
 
 class DatabaseTwoFactorTokenServiceTest {
 
-    lateinit var mockTokenRepository: TwoFactorTokenRepository
-    lateinit var mockUserRepository: UserRepository
+    private lateinit var mockTokenRepository: TwoFactorTokenRepository
+    private lateinit var mockUserRepository: UserRepository
 
-    lateinit var tokenService: TwoFactorTokenService
+    private lateinit var tokenService: TwoFactorTokenService
 
     @BeforeEach
     fun setup() {
@@ -36,9 +38,9 @@ class DatabaseTwoFactorTokenServiceTest {
         tokenService = DatabaseTwoFactorTokenService(mockTokenRepository, mockUserRepository)
     }
 
-    val userModel = User.Model(1L, "email", "username", "password", true, null)
+    private val userModel = User.Model(1L, "email", "username", "password", true, null)
 
-    val tokens = (1..10).map {
+    private val tokens = (1..10).map {
         TwoFactorTokenModel(
             it.toLong(),
             UUID.randomUUID(),
@@ -98,23 +100,23 @@ class DatabaseTwoFactorTokenServiceTest {
         val returned1 = tokenService.create(TwoFactorTokenType.RefreshToken, userModel.id, time, time, "content")
         val returned2 = tokenService.create(TwoFactorTokenType.EmailConfirm, userModel.id)
 
-        assertEquals("content", returned1?.additionalInfo)
-        assertEquals(time, returned1?.expiringAt)
-        assertEquals(time, returned1?.issuedAt)
-        assertEquals(TwoFactorTokenType.RefreshToken, returned1?.type)
+        assertEquals("content", returned1.additionalInfo)
+        assertEquals(time, returned1.expiringAt)
+        assertEquals(time, returned1.issuedAt)
+        assertEquals(TwoFactorTokenType.RefreshToken, returned1.type)
 
-        assertEquals(TwoFactorTokenType.EmailConfirm, returned2?.type)
+        assertEquals(TwoFactorTokenType.EmailConfirm, returned2.type)
     }
 
     @Test
-    fun `create returns null when user is not found`() = runTest {
+    fun `create throws when user is not found`() = runTest {
         coEvery { mockUserRepository.getSpecific(any<Long>()) } returns null
 
         val time = Clock.System.now()
 
-        val result = tokenService.create(TwoFactorTokenType.RefreshToken, userModel.id, time, time, "content")
-
-        assertNull(result)
+        assertThrows<ServiceException.UserNotFound> {
+            tokenService.create(TwoFactorTokenType.RefreshToken, userModel.id, time, time, "content")
+        }
     }
 
     @Test
@@ -137,11 +139,11 @@ class DatabaseTwoFactorTokenServiceTest {
 
         val updated = tokenService.markAsUsed(token.id)
 
-        assertTrue(updated!!.used)
+        assertTrue(updated.used)
     }
 
     @Test
-    fun `markUsed returns null when token is not found`() = runTest {
+    fun `markUsed throws when token is not found`() = runTest {
         coEvery { mockTokenRepository.getSpecific(any<Long>()) } returns null
 
         val time = Clock.System.now()
@@ -157,9 +159,9 @@ class DatabaseTwoFactorTokenServiceTest {
             mockk()
         )
 
-        val updated = tokenService.markAsUsed(token.id)
-
-        assertNull(updated)
+        assertThrows<ServiceException.TwoFactorTokenNotFound> {
+            tokenService.markAsUsed(token.id)
+        }
     }
 
 }
