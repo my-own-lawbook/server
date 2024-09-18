@@ -57,7 +57,7 @@ abstract class EntityRepository<
 
     val entityClass: Class
 
-) : IEntityRepository<Id, Model> where Entity : ExposedEntity<Id>, Entity : ModelMappableEntity<Id, Model> {
+) : IEntityRepository<Id, Model> where Entity : ExposedEntity<Id>, Entity : ModelMappableEntity<Model> {
 
     override suspend fun getAll(): List<Model> = suspendTransaction {
         entityClass.all().map { it.asModel }

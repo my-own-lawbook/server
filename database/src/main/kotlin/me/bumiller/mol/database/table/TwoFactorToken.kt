@@ -80,7 +80,7 @@ object TwoFactorToken {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {
 
         var user by User.Entity referencedOn Table.user
         var token by Table.token

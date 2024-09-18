@@ -1,5 +1,6 @@
 package me.bumiller.mol.core.data
 
+import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.User
 
 /**
@@ -32,5 +33,27 @@ interface MemberService {
      * @return The list of members in the book after the update, or null if the user or book was not found
      */
     suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User>?
+
+    /**
+     * Gets the book-wide role of a member
+     *
+     * @param userId The id of the user
+     * @param bookId The id of the book
+     * @return The role for the user in the book, or null if the user or book was not found, or the user is not a member of the book
+     */
+    suspend fun getMemberRole(userId: Long, bookId: Long): MemberRole?
+
+    /**
+     * Sets the book-wide role of a member
+     *
+     * @param userId The id of the user
+     * @param bookId The id of the book
+     * @param role The new role of the member
+     * @return False if the operation was not successful, i.e. any of the following scenarios occurred:
+     * - User or book was not found
+     * - User is not a member of the book
+     * - This operation would cause the book with [bookId] to have no members with [MemberRole.Admin] left.
+     */
+    suspend fun setMemberRole(userId: Long, bookId: Long, role: MemberRole): Boolean
 
 }

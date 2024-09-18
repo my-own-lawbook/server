@@ -37,7 +37,7 @@ object LawSection {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {
 
         var index by Table.index
         var name by Table.name

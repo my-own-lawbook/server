@@ -38,14 +38,14 @@ object LawBook {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {
 
         var key by Table.key
         var name by Table.name
         var description by Table.description
         var creator by User.Entity referencedOn Table.creator
 
-        var members by User.Entity via LawBookMembersCrossref
+        var members by User.Entity via LawBookMembersCrossref.Table
 
         override fun populate(model: Model) {
             key = model.key

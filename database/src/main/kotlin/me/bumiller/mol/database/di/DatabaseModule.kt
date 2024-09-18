@@ -14,4 +14,6 @@ val databaseModule = module {
     single<LawBookRepository> { ExposedLawBookRepository() }
     single<LawEntryRepository> { ExposedLawEntryRepository() }
     single<LawSectionRepository> { ExposedLawSectionRepository() }
+
+    single<MemberRoleRepository> { ExposedMemberRoleRepository() }
 }

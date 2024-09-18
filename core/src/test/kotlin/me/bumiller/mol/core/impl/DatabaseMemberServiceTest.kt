@@ -7,8 +7,10 @@ import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import me.bumiller.mol.core.data.MemberService
 import me.bumiller.mol.database.repository.LawBookRepository
+import me.bumiller.mol.database.repository.MemberRoleRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.database.table.LawBook
+import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.User
 import me.bumiller.mol.test.util.lawBookEntity
 import me.bumiller.mol.test.util.userEntities
@@ -21,6 +23,7 @@ class DatabaseMemberServiceTest {
 
     private lateinit var bookRepository: LawBookRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var roleRepository: MemberRoleRepository
 
     private lateinit var memberService: MemberService
 
@@ -28,8 +31,9 @@ class DatabaseMemberServiceTest {
     fun setup() {
         bookRepository = mockk()
         userRepository = mockk()
+        roleRepository = mockk()
 
-        memberService = DatabaseMemberService(bookRepository, userRepository)
+        memberService = DatabaseMemberService(bookRepository, userRepository, roleRepository)
     }
 
     @Test
@@ -207,6 +211,115 @@ class DatabaseMemberServiceTest {
         val returned = memberService.addMemberToBook(book1.id, user.id)
 
         assertEquals(6, returned?.size)
+    }
+
+    @Test
+    fun `getMemberRole correctly returns mapped repository result`() = runTest {
+        coEvery { roleRepository.getMemberRole(1L, 1L) } returnsMany listOf("admin", null)
+
+        val returned1 = memberService.getMemberRole(1L, 1L)
+        val returned2 = memberService.getMemberRole(1L, 1L)
+
+        assertEquals(MemberRole.Admin, returned1)
+        assertNull(returned2)
+    }
+
+    @Test
+    fun `setMemberRole correctly returns false if user or book not found or user not member of book`() = runTest {
+        coEvery { userRepository.getSpecific(1L) } returns null
+
+        val returned1 = memberService.setMemberRole(1L, 1L, MemberRole.Read)
+
+        coEvery { userRepository.getSpecific(1L) } returns userEntity(1L)
+        coEvery { bookRepository.getSpecific(1L) } returns null
+
+        val returned2 = memberService.setMemberRole(1L, 1L, MemberRole.Read)
+
+        coEvery { bookRepository.getSpecific(1L) } returns lawBookEntity(1L).copy(
+            members = userEntities(4L).filterNot { it.id == 1L }
+        )
+
+        val returned3 = memberService.setMemberRole(1L, 1L, MemberRole.Read)
+
+        assertFalse(returned1)
+        assertFalse(returned2)
+        assertFalse(returned3)
+
+        coVerify(exactly = 3) { userRepository.getSpecific(1L) }
+        coVerify(exactly = 2) { bookRepository.getSpecific(1L) }
+    }
+
+    @Test
+    fun `setMemberRole returns false if change would mean no admin in book`() = runTest {
+        coEvery { userRepository.getSpecific(1L) } returns userEntity(1L)
+        coEvery { bookRepository.getSpecific(1L) } returns lawBookEntity(1L).copy(members = userEntities(4L))
+
+        coEvery { roleRepository.getMemberRole(any(), 1L) } answers { m ->
+            when (m.invocation.args[0] as Long) {
+                1L -> "admin"
+                2L -> "read"
+                3L -> "write"
+                4L -> "update"
+                else -> error(Unit)
+            }
+        }
+
+        val returned = memberService.setMemberRole(1L, 1L, MemberRole.Read)
+
+        assertFalse(returned)
+        coVerify(exactly = 4) { roleRepository.getMemberRole(any(), 1L) }
+    }
+
+    @Test
+    fun `setMemberRole only checks for admins if an admin is being downgraded`() = runTest {
+        coEvery { userRepository.getSpecific(1L) } returns userEntity(1L)
+        coEvery { userRepository.getSpecific(2L) } returns userEntity(2L)
+        coEvery { bookRepository.getSpecific(1L) } returns lawBookEntity(1L).copy(members = userEntities(4L))
+        coEvery { roleRepository.setMemberRole(any(), any(), any()) } returns Unit
+
+        coEvery { roleRepository.getMemberRole(any(), 1L) } answers { m ->
+            when (m.invocation.args[0] as Long) {
+                1L -> "admin"
+                2L -> "read"
+                3L -> "write"
+                4L -> "update"
+                else -> error(Unit)
+            }
+        }
+
+        // Downgrading admin calls 4 times
+        memberService.setMemberRole(1L, 1L, MemberRole.Read)
+        coVerify(exactly = 4) { roleRepository.getMemberRole(any(), 1L) }
+
+        // Downgrading normie calls 1 time
+        memberService.setMemberRole(2L, 1L, MemberRole.Read) // Accounts for 1 call to getMemberRole
+        coVerify(exactly = 5) { roleRepository.getMemberRole(any(), 1L) }
+
+        // Upgrading normie calls 1 time
+        memberService.setMemberRole(2L, 1L, MemberRole.Admin) // Accounts for 1 call to getMemberRole
+        coVerify(exactly = 6) { roleRepository.getMemberRole(any(), 1L) }
+    }
+
+    @Test
+    fun `setMemberRole calls setMemberRole with correct args and returns true`() = runTest {
+        coEvery { userRepository.getSpecific(1L) } returns userEntity(1L)
+        coEvery { bookRepository.getSpecific(1L) } returns lawBookEntity(1L).copy(members = userEntities(4L))
+        coEvery { roleRepository.setMemberRole(any(), any(), any()) } returns Unit
+
+        coEvery { roleRepository.getMemberRole(any(), 1L) } answers { m ->
+            when (m.invocation.args[0] as Long) {
+                1L -> "admin"
+                2L -> "admin"
+                3L -> "write"
+                4L -> "update"
+                else -> error(Unit)
+            }
+        }
+
+        val returned = memberService.setMemberRole(1L, 1L, MemberRole.Read)
+
+        assertTrue(returned)
+        coVerify(exactly = 1) { roleRepository.setMemberRole(1L, 1L, "read") }
     }
 
 }

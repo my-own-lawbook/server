@@ -34,7 +34,7 @@ object LawEntry {
 
     }
 
-    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Long, Model> {
+    internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {
 
         var key by Table.key
         var name by Table.name
