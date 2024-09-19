@@ -97,11 +97,12 @@ internal class ExposedLawEntryRepository :
         }.map { it.asModel }
     }
 
-    override suspend fun getForSection(sectionId: Long): Model? =
+    override suspend fun getForSection(sectionId: Long): Model? = suspendTransaction {
         LawSection.Entity.find {
             LawSection.Table.id eq sectionId
         }
             .singleOrNull()
             ?.parentEntry?.asModel
+    }
 
 }

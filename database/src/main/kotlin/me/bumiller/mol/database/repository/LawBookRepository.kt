@@ -99,19 +99,21 @@ internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, 
             .map { it.asModel }
     }
 
-    override suspend fun getForEntry(entryId: Long): Model? =
+    override suspend fun getForEntry(entryId: Long): Model? = suspendTransaction {
         LawEntry.Entity.find {
             LawEntry.Table.id eq entryId
         }
             .singleOrNull()
             ?.parentBook?.asModel
+    }
 
-    override suspend fun getAllForMember(userId: Long): List<Model>? =
+    override suspend fun getAllForMember(userId: Long): List<Model>? = suspendTransaction {
         User.Entity.find {
             User.Table.id eq userId
         }
             .singleOrNull()
             ?.lawBooks?.toList()
             ?.map { it.asModel }
+    }
 
 }

@@ -38,12 +38,13 @@ internal class ExposedMemberRoleRepository : MemberRoleRepository {
         }.singleOrNull()?.role
     }
 
-    override suspend fun setMemberRole(userId: Long, bookId: Long, role: String) {
+    override suspend fun setMemberRole(userId: Long, bookId: Long, role: String) = suspendTransaction {
         LawBookMembersCrossref.Entity.findSingleByAndUpdate(
             op = (LawBookMembersCrossref.Table.member eq userId) and (LawBookMembersCrossref.Table.lawBook eq bookId)
         ) {
             it.role = role
         }
+        Unit
     }
 
 }
