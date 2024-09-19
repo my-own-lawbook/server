@@ -43,7 +43,7 @@ object LawBookMembersCrossref {
 
         val role = text("role").check("role-valid") {
             it inList Roles.entries.map(Roles::serializedName)
-        }
+        }.default(Roles.Read.serializedName)
 
         override val primaryKey = PrimaryKey(lawBook, member)
 
