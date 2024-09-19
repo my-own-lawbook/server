@@ -9,14 +9,11 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.toUUID
 import me.bumiller.mol.core.AuthService
-import me.bumiller.mol.core.data.TwoFactorTokenService
-import me.bumiller.mol.model.TwoFactorTokenType
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.http.bad
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.response.user.TokenResponse
 import me.bumiller.mol.validation.Validatable
-import me.bumiller.mol.validation.ValidationScope
-import me.bumiller.mol.validation.actions.isTokenValid
 import me.bumiller.mol.validation.actions.isUUID
 import me.bumiller.mol.validation.validateThat
 import me.bumiller.mol.validation.validated
@@ -30,11 +27,10 @@ import org.koin.ktor.ext.inject
  */
 internal fun Route.login() {
     val authService by inject<AuthService>()
-    val tokenService by inject<TwoFactorTokenService>()
 
     route("login/") {
         loginWithCredentials(authService)
-        loginWithRefreshToken(tokenService, authService)
+        loginWithRefreshToken(authService)
     }
 }
 
@@ -65,7 +61,7 @@ internal data class LoginCredentialsRequest(
 
 ) : Validatable {
 
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         listOf(email, username).map(Optional<*>::isPresent).distinct().size.let { size ->
             if (size == 1) bad("Only either 'email' or 'username' must be passed!")
         }
@@ -86,9 +82,8 @@ internal data class LoginRefreshRequest(
 
 ) : Validatable {
 
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         validateThat(token).isUUID()
-        validateThat(token.toUUID()).isTokenValid(TwoFactorTokenType.RefreshToken)
     }
 
 }
@@ -106,10 +101,18 @@ private fun Route.loginWithCredentials(authService: AuthService) = post {
     val body = call.validated<LoginCredentialsRequest>()
 
     val user = authService.getAuthenticatedUser(body.email.getOrNull(), body.username.getOrNull(), body.password)
-    if (user != null) {
-        val tokens = authService.loginUser(user.id)
-        call.respond(HttpStatusCode.OK, TokenResponse.create(tokens))
-    } else call.respond(HttpStatusCode.Unauthorized)
+    if (user == null) {
+        call.respond(HttpStatusCode.Unauthorized)
+        return@post
+    }
+
+    val tokens = try {
+        authService.loginUser(user.id)
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
+
+    call.respond(HttpStatusCode.OK, TokenResponse.create(tokens))
 }
 
 /**
@@ -117,12 +120,14 @@ private fun Route.loginWithCredentials(authService: AuthService) = post {
  *
  * Allows to authenticate using a previously acquired refresh token
  */
-private fun Route.loginWithRefreshToken(tokenService: TwoFactorTokenService, authService: AuthService) = post("refresh/") {
+private fun Route.loginWithRefreshToken(authService: AuthService) = post("refresh/") {
     val uuid = call.validated<LoginRefreshRequest>().token.toUUID()
-    val token = tokenService.getSpecific(token = uuid) ?: internal()
 
-    tokenService.markAsUsed(token.id)
+    val tokens = try {
+        authService.loginUserWithRefreshToken(uuid)
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
 
-    val tokens = authService.loginUser(token.user.id)
     call.respond(HttpStatusCode.OK, TokenResponse.create(tokens))
 }

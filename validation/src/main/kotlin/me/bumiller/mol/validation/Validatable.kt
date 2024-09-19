@@ -8,7 +8,7 @@ interface Validatable {
     /**
      * Called when the object will be validated.
      */
-    suspend fun ValidationScope.validate() {
+    suspend fun validate() {
         // Empty so that implementations can leave this method empty
     }
 

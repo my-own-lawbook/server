@@ -7,15 +7,15 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.toUUID
 import me.bumiller.mol.core.AuthService
-import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.data.UserService
-import me.bumiller.mol.model.TwoFactorTokenType
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.http.internal
-import me.bumiller.mol.model.http.notFoundIdentifier
 import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
 import me.bumiller.mol.validation.Validatable
-import me.bumiller.mol.validation.ValidationScope
-import me.bumiller.mol.validation.actions.*
+import me.bumiller.mol.validation.actions.isEmail
+import me.bumiller.mol.validation.actions.isPassword
+import me.bumiller.mol.validation.actions.isUUID
+import me.bumiller.mol.validation.actions.isUsername
 import me.bumiller.mol.validation.validateThat
 import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
@@ -30,12 +30,11 @@ import org.koin.ktor.ext.inject
 internal fun Route.signup() {
     val authService by inject<AuthService>()
     val userService by inject<UserService>()
-    val tokenService by inject<TwoFactorTokenService>()
 
     route("signup/") {
         createUser(authService)
         requestEmailToken(userService, authService)
-        submitEmailToken(tokenService, authService, userService)
+        submitEmailToken(authService)
     }
 }
 
@@ -66,12 +65,10 @@ internal data class CreateUserRequest(
 
 ): Validatable {
 
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         validateThat(email).isEmail()
         validateThat(username).isUsername()
         validateThat(password).isPassword()
-        validateThat(email).isEmailUnique()
-        validateThat(username).isUsernameUnique()
     }
 
 }
@@ -88,7 +85,7 @@ internal data class RequestEmailTokenRequest(
     val email: String
 
 ): Validatable {
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         validateThat(email).isEmail()
     }
 }
@@ -106,9 +103,8 @@ internal data class SubmitEmailTokenRequest(
 
 ): Validatable {
 
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         validateThat(token).isUUID()
-        validateThat(token.toUUID()).isTokenValid(TwoFactorTokenType.EmailConfirm)
     }
 
 }
@@ -126,6 +122,7 @@ private fun Route.createUser(authService: AuthService) = post {
     val body = call.validated<CreateUserRequest>()
 
     val createdUser = authService.createNewUser(body.email, body.username, body.password)
+
     call.respond(HttpStatusCode.Created, AuthUserWithoutProfileResponse.create(createdUser))
 }
 
@@ -137,7 +134,12 @@ private fun Route.createUser(authService: AuthService) = post {
 private fun Route.requestEmailToken(userService: UserService, authService: AuthService) = post("email-verify/") {
     val email = call.validated<RequestEmailTokenRequest>().email
 
-    val user = userService.getSpecific(email = email)
+    val user = try {
+        userService.getSpecific(email = email)
+    } catch (e: ServiceException.UserNotFound) {
+        null
+    }
+
     if(user?.profile != null && !user.isEmailVerified) {
         authService.sendEmailVerification(user)
     }
@@ -151,16 +153,15 @@ private fun Route.requestEmailToken(userService: UserService, authService: AuthS
  * Allows to submit an email-verify-token sent to an email address.
  */
 private fun Route.submitEmailToken(
-    tokenService: TwoFactorTokenService,
-    authService: AuthService,
-    userService: UserService
+    authService: AuthService
 ) = patch("email-verify/") {
-    val tokenUUID = call.validated<SubmitEmailTokenRequest>().token.toUUID()
-    val token = tokenService.getSpecific(token = tokenUUID) ?: internal()
-    val user = userService.getSpecific(id = token.user.id)
+    val token = call.validated<SubmitEmailTokenRequest>().token.toUUID()
 
-    if (user != null) {
-        authService.validateEmailWithToken(token.token)
-        call.respond(HttpStatusCode.OK)
-    } else notFoundIdentifier("two-factor-token", token.token.toString())
+    try {
+        authService.validateEmailWithToken(token)
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
+
+    call.respond(HttpStatusCode.OK)
 }

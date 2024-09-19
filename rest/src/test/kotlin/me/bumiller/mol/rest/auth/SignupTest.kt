@@ -38,7 +38,6 @@ class SignupTest {
     @Test
     fun `POST auth_signup calls createNewUser with arguments and responds the user`() =
         ktorEndpointTest { services, client ->
-        coEvery { services.userService.getSpecific(any(), any(), any()) } returns null
         coEvery { services.authService.createNewUser(any(), any(), any()) } returns user
 
             val res = client.post("/test/api/auth/signup/") {
@@ -88,10 +87,8 @@ class SignupTest {
         }
 
     @Test
-    fun `PATCH auth_signup_email-verify calls validateEmailWithToken and returns 200 only if user is found`() =
+    fun `PATCH auth_signup_email-verify calls validateEmailWithToken and returns 200`() =
         ktorEndpointTest { services, client ->
-            coEvery { services.tokenService.getSpecific(any(), eq(uuid)) } returns token
-            coEvery { services.userService.getSpecific(any(), any(), any()) } returnsMany listOf(user, null)
             coEvery { services.authService.validateEmailWithToken(uuid) } returns user
 
             val res1 = client.patch("/test/api/auth/signup/email-verify/") {
@@ -99,13 +96,6 @@ class SignupTest {
                 setBody(SubmitEmailTokenRequest(uuid.toStr()))
             }
             assertEquals(200, res1.status.value)
-            coVerify(exactly = 1) { services.authService.validateEmailWithToken(uuid) }
-
-            val res2 = client.patch("/test/api/auth/signup/email-verify/") {
-                contentType(ContentType.Application.Json)
-                setBody(SubmitEmailTokenRequest(uuid.toStr()))
-            }
-            assertEquals(404, res2.status.value)
             coVerify(exactly = 1) { services.authService.validateEmailWithToken(uuid) }
         }
 

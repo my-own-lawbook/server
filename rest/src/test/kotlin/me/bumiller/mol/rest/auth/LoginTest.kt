@@ -4,7 +4,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.mockk.coEvery
-import io.mockk.coVerify
 import kotlinx.datetime.Clock
 import me.bumiller.mol.model.AuthTokens
 import me.bumiller.mol.model.TwoFactorToken
@@ -110,24 +109,8 @@ class LoginTest {
     }
 
     @Test
-    fun `POST auth_login_refresh marks token as used`() = ktorEndpointTest { services, client ->
-        coEvery { services.tokenService.getSpecific(any(), uuid) } returns token
-        coEvery { services.tokenService.markAsUsed(1L) } returns token
-        coEvery { services.authService.loginUser(1L) } returns AuthTokens("jsw", token)
-
-        client.post("/test/api/auth/login/refresh/") {
-            contentType(ContentType.Application.Json)
-            setBody(LoginRefreshRequest(uuid.toString()))
-        }
-
-        coVerify(exactly = 1) { services.tokenService.markAsUsed(1L) }
-    }
-
-    @Test
     fun `POST auth_login_refresh returns tokens`() = ktorEndpointTest { services, client ->
-        coEvery { services.tokenService.getSpecific(any(), uuid) } returns token
-        coEvery { services.authService.loginUser(1L) } returns AuthTokens("jwt", token)
-        coEvery { services.tokenService.markAsUsed(1L) } returns token
+        coEvery { services.authService.loginUserWithRefreshToken(uuid) } returns AuthTokens("jwt", token)
 
         val res = client.post("/test/api/auth/login/refresh/") {
             contentType(ContentType.Application.Json)

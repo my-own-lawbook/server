@@ -3,6 +3,7 @@ package me.bumiller.mol.core.data
 import kotlinx.datetime.LocalDate
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
@@ -25,9 +26,10 @@ interface UserService {
      * @param id The id  of the user
      * @param email The email of the user
      * @param username The username of the user
-     * @return The user matching all given non-null criteria, or null
+     * @return The user matching all given non-null criteria
+     * @throws ServiceException.UserNotFound If the user could not be found
      */
-    suspend fun getSpecific(id: Long? = null, email: String? = null, username: String? = null): User?
+    suspend fun getSpecific(id: Long? = null, email: String? = null, username: String? = null): User
 
     /**
      * Creates a new user entry in the database.
@@ -39,6 +41,8 @@ interface UserService {
      * @param email The email
      * @param password The password, hashed
      * @param username The username
+     * @throws ServiceException.UserEmailNotUnique If the email is not available
+     * @throws ServiceException.UserUsernameNotUnique If the username is not available
      */
     suspend fun createUser(email: String, password: String, username: String): User
 
@@ -47,17 +51,20 @@ interface UserService {
      *
      * @param userId The id of the user
      * @param profile The profile to take content from. [UserProfile.id] is ignored.
-     * @return The user for which the profile was created. Null if no user was found or a profile already exists.
+     * @return The user for which the profile was created.
+     * @throws ServiceException.UserNotFound If the user could not be found
+     * @throws ServiceException.UserProfileAlreadyPresent If the user already has a profile set
      */
-    suspend fun createProfile(userId: Long, profile: UserProfile): User?
+    suspend fun createProfile(userId: Long, profile: UserProfile): User
 
     /**
      * Will delete a user in the database.
      *
      * @param userId The id of the user
-     * @return The user that was deleted, or null if no user with [userId] was found.
+     * @return The user that was deleted
+     * @throws ServiceException.UserNotFound If the user could not be found
      */
-    suspend fun deleteUser(userId: Long): User?
+    suspend fun deleteUser(userId: Long): User
 
     /**
      * Updates the specified (non-null) attributes of the user for [userId]
@@ -67,7 +74,10 @@ interface UserService {
      * @param username The new username
      * @param password The new password
      * @param isEmailVerified The new password verified status
-     * @return The updated user, or null if it was not found
+     * @return The updated user
+     * @throws ServiceException.UserNotFound If the user could not be found
+     * @throws ServiceException.UserEmailNotUnique If the email is not available
+     * @throws ServiceException.UserUsernameNotUnique If the username is not available
      */
     suspend fun update(
         userId: Long,
@@ -75,7 +85,7 @@ interface UserService {
         username: Optional<String> = empty(),
         password: Optional<String> = empty(),
         isEmailVerified: Optional<Boolean> = empty()
-    ): User?
+    ): User
 
     /**
      * Updates the specified attributes of the users profile for [userId]
@@ -85,7 +95,9 @@ interface UserService {
      * @param lastName The last name
      * @param birthday The birthday
      * @param gender The gender
-     * @return The updated user, or null if it was not found
+     * @return The updated user
+     * @throws ServiceException.UserNotFound If the user could not be found
+     * @throws ServiceException.UserProfileNotPresent If the user has no profile set
      */
     suspend fun updateProfile(
         userId: Long,
@@ -93,6 +105,6 @@ interface UserService {
         lastName: Optional<String>,
         birthday: Optional<LocalDate>,
         gender: Optional<Gender>
-    ): User?
+    ): User
 
 }

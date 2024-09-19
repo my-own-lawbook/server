@@ -1,5 +1,6 @@
 package me.bumiller.mol.core.data
 
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.User
 
@@ -12,36 +13,47 @@ interface MemberService {
      * Gets all members of a specific book
      *
      * @param bookId The id of the book to query the members for
-     * @return The list of members in the book, or null if it was not found
+     * @return The list of members in the book
+     * @throws ServiceException.LawBookNotFound If the book was not found
      */
-    suspend fun getMembersInBook(bookId: Long): List<User>?
+    suspend fun getMembersInBook(bookId: Long): List<User>
 
     /**
      * Adds a member to a specific book
      *
      * @param bookId The id of the book to add the member to
      * @param userId The id of the user to add to the book
-     * @return The list of members in the book after the update, or null if the user or book was not found, or if the user is the creator of the book.
+     * @return The list of members in the book after the update
+     * @throws ServiceException.LawBookNotFound If the book was not found
+     * @throws ServiceException.UserNotFound If the user was not found
+     * @throws ServiceException.CreatorTriedAddedToBook If the user with [userId] is the creator of the book
+     * @throws ServiceException.UserAlreadyMemberOfBook If is already a member of the book
      */
-    suspend fun addMemberToBook(bookId: Long, userId: Long): List<User>?
+    suspend fun addMemberToBook(bookId: Long, userId: Long): List<User>
 
     /**
      * Removes a member to a specific book
      *
      * @param bookId The id of the book to remove the member from
      * @param userId The id of the user to remove from the book
-     * @return The list of members in the book after the update, or null if the user or book was not found
+     * @return The list of members in the book after the update
+     * @throws ServiceException.LawBookNotFound If the book could not be found
+     * @throws ServiceException.UserNotFound If the user could not be found
+     * @throws ServiceException.UserNotMemberOfBook If the user is not a member of the book
      */
-    suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User>?
+    suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User>
 
     /**
      * Gets the book-wide role of a member
      *
      * @param userId The id of the user
      * @param bookId The id of the book
-     * @return The role for the user in the book, or null if the user or book was not found, or the user is not a member of the book
+     * @return The role for the user in the book
+     * @throws ServiceException.UserNotFound If the user could not be found
+     * @throws ServiceException.LawBookNotFound If the book could not be found
+     * @throws ServiceException.UserNotMemberOfBook If the user is not a member of the book
      */
-    suspend fun getMemberRole(userId: Long, bookId: Long): MemberRole?
+    suspend fun getMemberRole(userId: Long, bookId: Long): MemberRole
 
     /**
      * Sets the book-wide role of a member
@@ -49,11 +61,11 @@ interface MemberService {
      * @param userId The id of the user
      * @param bookId The id of the book
      * @param role The new role of the member
-     * @return False if the operation was not successful, i.e. any of the following scenarios occurred:
-     * - User or book was not found
-     * - User is not a member of the book
-     * - This operation would cause the book with [bookId] to have no members with [MemberRole.Admin] left.
+     * @throws ServiceException.UserNotFound If the user could not be found
+     * @throws ServiceException.LawBookNotFound If the book could not be found
+     * @throws ServiceException.UserNotMemberOfBook If the user is not a member of the book
+     * @throws ServiceException.BookNoAdminLeft If the book would not have an admin left after the operation
      */
-    suspend fun setMemberRole(userId: Long, bookId: Long, role: MemberRole): Boolean
+    suspend fun setMemberRole(userId: Long, bookId: Long, role: MemberRole)
 
 }

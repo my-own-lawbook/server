@@ -10,9 +10,7 @@ import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.LawService
@@ -23,6 +21,7 @@ import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.config.AppConfig
 import me.bumiller.mol.rest.restApi
+import me.bumiller.mol.validation.AccessValidator
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 
@@ -48,7 +47,9 @@ data class Services(
 
     val lawContentService: LawContentService = mockk(),
 
-    val memberService: MemberService = mockk()
+    val memberService: MemberService = mockk(),
+
+    val accessValidator: AccessValidator = mockk()
 
 )
 
@@ -76,6 +77,16 @@ fun ktorEndpointTest(
         } returns authenticatedUser
     }
 
+    /*
+     * AccessService is mocked to always return true for access. Can be overwritten
+     */
+    coEvery { services.accessValidator.validateReadBook(any(), any()) } just Runs
+    coEvery { services.accessValidator.validateReadEntry(any(), any()) } just Runs
+    coEvery { services.accessValidator.validateReadSection(any(), any()) } just Runs
+    coEvery { services.accessValidator.validateWriteBook(any(), any()) } just Runs
+    coEvery { services.accessValidator.validateWriteEntry(any(), any()) } just Runs
+    coEvery { services.accessValidator.validateWriteSection(any(), any()) } just Runs
+
     application {
         install(Koin) {
             services.run {
@@ -87,6 +98,7 @@ fun ktorEndpointTest(
                     single { lawService }
                     single { lawContentService }
                     single { memberService }
+                    single { accessValidator }
                 })
             }
         }

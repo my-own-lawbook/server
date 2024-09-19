@@ -9,6 +9,7 @@ import io.mockk.slot
 import kotlinx.datetime.LocalDate
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.UserProfile
@@ -26,12 +27,15 @@ class ProfileTest {
 
 
     @Test
-    fun `POST user_profile returns 409 if user already has a profile`() = ktorEndpointTest(user) { _, client ->
+    fun `POST user_profile returns 500 if user is not found`() = ktorEndpointTest(user) { services, client ->
+        coEvery { services.userService.createProfile(any(), any()) } throws ServiceException.UserNotFound(1L)
+
         val res = client.post("/test/api/user/profile/") {
             contentType(ContentType.Application.Json)
             setBody(CreateProfileRequest("firstName", "lastName", Gender.Other, LocalDate(2000, 1, 1)))
         }
-        assertEquals(409, res.status.value)
+
+        assertEquals(500, res.status.value)
     }
 
 

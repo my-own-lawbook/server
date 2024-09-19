@@ -10,6 +10,7 @@ import me.bumiller.mol.database.table.crossref.LawBookMembersCrossref
 import me.bumiller.mol.email.di.emailModule
 import me.bumiller.mol.model.config.AppConfig
 import me.bumiller.mol.rest.restApi
+import me.bumiller.mol.validation.di.validationModule
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -62,6 +63,7 @@ private fun Application.setupKoin(appConfig: AppConfig) {
         modules(appModule)
         modules(databaseModule)
         modules(emailModule)
+        modules(validationModule)
         modules(servicesModule, dataServiceModule)
     }
 }

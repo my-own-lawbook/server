@@ -7,6 +7,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
+import me.bumiller.mol.core.exception.ServiceException
+import me.bumiller.mol.model.http.RequestException
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
 import me.bumiller.mol.test.*
 import org.junit.jupiter.api.Assertions.assertArrayEquals
@@ -16,10 +18,31 @@ import org.junit.jupiter.api.Test
 class LawEntriesTest {
 
     private val user = userModel(1L).copy(isEmailVerified = true)
-    private val user2 = userModel(2L)
 
     @Test
-    fun `GET law-entries returns all law entries the user had access to`() =
+    fun `GET law-entries returns 500 if user is not found`() =
+        ktorEndpointTest(user) { services, client ->
+            coEvery { services.lawContentService.getBooksByCreator(1L) } throws ServiceException.UserNotFound(1L)
+
+            val res = client.get("/test/api/law-entries/")
+
+            assertEquals(500, res.status.value)
+        }
+
+    @Test
+    fun `GET law-entries returns 500 if book is not found`() =
+        ktorEndpointTest(user) { services, client ->
+            coEvery { services.lawContentService.getBooksByCreator(1L) } returns lawBookModels(2)
+            coEvery { services.lawContentService.getBooksForMember(1L) } returns lawBookModels(2, 3)
+            coEvery { services.lawContentService.getEntriesByBook(any()) } throws ServiceException.LawBookNotFound(1L)
+
+            val res = client.get("/test/api/law-entries/")
+
+            assertEquals(500, res.status.value)
+        }
+
+    @Test
+    fun `GET law-entries returns 200 with all law entries the user had access to`() =
         ktorEndpointTest(user) { services, client ->
             coEvery { services.lawContentService.getBooksByCreator(1L) } returns lawBookModels(2)
             coEvery { services.lawContentService.getBooksForMember(1L) } returns lawBookModels(2, 3)
@@ -43,14 +66,11 @@ class LawEntriesTest {
 
     @Test
     fun `GET law-entries_{id} checks that user has read access`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L, creator = user2)
+        coEvery { services.accessValidator.validateReadEntry(user, 1L) } throws RequestException(404, Unit)
 
-        coEvery { services.lawContentService.getBookByEntry(1L) } returns book
-        coEvery { services.lawService.isUserMemberOfEntry(1L, 1L) } returns false
+        client.get("/test/api/law-entries/1/")
 
-        val res = client.get("/test/api/law-entries/1/")
-
-        assertEquals(404, res.status.value)
+        coVerify(exactly = 1) { services.accessValidator.validateReadEntry(user, 1L) }
     }
 
     @Test
@@ -73,11 +93,9 @@ class LawEntriesTest {
 
     @Test
     fun `UPDATE law-entries_{id} checks user has write access`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L, creator = user2)
+        coEvery { services.accessValidator.validateWriteEntry(user, 1L) } throws RequestException(404, Unit)
 
-        coEvery { services.lawContentService.getBookByEntry(1L) } returns book
-
-        val res = client.patch("/test/api/law-entries/1/") {
+        client.patch("/test/api/law-entries/1/") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -86,33 +104,7 @@ class LawEntriesTest {
             )
         }
 
-        assertEquals(404, res.status.value)
-    }
-
-    @Test
-    fun `UPDATE law-entries_{id} checks that key is unique`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L, creator = user)
-        val entry = lawEntryModel(1L)
-
-        coEvery { services.lawContentService.getBookByEntry(1L) } returns book
-        coEvery {
-            services.lawContentService.getSpecificEntry(
-                empty(), present("key-123"), present(book.id)
-            )
-        } returns entry
-
-        val res = client.patch("/test/api/law-entries/1/") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                """
-                {
-                  "key": "key-123"
-                }
-            """.trimIndent()
-            )
-        }
-
-        assertEquals(409, res.status.value)
+        coVerify(exactly = 1) { services.accessValidator.validateWriteEntry(user, 1L) }
     }
 
     @Test
@@ -126,7 +118,7 @@ class LawEntriesTest {
                 services.lawContentService.getSpecificEntry(
                     empty(), present("key-123"), present(book.id)
                 )
-            } returns null
+            } returns entry//null
             coEvery { services.lawContentService.updateEntry(any(), any(), any()) } returns entry
 
             val res = client.patch("/test/api/law-entries/1/") {
@@ -156,14 +148,12 @@ class LawEntriesTest {
         }
 
     @Test
-    fun `DELETE law-entries_{id} checks that user has write access`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L, creator = user2)
+    fun `DELETE law-entries_{id} checks for write access`() = ktorEndpointTest(user) { services, client ->
+        coEvery { services.accessValidator.validateWriteEntry(user, 1L) } throws RequestException(404, Unit)
 
-        coEvery { services.lawContentService.getBookByEntry(1L) } returns book
+        client.delete("/test/api/law-entries/1/")
 
-        val res = client.delete("/test/api/law-entries/1/")
-
-        assertEquals(404, res.status.value)
+        coVerify(exactly = 1) { services.accessValidator.validateWriteEntry(user, 1L) }
     }
 
     @Test
@@ -188,12 +178,9 @@ class LawEntriesTest {
         }
 
     @Test
-    fun `GET law-books_{id}_law-entries checks that user has write access`() =
+    fun `GET law-books_{id}_law-entries checks that user has read access`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L, creator = user2)
-
-            coEvery { services.lawContentService.getBookByEntry(1L) } returns book
-            coEvery { services.lawService.isUserMemberOfEntry(user.id, 1L) } returns false
+            coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
 
             val res = client.get("/test/api/law-books/1/law-entries/")
 
@@ -226,13 +213,11 @@ class LawEntriesTest {
         }
 
     @Test
-    fun `CREATE law-books_{id}_law-entries checks user has write access`() =
+    fun `CREATE law-books_{id}_law-entries checks for write access`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L, creator = user2)
+            coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
 
-            coEvery { services.lawContentService.getSpecificBook(1L) } returns book
-
-            val res = client.post("/test/api/law-books/1/law-entries/") {
+            client.post("/test/api/law-books/1/law-entries/") {
                 contentType(ContentType.Application.Json)
                 setBody(
                     """
@@ -244,41 +229,11 @@ class LawEntriesTest {
                 )
             }
 
-            assertEquals(404, res.status.value)
+            coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
         }
 
     @Test
-    fun `CREATE law-books_{id}_law-entries checks key is unique`() =
-        ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L, creator = user)
-            val entry = lawEntryModel(1L)
-
-            coEvery { services.lawContentService.getSpecificBook(1L) } returns book
-            coEvery {
-                services.lawContentService.getSpecificEntry(
-                    empty(),
-                    present("key-253"),
-                    present(1L)
-                )
-            } returns entry
-
-            val res = client.post("/test/api/law-books/1/law-entries/") {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    """
-                    {
-                      "key": "key-253",
-                      "name": "name-532"
-                    }
-                """.trimIndent()
-                )
-            }
-
-            assertEquals(409, res.status.value)
-        }
-
-    @Test
-    fun `CREATE law-books_{id}_law-entries calls createEntry with correct argumentd`() =
+    fun `CREATE law-books_{id}_law-entries calls createEntry with correct arguments`() =
         ktorEndpointTest(user) { services, client ->
             val book = lawBookModel(1L, creator = user)
             val entry = lawEntryModel(1L)
@@ -291,7 +246,7 @@ class LawEntriesTest {
                     present("key-253"),
                     present(1L)
                 )
-            } returns null
+            } returns entry//null
 
             val res = client.post("/test/api/law-books/1/law-entries/") {
                 contentType(ContentType.Application.Json)

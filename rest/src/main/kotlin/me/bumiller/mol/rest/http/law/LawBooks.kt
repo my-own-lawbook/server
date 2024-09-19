@@ -9,10 +9,11 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberService
+import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.http.badFormat
-import me.bumiller.mol.model.http.conflict
-import me.bumiller.mol.model.http.notFoundIdentifier
+import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathUserId
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
@@ -20,11 +21,9 @@ import me.bumiller.mol.rest.response.user.BookRoleUserResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.*
-import me.bumiller.mol.validation.actions.hasReadAccess
-import me.bumiller.mol.validation.actions.hasWriteAccess
-import me.bumiller.mol.validation.actions.isUniqueBookKey
-import me.bumiller.mol.validation.actions.userExists
+import me.bumiller.mol.validation.AccessValidator
+import me.bumiller.mol.validation.Validatable
+import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
 
 /**
@@ -51,27 +50,30 @@ import org.koin.ktor.ext.inject
 internal fun Route.lawBooks() {
     val lawContentService by inject<LawContentService>()
     val memberService by inject<MemberService>()
+    val userService by inject<UserService>()
+    val accessValidator by inject<AccessValidator>()
 
     route("law-books/") {
         getAll(lawContentService)
-        getById(lawContentService)
+        getById(lawContentService, accessValidator)
         create(lawContentService)
-        update(lawContentService)
-        delete(lawContentService)
+        update(lawContentService, accessValidator)
+        delete(lawContentService, accessValidator)
 
         route("{$PathBookId}/members/") {
-            getMembers(memberService)
+            getMembers(memberService, accessValidator)
             route("{$PathUserId}/") {
-                putMember(memberService, lawContentService)
-                removeMember(memberService)
+                putMember(memberService, accessValidator)
+                removeMember(memberService, accessValidator)
             }
         }
 
         route("/{$PathBookId}/roles/") {
-            memberRoles(memberService)
+            memberRoles(memberService, accessValidator)
 
             route("{$PathUserId}/") {
-                memberRole(memberService)
+                memberRole(memberService, userService, accessValidator)
+                putMemberRole(memberService, accessValidator)
             }
         }
     }
@@ -90,13 +92,7 @@ internal data class CreateLawBookRequest(
 
     val description: String
 
-) : Validatable {
-
-    override suspend fun ValidationScope.validate() {
-        validateThat(key).isUniqueBookKey()
-    }
-
-}
+) : Validatable
 
 @Serializable
 internal data class UpdateLawBookRequest(
@@ -107,13 +103,7 @@ internal data class UpdateLawBookRequest(
 
     val description: Optional<String> = empty()
 
-) : Validatable {
-
-    override suspend fun ValidationScope.validate() {
-        validateThatOptional(key)?.isUniqueBookKey()
-    }
-
-}
+) : Validatable
 
 @Serializable
 internal data class PutUserBookRoleRequest(
@@ -122,9 +112,9 @@ internal data class PutUserBookRoleRequest(
 
 ) : Validatable {
 
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         val role = MemberRole.roles.find { it.value == role }
-        if (role != null) badFormat("role", role.toString())
+        if (role == null) badFormat("role", this.role.toString())
     }
 
 }
@@ -137,24 +127,29 @@ internal data class PutUserBookRoleRequest(
  * Endpoint to GET /law-books/ that returns the law-books the user has access to
  */
 private fun Route.getAll(lawContentService: LawContentService) = get {
-    val booksByCreator = lawContentService.getBooksByCreator(user.id)!!
-    val booksByMember = lawContentService.getBooksForMember(user.id)!!
+    try {
+        val booksByCreator = lawContentService.getBooksByCreator(user.id)
+        val booksByMember = lawContentService.getBooksForMember(user.id)
 
-    val responses = (booksByCreator + booksByMember)
-        .map(LawBookResponse.Companion::create)
+        val responses = (booksByCreator + booksByMember)
+            .map(LawBookResponse.Companion::create)
 
-    call.respond(HttpStatusCode.OK, responses)
+        call.respond(HttpStatusCode.OK, responses)
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
 }
 
 /**
  * Endpoint to GET /law-books/:id that returns a specific law-book
  */
-private fun Route.getById(lawContentService: LawContentService) = get("{$PathBookId}/") {
+private fun Route.getById(lawContentService: LawContentService, accessValidator: AccessValidator) =
+    get("{$PathBookId}/") {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    validateThat(user).hasReadAccess(lawBookId = bookId)
+        accessValidator.validateReadBook(user, bookId)
 
-    val book = lawContentService.getSpecificBook(id = bookId)!!
+        val book = lawContentService.getSpecificBook(id = bookId)
     val response = LawBookResponse.create(book)
     call.respond(HttpStatusCode.OK, response)
 }
@@ -165,7 +160,12 @@ private fun Route.getById(lawContentService: LawContentService) = get("{$PathBoo
 private fun Route.create(lawContentService: LawContentService) = post {
     val body = call.validated<CreateLawBookRequest>()
 
-    val created = lawContentService.createBook(body.key, body.name, body.description, user.id)!!
+    val created = try {
+        lawContentService.createBook(body.key, body.name, body.description, user.id)
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
+
     val response = LawBookResponse.create(created)
 
     call.respond(HttpStatusCode.Created, response)
@@ -174,18 +174,19 @@ private fun Route.create(lawContentService: LawContentService) = post {
 /**
  * Endpoint to PATCH /law-books/:id that allows a user to update an existing law-book
  */
-private fun Route.update(lawContentService: LawContentService) = patch("{$PathBookId}/") {
+private fun Route.update(lawContentService: LawContentService, accessValidator: AccessValidator) =
+    patch("{$PathBookId}/") {
     val body = call.validated<UpdateLawBookRequest>()
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    validateThat(user).hasWriteAccess(lawBookId = bookId)
+        accessValidator.validateWriteBook(user, bookId)
 
     val updated = lawContentService.updateBook(
         bookId = bookId,
         key = body.key,
         name = body.name,
         description = body.description
-    )!!
+    )
     val response = LawBookResponse.create(updated)
 
     call.respond(HttpStatusCode.OK, response)
@@ -194,12 +195,13 @@ private fun Route.update(lawContentService: LawContentService) = patch("{$PathBo
 /**
  * Endpoint for DELETE /law-books/:id/ that allows a user to delete a law-book
  */
-private fun Route.delete(lawContentService: LawContentService) = delete("{$PathBookId}/") {
+private fun Route.delete(lawContentService: LawContentService, accessValidator: AccessValidator) =
+    delete("{$PathBookId}/") {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    validateThat(user).hasWriteAccess(lawBookId = bookId)
+        accessValidator.validateWriteBook(user, bookId)
 
-    val deleted = lawContentService.deleteBook(bookId)!!
+        val deleted = lawContentService.deleteBook(bookId)
     val response = LawBookResponse.create(deleted)
 
     call.respond(HttpStatusCode.OK, response)
@@ -208,12 +210,12 @@ private fun Route.delete(lawContentService: LawContentService) = delete("{$PathB
 /**
  * Endpoint for GET /law-books/:id/members/ that gets all members for a law-book
  */
-private fun Route.getMembers(memberService: MemberService) = get {
+private fun Route.getMembers(memberService: MemberService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    validateThat(user).hasReadAccess(lawBookId = bookId)
+    accessValidator.validateReadBook(user, bookId)
 
-    val members = memberService.getMembersInBook(bookId)!!
+    val members = memberService.getMembersInBook(bookId)
     val response = members.map(UserWithProfileResponse::create)
     call.respond(HttpStatusCode.OK, response)
 }
@@ -221,21 +223,18 @@ private fun Route.getMembers(memberService: MemberService) = get {
 /**
  * Endpoint to PUT /law-books/:id/members/:id/ that adds a new user to the members of a law-book
  */
-private fun Route.putMember(memberService: MemberService, lawContentService: LawContentService) = put {
+private fun Route.putMember(memberService: MemberService, accessValidator: AccessValidator) = put {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-    validateThat(user).hasWriteAccess(lawBookId = bookId)
-    validateThat(userId).userExists(true)
+    accessValidator.validateWriteBook(user, bookId)
 
-    val book = lawContentService.getSpecificBook(id = bookId)!!
-
-    if (book.creator.id == userId) {
-        conflict("User with id '$userId' is the creator of book with id '${book.id}' and cannot be a member of its own book.")
-        // TODO: Also limit this behaviour via the MemberService
+    val members = try {
+        memberService.addMemberToBook(bookId, userId)
+    } catch (e: ServiceException.UserAlreadyMemberOfBook) {
+        memberService.getMembersInBook(bookId)
     }
 
-    val members = memberService.addMemberToBook(bookId, userId)!!
     val response = members.map(UserWithProfileResponse::create)
     call.respond(HttpStatusCode.OK, response)
 }
@@ -243,14 +242,20 @@ private fun Route.putMember(memberService: MemberService, lawContentService: Law
 /**
  * Endpoint to DELETE /law-books/:id/members/:id/ that removes a user from the members of a law-book
  */
-private fun Route.removeMember(memberService: MemberService) = delete {
+private fun Route.removeMember(memberService: MemberService, accessValidator: AccessValidator) = delete {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-    validateThat(user).hasReadAccess(lawBookId = bookId)
-    validateThat(userId).userExists()
+    accessValidator.validateWriteBook(user, bookId)
 
-    val members = memberService.removeMemberFromBook(bookId, userId)!!
+    val members = try {
+        memberService.removeMemberFromBook(bookId, userId)
+    } catch (e: ServiceException.UserNotMemberOfBook) {
+        memberService.getMembersInBook(bookId)
+    } catch (e: ServiceException.UserNotFound) {
+        memberService.getMembersInBook(bookId)
+    }
+
     val response = members.map(UserWithProfileResponse::create)
     call.respond(HttpStatusCode.OK, response)
 }
@@ -258,14 +263,14 @@ private fun Route.removeMember(memberService: MemberService) = delete {
 /**
  * Endpoint to GET /law-books/:id/roles/ that gets all users and their role
  */
-private fun Route.memberRoles(memberService: MemberService) = get {
+private fun Route.memberRoles(memberService: MemberService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    validateThat(user).hasReadAccess(lawBookId = bookId)
+    accessValidator.validateReadBook(user, bookId)
 
-    val members = memberService.getMembersInBook(bookId)!!
+    val members = memberService.getMembersInBook(bookId)
     val rolesForMembers = members.map { member ->
-        memberService.getMemberRole(member.id, bookId)!!
+        memberService.getMemberRole(member.id, bookId)
     }
     val response = members.zip(rolesForMembers) { member, role ->
         BookRoleUserResponse.create(role.value, member)
@@ -277,38 +282,31 @@ private fun Route.memberRoles(memberService: MemberService) = get {
 /**
  * Endpoint to GET /law-books/:id/roles/:id/ that gets a user and it's role
  */
-private fun Route.memberRole(memberService: MemberService) = get {
+private fun Route.memberRole(memberService: MemberService, userService: UserService, accessValidator: AccessValidator) =
+    get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-    validateThat(user).hasReadAccess(lawBookId = bookId)
-    validateThat(userId).userExists(true)
+        accessValidator.validateReadBook(user, bookId)
 
-    val members = memberService.getMembersInBook(bookId)!!
-    val member = members.find { it.id == userId } ?: notFoundIdentifier("user", userId.toString())
+        val user = userService.getSpecific(id = userId)
 
-    val role = memberService.getMemberRole(member.id, bookId)!!
-    val response = BookRoleUserResponse.create(role.value, member)
+        val role = memberService.getMemberRole(userId, bookId)
+        val response = BookRoleUserResponse.create(role.value, user)
 
     call.respond(HttpStatusCode.OK, response)
 }
 
 /**
- * Endpoint to GET /law-books/:id/roles/:id/ that gets a user and it's role.
- *
- * TODO: Check for illegal states
+ * Endpoint to PUT /law-books/:id/roles/:id/ that changes the role of a member.
  */
-private fun Route.putMemberRole(memberService: MemberService) = put {
+private fun Route.putMemberRole(memberService: MemberService, accessValidator: AccessValidator) = put {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-    validateThat(user).hasWriteAccess(lawBookId = bookId)
-    validateThat(userId).userExists(true)
-
     val body = call.validated<PutUserBookRoleRequest>()
 
-    val members = memberService.getMembersInBook(bookId)!!
-    members.find { it.id == userId } ?: notFoundIdentifier("user", userId.toString())
+    accessValidator.validateWriteBook(user, bookId)
 
     val role = MemberRole.roles.find { it.value == body.role }!!
     memberService.setMemberRole(userId, bookId, role)

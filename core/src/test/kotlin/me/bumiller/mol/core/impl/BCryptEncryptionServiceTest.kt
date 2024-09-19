@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 
 class BCryptEncryptionServiceTest {
 
-    val encryptionService: EncryptionService = BCryptEncryptionService()
+    private val encryptionService: EncryptionService = BCryptEncryptionService()
 
     @Test
     fun `encryption and decryption works`() {
