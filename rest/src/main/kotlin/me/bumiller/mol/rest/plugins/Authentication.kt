@@ -13,11 +13,18 @@ import me.bumiller.mol.model.User
 import me.bumiller.mol.model.config.AppConfig
 import org.koin.ktor.ext.inject
 
-/* Endpoints that can be accessed without having the profile set up.
+/* Endpoints that can be accessed without having the email verified.
  * POST to /auth/signup/email-verify/ is required to let a user verify their email-address.
  */
-private val allowedEndpointsWithoutProfile = mapOf(
-    HttpMethod.Post to "/auth/signup/email-verify/"
+private val allowedWithoutEmailVerified = mapOf(
+    HttpMethod.Post to "auth/signup/email-verify/"
+)
+
+/* Endpoints that can be accessed without having the profile set up.
+ * POST to /user/profile/ is required to let a user set up their profile for the first time.
+ */
+private val allowedWithoutProfileSet = mapOf(
+    HttpMethod.Post to "user/profile/"
 )
 
 internal fun Application.authentication(appConfig: AppConfig, basePath: String) {
@@ -39,12 +46,23 @@ internal fun Application.authentication(appConfig: AppConfig, basePath: String) 
                     null
                 }
 
-                val badAuthentication =
-                    user == null || !user.isEmailVerified || (user.profile == null && !allowedEndpointsWithoutProfile.any { entry ->
-                        request.httpMethod == entry.key && request.uri.endsWith(
-                            "$basePath${entry.value}"
-                        )
-                    })
+                val noUserFound = user == null
+                val userNoProfile = user?.profile == null
+                val emailVerified = user?.isEmailVerified == true
+                val whitelistedForEmail = allowedWithoutEmailVerified.any { entry ->
+                    request.httpMethod == entry.key && request.uri.endsWith(
+                        "$basePath${entry.value}"
+                    )
+                }
+                val whitelistedForProfile = allowedWithoutProfileSet.any { entry ->
+                    request.httpMethod == entry.key && request.uri.endsWith(
+                        "$basePath${entry.value}"
+                    )
+                }
+
+                val badAuthentication = noUserFound ||
+                        (userNoProfile && !whitelistedForProfile) ||
+                        (!emailVerified && !whitelistedForEmail)
 
                 if (badAuthentication) null
                 else UserPrincipalWrapper(user!!)
