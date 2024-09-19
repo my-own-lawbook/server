@@ -18,7 +18,7 @@ data class LawBookResponse(
 
     val description: String,
 
-    @SerialName("created_at")
+    @SerialName("creator_id")
     val creatorId: Long
 
 ) {
