@@ -23,9 +23,10 @@ interface LawEntryRepository : IEntityRepository<Long, Model> {
      * Creates a new [LawEntry]
      *
      * @param model The model to take the data from
+     * @param bookId The id of the parent book
      * @return The created model
      */
-    suspend fun create(model: Model): Model
+    suspend fun create(model: Model, bookId: Long): Model?
 
     /**
      * Updates the parent book of the entry
@@ -69,8 +70,10 @@ interface LawEntryRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawEntryRepository :
     EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity), LawEntryRepository {
 
-    override suspend fun create(model: Model): Model = suspendTransaction {
+    override suspend fun create(model: Model, bookId: Long): Model? = suspendTransaction {
+        val book = LawBook.Entity.findById(bookId) ?: return@suspendTransaction null
         Entity.new {
+            parentBook = book
             populate(model)
         }.asModel
     }

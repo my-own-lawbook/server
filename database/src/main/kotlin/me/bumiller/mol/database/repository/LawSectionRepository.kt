@@ -22,9 +22,10 @@ interface LawSectionRepository : IEntityRepository<Long, Model> {
      * Creates a new [LawSection]
      *
      * @param model The model to take the data from
+     * @param entryId The id of the parent entry
      * @return The created [LawSection]
      */
-    suspend fun create(model: Model): Model
+    suspend fun create(model: Model, entryId: Long): Model?
 
     /**
      * Updates the parent entry of a [Model]
@@ -75,8 +76,10 @@ internal class ExposedLawSectionRepository :
             ?.asModel
     }
 
-    override suspend fun create(model: Model): Model = suspendTransaction {
+    override suspend fun create(model: Model, entryId: Long): Model? = suspendTransaction {
+        val entry = LawEntry.Entity.findById(entryId) ?: return@suspendTransaction null
         Entity.new {
+            parentEntry = entry
             populate(model)
         }.asModel
     }

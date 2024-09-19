@@ -157,8 +157,8 @@ internal class DatabaseLawContentService(
             name = name
         )
 
-        return entryRepository.create(entry)
-            .let(::mapEntry)
+        return entryRepository.create(entry, parentBookId)
+            ?.let(::mapEntry) ?: throw ServiceException.LawBookNotFound(parentBookId)
     }
 
     override suspend fun updateEntry(
@@ -254,7 +254,7 @@ internal class DatabaseLawContentService(
             content = content
         )
 
-        return sectionRepository.create(section)
-            .let(::mapSection)
+        return sectionRepository.create(section, parentEntryId)
+            ?.let(::mapSection) ?: throw ServiceException.LawEntryNotFound(parentEntryId)
     }
 }
