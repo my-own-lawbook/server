@@ -27,7 +27,6 @@ class LawBooksTest {
 
     private val profile = profileModel(1L)
     private val user = User(1L, "email@domain.com", "username", "password", true, profile)
-    private val user2 = userModel(2L)
 
     @Test
     fun `GET law-books returns 200 with books by member and creator of user`() =
@@ -242,7 +241,7 @@ class LawBooksTest {
     fun `PUT law-books_{id}_members_{id} returns 200 with current list of members if to be added user is already a member`() =
         ktorEndpointTest(user) { services, client ->
             coEvery {
-                services.memberContentService.addMemberToBook(
+                services.memberService.addMemberToBook(
                     any(), any()
                 )
             } throws ServiceException.UserAlreadyMemberOfBook(1L, 1L)
@@ -263,7 +262,7 @@ class LawBooksTest {
             val toAddUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
 
             coEvery {
-                services.memberContentService.addMemberToBook(
+                services.memberService.addMemberToBook(
                     book.id, toAddUser.id
                 )
             } returns userModels(3L).map { it.copy(profile = profile) }
@@ -275,7 +274,7 @@ class LawBooksTest {
             val body = res.body<List<UserWithProfileResponse>>()
             assertEquals(3, body.size)
 
-            coVerify(exactly = 1) { services.memberContentService.addMemberToBook(1L, 7L) }
+            coVerify(exactly = 1) { services.memberService.addMemberToBook(1L, 7L) }
         }
 
     @Test
@@ -291,7 +290,7 @@ class LawBooksTest {
     @Test
     fun `DELETE law-books_{id}_members_{id} returns 200 with current list of members if to be deleted user was not found`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.memberContentService.removeMemberFromBook(1L, 1L) } throws ServiceException.UserNotFound(
+            coEvery { services.memberService.removeMemberFromBook(1L, 1L) } throws ServiceException.UserNotFound(
                 1L
             )
             coEvery { services.memberContentService.getMembersInBook(1L) } returns userModels(3).map { it.copy(profile = profile) }
@@ -308,7 +307,7 @@ class LawBooksTest {
     fun `DELETE law-books_{id}_members_{id} returns 200 with current list of members if to be deleted user was not member`() =
         ktorEndpointTest(user) { services, client ->
             coEvery {
-                services.memberContentService.removeMemberFromBook(
+                services.memberService.removeMemberFromBook(
                     1L,
                     1L
                 )
@@ -333,7 +332,7 @@ class LawBooksTest {
             val toRemoveUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
 
             coEvery {
-                services.memberContentService.removeMemberFromBook(
+                services.memberService.removeMemberFromBook(
                     book.id, toRemoveUser.id
                 )
             } returns userModels(3L).map { it.copy(profile = profile) }
@@ -345,7 +344,7 @@ class LawBooksTest {
             val body = res.body<List<UserWithProfileResponse>>()
             assertEquals(3, body.size)
 
-            coVerify(exactly = 1) { services.memberContentService.removeMemberFromBook(1L, 7L) }
+            coVerify(exactly = 1) { services.memberService.removeMemberFromBook(1L, 7L) }
         }
 
     @Test
@@ -428,7 +427,7 @@ class LawBooksTest {
     @Test
     fun `PUT law-books_{id}_roles_{id} calls setMemberRole with correct role and returns 200 with 204`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.memberContentService.setMemberRole(1L, 1L, any()) } just runs
+            coEvery { services.memberService.setMemberRole(1L, 1L, any()) } just runs
 
             val res = client.put("/test/api/law-books/1/roles/1/") {
                 contentType(ContentType.Application.Json)

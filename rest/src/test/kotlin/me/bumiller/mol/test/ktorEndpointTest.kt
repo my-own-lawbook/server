@@ -14,6 +14,7 @@ import io.mockk.*
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.LawService
+import me.bumiller.mol.core.MemberService
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.data.TwoFactorTokenService
@@ -48,6 +49,8 @@ data class Services(
     val lawContentService: LawContentService = mockk(),
 
     val memberContentService: MemberContentService = mockk(),
+
+    val memberService: MemberService = mockk(),
 
     val accessValidator: AccessValidator = mockk()
 
@@ -97,13 +100,14 @@ fun ktorEndpointTest(
                     single { encryptionService }
                     single { lawService }
                     single { lawContentService }
+                    single { memberService }
                     single { memberContentService }
                     single { accessValidator }
                 })
             }
         }
 
-        restApi(appConfig, "test/api")
+        restApi(appConfig, "test/api/")
     }
 
     val client = createClient {

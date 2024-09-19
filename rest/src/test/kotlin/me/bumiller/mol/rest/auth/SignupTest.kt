@@ -10,7 +10,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import me.bumiller.mol.model.*
 import me.bumiller.mol.rest.http.auth.CreateUserRequest
-import me.bumiller.mol.rest.http.auth.RequestEmailTokenRequest
 import me.bumiller.mol.rest.http.auth.SubmitEmailTokenRequest
 import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
 import me.bumiller.mol.test.ktorEndpointTest
@@ -54,36 +53,11 @@ class SignupTest {
     }
 
     @Test
-    fun `POST auth_signup_email-verify only sends email when user is not yet verified and user has a profile set`() =
-        ktorEndpointTest { services, client ->
-            coEvery { services.userService.getSpecific(null, "email@email.com", null) } returnsMany listOf(
-                user,
-                user.copy(isEmailVerified = true),
-                user.copy(profile = null)
-            )
-            coEvery { services.authService.sendEmailVerification(any()) } returns token
+    fun `POST auth_signup_email-verify returns 409 if user already has the email verified`() =
+        ktorEndpointTest(user.copy(isEmailVerified = true, profile = profile)) { services, client ->
+            val res1 = client.post("/test/api/auth/signup/email-verify/")
 
-            val res1 = client.post("/test/api/auth/signup/email-verify/") {
-                contentType(ContentType.Application.Json)
-                setBody(RequestEmailTokenRequest("email@email.com"))
-            }
-            assertEquals(202, res1.status.value)
-            coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
-
-            val res2 = client.post("/test/api/auth/signup/email-verify/") {
-                contentType(ContentType.Application.Json)
-                setBody(RequestEmailTokenRequest("email@email.com"))
-            }
-            assertEquals(202, res2.status.value)
-            coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
-
-            val res3 = client.post("/test/api/auth/signup/email-verify/") {
-                contentType(ContentType.Application.Json)
-                setBody(RequestEmailTokenRequest("email@email.com"))
-            }
-            assertEquals(202, res3.status.value)
-            coVerify(exactly = 1) { services.authService.sendEmailVerification(any()) }
-
+            assertEquals(409, res1.status.value)
         }
 
     @Test

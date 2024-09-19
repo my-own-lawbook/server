@@ -7,6 +7,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
+import me.bumiller.mol.core.MemberService
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.data.UserService
@@ -50,6 +51,7 @@ import org.koin.ktor.ext.inject
 internal fun Route.lawBooks() {
     val lawContentService by inject<LawContentService>()
     val memberContentService by inject<MemberContentService>()
+    val memberService by inject<MemberService>()
     val userService by inject<UserService>()
     val accessValidator by inject<AccessValidator>()
 
@@ -63,8 +65,8 @@ internal fun Route.lawBooks() {
         route("{$PathBookId}/members/") {
             getMembers(memberContentService, accessValidator)
             route("{$PathUserId}/") {
-                putMember(memberContentService, accessValidator)
-                removeMember(memberContentService, accessValidator)
+                putMember(memberContentService, memberService, accessValidator)
+                removeMember(memberContentService, memberService, accessValidator)
             }
         }
 
@@ -73,7 +75,7 @@ internal fun Route.lawBooks() {
 
             route("{$PathUserId}/") {
                 memberRole(memberContentService, userService, accessValidator)
-                putMemberRole(memberContentService, accessValidator)
+                putMemberRole(memberService, accessValidator)
             }
         }
     }
@@ -223,14 +225,18 @@ private fun Route.getMembers(memberContentService: MemberContentService, accessV
 /**
  * Endpoint to PUT /law-books/:id/members/:id/ that adds a new user to the members of a law-book
  */
-private fun Route.putMember(memberContentService: MemberContentService, accessValidator: AccessValidator) = put {
+private fun Route.putMember(
+    memberContentService: MemberContentService,
+    memberService: MemberService,
+    accessValidator: AccessValidator
+) = put {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
     accessValidator.validateWriteBook(user, bookId)
 
     val members = try {
-        memberContentService.addMemberToBook(bookId, userId)
+        memberService.addMemberToBook(bookId, userId)
     } catch (e: ServiceException.UserAlreadyMemberOfBook) {
         memberContentService.getMembersInBook(bookId)
     }
@@ -242,14 +248,18 @@ private fun Route.putMember(memberContentService: MemberContentService, accessVa
 /**
  * Endpoint to DELETE /law-books/:id/members/:id/ that removes a user from the members of a law-book
  */
-private fun Route.removeMember(memberContentService: MemberContentService, accessValidator: AccessValidator) = delete {
+private fun Route.removeMember(
+    memberContentService: MemberContentService,
+    memberService: MemberService,
+    accessValidator: AccessValidator
+) = delete {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
     accessValidator.validateWriteBook(user, bookId)
 
     val members = try {
-        memberContentService.removeMemberFromBook(bookId, userId)
+        memberService.removeMemberFromBook(bookId, userId)
     } catch (e: ServiceException.UserNotMemberOfBook) {
         memberContentService.getMembersInBook(bookId)
     } catch (e: ServiceException.UserNotFound) {
@@ -304,7 +314,10 @@ private fun Route.memberRole(
 /**
  * Endpoint to PUT /law-books/:id/roles/:id/ that changes the role of a member.
  */
-private fun Route.putMemberRole(memberContentService: MemberContentService, accessValidator: AccessValidator) = put {
+private fun Route.putMemberRole(
+    memberService: MemberService,
+    accessValidator: AccessValidator
+) = put {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
@@ -313,7 +326,7 @@ private fun Route.putMemberRole(memberContentService: MemberContentService, acce
     accessValidator.validateWriteBook(user, bookId)
 
     val role = MemberRole.roles.find { it.value == body.role }!!
-    memberContentService.setMemberRole(userId, bookId, role)
+    memberService.setMemberRole(userId, bookId, role)
 
     call.respond(HttpStatusCode.NoContent)
 }
