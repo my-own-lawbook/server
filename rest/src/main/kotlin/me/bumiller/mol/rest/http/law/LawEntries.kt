@@ -9,17 +9,15 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.core.exception.ServiceException
+import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathEntryId
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
+import me.bumiller.mol.validation.AccessValidator
 import me.bumiller.mol.validation.Validatable
-import me.bumiller.mol.validation.actions.hasReadAccess
-import me.bumiller.mol.validation.actions.hasWriteAccess
-import me.bumiller.mol.validation.actions.isUniqueEntryKey
-import me.bumiller.mol.validation.validateThat
-import me.bumiller.mol.validation.validateThatOptional
 import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
 
@@ -38,16 +36,17 @@ import org.koin.ktor.ext.inject
  */
 internal fun Route.lawEntries() {
     val lawContentService by inject<LawContentService>()
+    val accessValidator by inject<AccessValidator>()
 
     route("law-entries/") {
         getAll(lawContentService)
-        getById(lawContentService)
-        update(lawContentService)
-        delete(lawContentService)
+        getById(lawContentService, accessValidator)
+        update(lawContentService, accessValidator)
+        delete(lawContentService, accessValidator)
     }
     route("law-books/{$PathBookId}/law-entries/") {
-        getByBook(lawContentService)
-        create(lawContentService)
+        getByBook(lawContentService, accessValidator)
+        create(lawContentService, accessValidator)
     }
 }
 
@@ -77,83 +76,111 @@ internal data class CreateLawEntryRequest(
 // Endpoints
 //
 
+/**
+ * Endpoint to GET /law-entries/ that gets all the entries the user has access to
+ */
 private fun Route.getAll(lawContentService: LawContentService) = get {
-    val booksForUserCreated = lawContentService.getBooksByCreator(user.id)!!
-    val booksForUserMember = lawContentService.getBooksForMember(user.id)!!
-    val allBooks = booksForUserCreated + booksForUserMember
+    val allBooks = try {
+        val booksForUserCreated = lawContentService.getBooksByCreator(user.id)
+        val booksForUserMember = lawContentService.getBooksForMember(user.id)
+        booksForUserCreated + booksForUserMember
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
 
     val allEntries = allBooks.map { book ->
-        lawContentService.getEntriesByBook(book.id)!!
+        try {
+            lawContentService.getEntriesByBook(book.id)
+        } catch (e: ServiceException.LawBookNotFound) {
+            internal()
+        }
     }.flatten()
+
     val response = allEntries.map(LawEntryResponse.Companion::create)
 
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.getById(lawContentService: LawContentService) = get("{$PathEntryId}/") {
+/**
+ * Endpoint to GET /law-entries/:id/ that gets a specific law entry
+ */
+private fun Route.getById(lawContentService: LawContentService, accessValidator: AccessValidator) =
+    get("{$PathEntryId}/") {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-    validateThat(user).hasReadAccess(lawEntryId = entryId)
+        accessValidator.validateReadEntry(user, entryId)
 
-    val entry = lawContentService.getSpecificEntry(id = present(entryId))!!
+        val entry = lawContentService.getSpecificEntry(id = present(entryId))
+
     val response = LawEntryResponse.create(entry)
-
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.update(lawContentService: LawContentService) = patch("{$PathEntryId}/") {
+/**
+ * Endpoint to PATCH /law-entries/:id/ that perform a partial update on a law-entry
+ */
+private fun Route.update(lawContentService: LawContentService, accessValidator: AccessValidator) =
+    patch("{$PathEntryId}/") {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
+
     val body = call.validated<UpdateLawEntryRequest>()
 
-    validateThat(user).hasWriteAccess(lawEntryId = entryId)
-    val book = lawContentService.getBookByEntry(entryId)!!
-    validateThatOptional(body.key)?.isUniqueEntryKey(book.id)
+        accessValidator.validateWriteEntry(user, entryId)
 
     val updated = lawContentService.updateEntry(
         entryId = entryId,
         key = body.key,
         name = body.name
-    )!!
-    val response = LawEntryResponse.create(updated)
+    )
 
+    val response = LawEntryResponse.create(updated)
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.delete(lawContentService: LawContentService) = delete("{$PathEntryId}/") {
+/**
+ * Endpoint to DELETE /law-entries/:id/ that deletes a law-entry
+ */
+private fun Route.delete(lawContentService: LawContentService, accessValidator: AccessValidator) =
+    delete("{$PathEntryId}/") {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-    validateThat(user).hasWriteAccess(lawEntryId = entryId)
+        accessValidator.validateWriteEntry(user, entryId)
 
-    val deleted = lawContentService.deleteEntry(entryId)!!
+        val deleted = lawContentService.deleteEntry(entryId)
+
     val response = LawEntryResponse.create(deleted)
-
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.getByBook(lawContentService: LawContentService) = get {
+/**
+ * Endpoint to GET /law-books/:id/law-entries/ that get law-entries by a book
+ */
+private fun Route.getByBook(lawContentService: LawContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    validateThat(user).hasReadAccess(lawEntryId = bookId)
+    accessValidator.validateReadBook(user, bookId)
 
-    val entries = lawContentService.getEntriesByBook(bookId)!!
+    val entries = lawContentService.getEntriesByBook(bookId)
+
     val response = entries.map(LawEntryResponse.Companion::create)
-
     call.respond(HttpStatusCode.OK, response)
 }
 
-private fun Route.create(lawContentService: LawContentService) = post {
+/**
+ * Endpoint to POST /law-books/:id/law-entries/ that creates a new law-entry
+ */
+private fun Route.create(lawContentService: LawContentService, accessValidator: AccessValidator) = post {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val body = call.validated<CreateLawEntryRequest>()
 
-    validateThat(user).hasWriteAccess(bookId)
-    validateThat(body.key).isUniqueEntryKey(bookId)
+    accessValidator.validateWriteBook(user, bookId)
 
     val created = lawContentService.createEntry(
         key = body.key,
         name = body.name,
         parentBookId = bookId
-    )!!
-    val response = LawEntryResponse.create(created)
+    )
 
+    val response = LawEntryResponse.create(created)
     call.respond(HttpStatusCode.OK, response)
 }

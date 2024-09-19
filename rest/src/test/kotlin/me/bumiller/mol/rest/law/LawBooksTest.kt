@@ -5,10 +5,18 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.just
+import io.mockk.runs
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
+import me.bumiller.mol.core.exception.ServiceException
+import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.User
+import me.bumiller.mol.model.http.RequestException
+import me.bumiller.mol.rest.http.law.CreateLawBookRequest
+import me.bumiller.mol.rest.http.law.PutUserBookRoleRequest
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
+import me.bumiller.mol.rest.response.user.BookRoleUserResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.test.*
 import org.junit.jupiter.api.Assertions.assertArrayEquals
@@ -22,13 +30,15 @@ class LawBooksTest {
     private val user2 = userModel(2L)
 
     @Test
-    fun `GET law-books returns books by member and creator of user`() = ktorEndpointTest(user) { services, client ->
+    fun `GET law-books returns 200 with books by member and creator of user`() =
+        ktorEndpointTest(user) { services, client ->
         coEvery { services.lawContentService.getBooksByCreator(user.id) } returns lawBookModels(3, 1L)
         coEvery { services.lawContentService.getBooksForMember(user.id) } returns lawBookModels(3, 4L)
 
-        val body = client.get("/test/api/law-books/")
-            .body<List<LawBookResponse>>()
+            val res = client.get("/test/api/law-books/")
+            val body = res.body<List<LawBookResponse>>()
 
+            assertEquals(200, res.status.value)
         assertArrayEquals(
             (1L..6L).toList().sorted().toTypedArray(),
             body.map(LawBookResponse::id).sorted().toTypedArray()
@@ -36,21 +46,32 @@ class LawBooksTest {
     }
 
     @Test
-    fun `GET law-books_{id} returns 404 if user has no access to book`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L).copy(creator = user2)
-        coEvery { services.lawContentService.getSpecificBook(eq(book.id), any(), any()) } returns book
+    fun `GET law-books returns 500 if user not found`() = ktorEndpointTest(user) { services, client ->
+        coEvery { services.lawContentService.getBooksByCreator(user.id) } throws ServiceException.UserNotFound(user.id)
 
-        val res = client.get("/test/api/law-books/1/")
-        assertEquals(404, res.status.value)
+        val res = client.get("/test/api/law-books/")
+
+        assertEquals(500, res.status.value)
     }
 
     @Test
-    fun `GET law-books_{id} returns book if user has access`() = ktorEndpointTest(user) { services, client ->
+    fun `GET law-books_{id} checks read access`() = ktorEndpointTest(user) { services, client ->
+        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
+
+        client.get("/test/api/law-books/1/")
+
+        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
+    }
+
+    @Test
+    fun `GET law-books_{id} returns 200 with book`() = ktorEndpointTest(user) { services, client ->
         val book = lawBookModel(1L, creator = user)
         coEvery { services.lawContentService.getSpecificBook(eq(book.id), any()) } returns book
 
-        val body = client.get("/test/api/law-books/1/")
-            .body<LawBookResponse>()
+        val res = client.get("/test/api/law-books/1/")
+        val body = res.body<LawBookResponse>()
+
+        assertEquals(200, res.status.value)
         assertEquals(book.id, body.id)
         assertEquals(book.key, body.key)
         assertEquals(book.creator.id, body.creatorId)
@@ -58,24 +79,33 @@ class LawBooksTest {
     }
 
     @Test
-    fun `POST law-books calls createBook with proper arguments and return new book`() =
+    fun `POST law-books returns 500 if user is not found`() = ktorEndpointTest(user) { services, client ->
+        coEvery {
+            services.lawContentService.createBook(
+                any(),
+                any(),
+                any(),
+                any()
+            )
+        } throws ServiceException.UserNotFound(user.id)
+
+        val res = client.post("/test/api/law-books/") {
+            contentType(ContentType.Application.Json)
+            setBody(CreateLawBookRequest("key", "name", "description"))
+        }
+        assertEquals(500, res.status.value)
+    }
+
+    @Test
+    fun `POST law-books calls createBook with proper arguments and returns 200 with new book`() =
         ktorEndpointTest(user) { services, client ->
             val book = lawBookModel(1L)
 
-            coEvery { services.lawContentService.getSpecificBook(any(), any(), any()) } returns null
             coEvery { services.lawContentService.createBook(any(), any(), any(), any()) } returns book
 
             val res = client.post("/test/api/law-books/") {
                 contentType(ContentType.Application.Json)
-                setBody(
-                    """
-                {
-                    "name": "name",
-                    "key": "key",
-                    "description": "description"
-                }
-            """.trimIndent()
-                )
+                setBody(CreateLawBookRequest("key", "name", "description"))
             }
             val body = res.body<LawBookResponse>()
 
@@ -89,12 +119,11 @@ class LawBooksTest {
         }
 
     @Test
-    fun `PATCH law-books_{id} returns 404 if user does not have access to the book`() =
+    fun `PATCH law-books_{id} checks write access`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user2)
-            coEvery { services.lawContentService.getSpecificBook(eq(book.id), any(), any()) } returns book
+            coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
 
-            val res = client.patch("/test/api/law-books/1/") {
+            client.patch("/test/api/law-books/1/") {
                 contentType(ContentType.Application.Json)
                 setBody(
                     """
@@ -102,15 +131,14 @@ class LawBooksTest {
                 """.trimIndent()
                 )
             }
-            assertEquals(404, res.status.value)
+
+            coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
         }
 
     @Test
     fun `PATCH law-books_{id} calls updateBook with the correct arguments`() =
         ktorEndpointTest(user) { services, client ->
             val book = lawBookModel(1L)
-            coEvery { services.lawContentService.getSpecificBook(eq(1L), any(), any()) } returns book
-            coEvery { services.lawContentService.getSpecificBook(any(), "new-key", any()) } returns null
             coEvery {
                 services.lawContentService.updateBook(
                     any(),
@@ -129,7 +157,6 @@ class LawBooksTest {
                     {
                       "name": "new-name",
                       "key": "new-key"
-                      
                     }
                 """.trimIndent()
                 )
@@ -155,17 +182,15 @@ class LawBooksTest {
 
     @Test
     fun `DELETE law-books_{id} checks for write access`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L).copy(creator = user2)
-        coEvery { services.lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
 
-        val res1 = client.delete("/test/api/law-books/1/")
-        assertEquals(404, res1.status.value)
+        client.delete("/test/api/law-books/1/")
+        coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
     }
 
     @Test
     fun `DELETE law-books_{id} calls deleteBook with right argument`() = ktorEndpointTest(user) { services, client ->
         val book = lawBookModel(1L).copy(creator = user)
-        coEvery { services.lawContentService.getSpecificBook(any(), any(), any()) } returns book
         coEvery { services.lawContentService.deleteBook(1L) } returns book
 
         val res1 = client.delete("/test/api/law-books/1/")
@@ -179,20 +204,15 @@ class LawBooksTest {
 
     @Test
     fun `GET law-books_{id}_members checks user has read access`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L).copy(creator = user2)
+        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
 
-        coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+        client.get("/test/api/law-books/1/members/")
 
-        val res = client.get("/test/api/law-books/1/members/")
-
-        assertEquals(404, res.status.value)
+        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
     }
 
     @Test
     fun `GET law-books_{id}_members returns members of book`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L).copy(creator = user)
-
-        coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
         coEvery { services.memberService.getMembersInBook(1L) } returns userModels(4L).map {
             it.copy(
                 profile = profileModel(
@@ -211,57 +231,49 @@ class LawBooksTest {
 
     @Test
     fun `PUT law-books_{id}_members_{id} checks user has write access`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L).copy(creator = user2)
+        coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
 
-        coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+        client.put("/test/api/law-books/1/members/1/")
 
-        val res = client.put("/test/api/law-books/1/members/")
-
-        assertEquals(404, res.status.value)
+        coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
     }
 
     @Test
-    fun `PUT law-books_{id}_members_{id} checks to be added user exists`() =
+    fun `PUT law-books_{id}_members_{id} returns 200 with current list of members if to be added user is already a member`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
-
-            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
-            coEvery { services.userService.getSpecific(5L, null, null) } returns null
-
-            val res = client.put("/test/api/law-books/1/members/5/")
-
-            assertEquals(404, res.status.value)
-        }
-
-    @Test
-    fun `PUT law-books_{id}_members_{id} returns 409 if the user to be added is the creator of the book`() =
-        ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
-
-            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
-            coEvery { services.userService.getSpecific(1L, null, null) } returns user
+            coEvery {
+                services.memberService.addMemberToBook(
+                    any(), any()
+                )
+            } throws ServiceException.UserAlreadyMemberOfBook(1L, 1L)
+            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(4L).map { it.copy(profile = profile) }
 
             val res = client.put("/test/api/law-books/1/members/1/")
 
-            assertEquals(409, res.status.value)
+            assertEquals(200, res.status.value)
+
+            val body = res.body<List<UserWithProfileResponse>>()
+            assertEquals(4, body.size)
         }
 
     @Test
-    fun `PUT law-books_{id}_members_{id} calls addMemberToBook with correct arguments and returns the result`() =
+    fun `PUT law-books_{id}_members_{id} calls addMemberToBook with correct arguments and returns 200 with the result`() =
         ktorEndpointTest(user) { services, client ->
             val book = lawBookModel(1L).copy(creator = user)
             val toAddUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
 
-            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
-            coEvery { services.userService.getSpecific(toAddUser.id, null, null) } returns toAddUser
-            coEvery { services.memberService.addMemberToBook(book.id, toAddUser.id) } returns listOf(toAddUser)
+            coEvery {
+                services.memberService.addMemberToBook(
+                    book.id, toAddUser.id
+                )
+            } returns userModels(3L).map { it.copy(profile = profile) }
 
             val res = client.put("/test/api/law-books/1/members/7/")
 
             assertEquals(200, res.status.value)
 
             val body = res.body<List<UserWithProfileResponse>>()
-            assertEquals(1, body.size)
+            assertEquals(3, body.size)
 
             coVerify(exactly = 1) { services.memberService.addMemberToBook(1L, 7L) }
         }
@@ -269,48 +281,154 @@ class LawBooksTest {
     @Test
     fun `DELETE law-books_{id}_members_{id} checks user has write access`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user2)
+            coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
 
-            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
+            client.delete("/test/api/law-books/1/members/1/")
 
-            val res = client.delete("/test/api/law-books/1/members/")
-
-            assertEquals(404, res.status.value)
+            coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
         }
 
     @Test
-    fun `DELETE law-books_{id}_members_{id} checks to be added user exists`() =
+    fun `DELETE law-books_{id}_members_{id} returns 200 with current list of members if to be deleted user was not found`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
+            coEvery { services.memberService.removeMemberFromBook(1L, 1L) } throws ServiceException.UserNotFound(1L)
+            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(3).map { it.copy(profile = profile) }
 
-            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
-            coEvery { services.userService.getSpecific(5L, null, null) } returns null
+            val res = client.delete("/test/api/law-books/1/members/1/")
 
-            val res = client.delete("/test/api/law-books/1/members/5/")
+            assertEquals(200, res.status.value)
 
-            assertEquals(404, res.status.value)
+            val body = res.body<List<UserWithProfileResponse>>()
+            assertEquals(3, body.size)
         }
 
     @Test
-    fun `DELETE law-books_{id}_members_{id} calls removeMemberFromBook with correct arguments and returns the result`() =
+    fun `DELETE law-books_{id}_members_{id} returns 200 with current list of members if to be deleted user was not member`() =
+        ktorEndpointTest(user) { services, client ->
+            coEvery { services.memberService.removeMemberFromBook(1L, 1L) } throws ServiceException.UserNotMemberOfBook(
+                1L,
+                1L
+            )
+            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(3).map { it.copy(profile = profile) }
+
+            val res = client.delete("/test/api/law-books/1/members/1/")
+
+            assertEquals(200, res.status.value)
+
+            val body = res.body<List<UserWithProfileResponse>>()
+            assertEquals(3, body.size)
+        }
+
+    @Test
+    fun `DELETE law-books_{id}_members_{id} calls removeMemberFromBook with correct arguments and returns 200 with the result`() =
         ktorEndpointTest(user) { services, client ->
             val book = lawBookModel(1L).copy(creator = user)
             val toRemoveUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
 
-            coEvery { services.lawContentService.getSpecificBook(1L, null, null) } returns book
-            coEvery { services.userService.getSpecific(toRemoveUser.id, null, null) } returns toRemoveUser
-            coEvery { services.memberService.removeMemberFromBook(book.id, toRemoveUser.id) } returns listOf(
-                toRemoveUser
-            )
+            coEvery {
+                services.memberService.removeMemberFromBook(
+                    book.id, toRemoveUser.id
+                )
+            } returns userModels(3L).map { it.copy(profile = profile) }
 
             val res = client.delete("/test/api/law-books/1/members/7/")
 
             assertEquals(200, res.status.value)
 
             val body = res.body<List<UserWithProfileResponse>>()
-            assertEquals(1, body.size)
+            assertEquals(3, body.size)
 
             coVerify(exactly = 1) { services.memberService.removeMemberFromBook(1L, 7L) }
+        }
+
+    @Test
+    fun `GET law-books_{id}_roles checks for read access`() = ktorEndpointTest(user) { services, client ->
+        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
+
+        client.get("/test/api/law-books/1/roles/")
+
+        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
+    }
+
+    @Test
+    fun `GET law-books_{id}_roles correctly combines members and roles and returns 200 with result`() =
+        ktorEndpointTest(user) { services, client ->
+            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(4L).map { it.copy(profile = profile) }
+            coEvery { services.memberService.getMemberRole(any(), 1L) } answers { m ->
+                when (m.invocation.args[0] as Long) {
+                    1L -> MemberRole.Read
+                    2L -> MemberRole.Write
+                    3L -> MemberRole.Update
+                    4L -> MemberRole.Admin
+                    else -> error(Unit)
+                }
+            }
+
+            val res = client.get("/test/api/law-books/1/roles/")
+
+            assertEquals(200, res.status.value)
+
+            val body = res.body<List<BookRoleUserResponse>>()
+
+            body.forEach { memberWithRole ->
+                val expectedRole = when (memberWithRole.user.id) {
+                    1L -> MemberRole.Read.value
+                    2L -> MemberRole.Write.value
+                    3L -> MemberRole.Update.value
+                    4L -> MemberRole.Admin.value
+                    else -> error(Unit)
+                }
+                assertEquals(expectedRole, memberWithRole.role)
+            }
+        }
+
+    @Test
+    fun `GET law-books_{id}_roles_{id} checks for read access`() = ktorEndpointTest(user) { services, client ->
+        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
+
+        client.get("/test/api/law-books/1/roles/1/")
+
+        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
+    }
+
+    @Test
+    fun `GET law-books_{id}_roles_{id} correctly combines member and role and returns 200 with result`() =
+        ktorEndpointTest(user) { services, client ->
+            coEvery { services.userService.getSpecific(5L) } returns userModel(5L).copy(profile = profile)
+            coEvery { services.memberService.getMemberRole(5L, 1L) } returns MemberRole.Admin
+
+            val res = client.get("/test/api/law-books/1/roles/5/")
+
+            assertEquals(200, res.status.value)
+
+            val body = res.body<BookRoleUserResponse>()
+            assertEquals(MemberRole.Admin.value, body.role)
+            assertEquals(5L, body.user.id)
+        }
+
+    @Test
+    fun `PUT law-books_{id}_roles_{id} checks for write access`() = ktorEndpointTest(user) { services, client ->
+        coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
+
+        val res = client.put("/test/api/law-books/1/roles/1/") {
+            contentType(ContentType.Application.Json)
+            setBody(PutUserBookRoleRequest(1))
+        }
+
+        coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
+    }
+
+    @Test
+    fun `PUT law-books_{id}_roles_{id} calls setMemberRole with correct role and returns 200 with 204`() =
+        ktorEndpointTest(user) { services, client ->
+            coEvery { services.memberService.setMemberRole(1L, 1L, any()) } just runs
+
+            val res = client.put("/test/api/law-books/1/roles/1/") {
+                contentType(ContentType.Application.Json)
+                setBody(PutUserBookRoleRequest(1))
+            }
+
+            assertEquals(204, res.status.value)
         }
 
 }

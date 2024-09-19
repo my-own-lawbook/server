@@ -15,3 +15,7 @@ dependencies {
 
     implementation(project(":model"))
 }
+
+kotlin {
+    jvmToolchain(22)
+}

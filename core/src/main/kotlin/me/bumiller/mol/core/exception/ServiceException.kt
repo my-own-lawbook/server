@@ -113,11 +113,6 @@ sealed class ServiceException : RuntimeException() {
     data class TwoFactorTokenUsed(val token: UUID) : ServiceException()
 
     /**
-     * The user for an email token could not be found
-     */
-    data class EmailTokenUserNotFound(val token: UUID) : ServiceException()
-
-    /**
      * The user for an email token is already verified
      */
     data class EmailTokenUserAlreadyVerified(val token: UUID) : ServiceException()

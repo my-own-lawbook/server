@@ -14,3 +14,7 @@ dependencies {
     implementation(libs.kotlin.datetime)
     implementation(libs.kotlin.serialization.json)
 }
+
+kotlin {
+    jvmToolchain(22)
+}

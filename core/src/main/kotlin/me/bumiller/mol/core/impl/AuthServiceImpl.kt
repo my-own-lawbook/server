@@ -104,20 +104,17 @@ internal class AuthServiceImpl(
         }
     }
 
+    override suspend fun loginUserWithRefreshToken(uuid: UUID): AuthTokens {
+        val token = validateToken(uuid, TwoFactorTokenType.RefreshToken)
+
+        tokenService.markAsUsed(token.id)
+        return loginUser(token.user.id)
+    }
+
     override suspend fun validateEmailWithToken(tokenUUID: UUID): User {
-        val now = Clock.System.now()
+        val token = validateToken(tokenUUID, TwoFactorTokenType.EmailConfirm)
+        val user = token.additionalInfo?.let { userService.getSpecific(email = it) }!!
 
-        val token = tokenService.getSpecific(token = tokenUUID)
-        val user = token.additionalInfo?.let { userService.getSpecific(email = it) }
-
-        if (token.type != TwoFactorTokenType.EmailConfirm)
-            throw ServiceException.InvalidTwoFactorTokenType(tokenUUID, TwoFactorTokenType.EmailConfirm)
-        if (token.expiringAt == null || token.expiringAt!! < now)
-            throw ServiceException.TwoFactorTokenExpired(tokenUUID, token.expiringAt)
-        if (token.used)
-            throw ServiceException.TwoFactorTokenUsed(tokenUUID)
-        if (user == null)
-            throw ServiceException.EmailTokenUserNotFound(tokenUUID)
         if (user.isEmailVerified)
             throw ServiceException.EmailTokenUserAlreadyVerified(tokenUUID)
 
@@ -126,5 +123,20 @@ internal class AuthServiceImpl(
             userId = user.id,
             isEmailVerified = present(true)
         )
+    }
+
+    private suspend fun validateToken(uuid: UUID, type: TwoFactorTokenType): TwoFactorToken {
+        val now = Clock.System.now()
+
+        val token = tokenService.getSpecific(token = uuid)
+
+        if (token.type != type)
+            throw ServiceException.InvalidTwoFactorTokenType(uuid, type)
+        if (token.expiringAt == null || token.expiringAt!! < now)
+            throw ServiceException.TwoFactorTokenExpired(uuid, token.expiringAt)
+        if (token.used)
+            throw ServiceException.TwoFactorTokenUsed(uuid)
+
+        return token
     }
 }

@@ -10,17 +10,20 @@ import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.UserProfile
-import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.user.AuthUserWithProfileResponse
 import me.bumiller.mol.rest.response.user.UserProfileResponse
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.Validatable
 import me.bumiller.mol.validation.actions.isInPast
 import me.bumiller.mol.validation.actions.isProfileName
+import me.bumiller.mol.validation.validateThat
+import me.bumiller.mol.validation.validateThatOptional
+import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
 
 /**
@@ -62,7 +65,7 @@ internal data class CreateProfileRequest(
 
 ) : Validatable {
 
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         validateThat(firstName).isProfileName()
         validateThat(lastName).isProfileName()
         validateThat(birthday).isInPast()
@@ -88,7 +91,7 @@ internal data class UpdateProfileRequest(
 
 ) : Validatable {
 
-    override suspend fun ValidationScope.validate() {
+    override suspend fun validate() {
         validateThatOptional(firstName)?.isProfileName()
         validateThatOptional(lastName)?.isProfileName()
         validateThatOptional(birthday)?.isInPast()
@@ -106,13 +109,16 @@ internal data class UpdateProfileRequest(
 private fun Route.createProfile(userService: UserService) = post {
     val body = call.validated<CreateProfileRequest>()
 
-    if (user.profile != null) conflict("The authenticated user already has a profile set.")
-
     val profile = UserProfile(user.id, body.birthday, body.gender, body.firstName, body.lastName)
 
-    val updatedUser = userService.createProfile(user.id, profile) ?: internal()
+    val updatedUser = try {
+        userService.createProfile(user.id, profile)
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
 
-    call.respond(HttpStatusCode.OK, AuthUserWithProfileResponse.create(updatedUser))
+    val response = AuthUserWithProfileResponse.create(updatedUser)
+    call.respond(HttpStatusCode.OK, response)
 }
 
 /**
@@ -129,15 +135,18 @@ private fun Route.updateProfile(userService: UserService) = patch {
     val body = call.validated<UpdateProfileRequest>()
     val user = call.authenticatedUser()
 
-    val updatedUser = userService.updateProfile(
-        userId = user.id,
-        firstName = body.firstName,
-        lastName = body.lastName,
-        birthday = body.birthday,
-        gender = body.gender
-    )
+    val updatedUser = try {
+        userService.updateProfile(
+            userId = user.id,
+            firstName = body.firstName,
+            lastName = body.lastName,
+            birthday = body.birthday,
+            gender = body.gender
+        )
+    } catch (e: ServiceException.UserNotFound) {
+        internal()
+    }
 
-    if (updatedUser != null)
-        call.respond(HttpStatusCode.OK, AuthUserWithProfileResponse.create(updatedUser))
-    else internal()
+    val response = AuthUserWithProfileResponse.create(updatedUser)
+    call.respond(HttpStatusCode.OK, response)
 }

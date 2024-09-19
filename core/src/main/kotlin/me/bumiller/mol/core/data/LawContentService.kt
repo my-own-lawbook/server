@@ -87,10 +87,12 @@ interface LawContentService {
     /**
      * Updates an existing [LawBook]
      *
+     * @param bookId The id of the book to update
      * @param key The key
      * @param name The name
      * @param description The description
      * @param creatorId The id of the new user
+     * @param memberIds The ids of the new members
      * @return The updated [LawBook]
      * @throws ServiceException.UserNotFound If the user was not found
      * @throws ServiceException.UserNotFoundList If any of the [memberIds] did not resolve to a user

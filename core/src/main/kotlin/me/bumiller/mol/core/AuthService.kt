@@ -73,6 +73,19 @@ interface AuthService {
     suspend fun logoutUser(userId: Long, vararg tokens: UUID)
 
     /**
+     * Will log in a user based on a refresh token.
+     *
+     * @param uuid The refresh token
+     * @return The login tokens
+     * @throws ServiceException.TwoFactorTokenNotFound If the token for [uuid] could not be found
+     * @throws ServiceException.InvalidTwoFactorTokenType If the token for [uuid] is not an email token
+     * @throws ServiceException.TwoFactorTokenExpired If the token for [uuid] is already expired
+     * @throws ServiceException.TwoFactorTokenUsed If the token for [uuid] is already used
+     * @throws ServiceException.UserNotFound If the user for the token for [uuid] could not be found
+     */
+    suspend fun loginUserWithRefreshToken(uuid: UUID): AuthTokens
+
+    /**
      * Will set a user to have their email validated based on the [tokenUUID].
      * Will also update [TwoFactorToken.used]
      *
@@ -82,7 +95,6 @@ interface AuthService {
      * @throws ServiceException.InvalidTwoFactorTokenType If the token for [tokenUUID] is not an email token
      * @throws ServiceException.TwoFactorTokenExpired If the token for [tokenUUID] is already expired
      * @throws ServiceException.TwoFactorTokenUsed If the token for [tokenUUID] is already used
-     * @throws ServiceException.EmailTokenUserNotFound If the token for [tokenUUID] did not have a user attached
      * @throws ServiceException.EmailTokenUserAlreadyVerified If the user for the token for [tokenUUID] already has their email verified
      * @throws ServiceException.UserNotFound If the user for the token for [tokenUUID] could not be found
      */
