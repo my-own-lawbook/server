@@ -2,15 +2,17 @@ package me.bumiller.mol.rest.http.auth
 
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.toUUID
 import me.bumiller.mol.core.AuthService
-import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.core.exception.ServiceException
+import me.bumiller.mol.model.http.conflict
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
+import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.validation.Validatable
 import me.bumiller.mol.validation.actions.isEmail
 import me.bumiller.mol.validation.actions.isPassword
@@ -29,12 +31,14 @@ import org.koin.ktor.ext.inject
  */
 internal fun Route.signup() {
     val authService by inject<AuthService>()
-    val userService by inject<UserService>()
 
     route("signup/") {
         createUser(authService)
-        requestEmailToken(userService, authService)
         submitEmailToken(authService)
+
+        authenticate {
+            requestEmailToken(authService)
+        }
     }
 }
 
@@ -71,23 +75,6 @@ internal data class CreateUserRequest(
         validateThat(password).isPassword()
     }
 
-}
-
-/**
- * Contains the fields required by the request to POST /auth/signup/email-verify/
- */
-@Serializable
-internal data class RequestEmailTokenRequest(
-
-    /**
-     * The email to send the token to
-     */
-    val email: String
-
-): Validatable {
-    override suspend fun validate() {
-        validateThat(email).isEmail()
-    }
 }
 
 /**
@@ -131,18 +118,10 @@ private fun Route.createUser(authService: AuthService) = post {
  *
  * Allows to request an email-verify-token to a specific email address
  */
-private fun Route.requestEmailToken(userService: UserService, authService: AuthService) = post("email-verify/") {
-    val email = call.validated<RequestEmailTokenRequest>().email
-
-    val user = try {
-        userService.getSpecific(email = email)
-    } catch (e: ServiceException.UserNotFound) {
-        null
-    }
-
-    if(user?.profile != null && !user.isEmailVerified) {
+private fun Route.requestEmailToken(authService: AuthService) = post("email-verify/") {
+    if (!user.isEmailVerified) {
         authService.sendEmailVerification(user)
-    }
+    } else conflict("The email address ${user.email} is already verified!")
 
     call.respond(HttpStatusCode.Accepted)
 }

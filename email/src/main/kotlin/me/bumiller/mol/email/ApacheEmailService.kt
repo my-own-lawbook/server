@@ -5,20 +5,17 @@ import me.bumiller.mol.model.User
 import me.bumiller.mol.model.config.AppConfig
 import org.apache.commons.mail.DefaultAuthenticator
 import org.apache.commons.mail.SimpleEmail
-import java.util.*
 
 internal class ApacheEmailService(
-    val appConfig: AppConfig
+    private val appConfig: AppConfig
 ) : EmailService {
 
     override suspend fun sendEmailVerifyEmail(user: User, token: TwoFactorToken) {
-        require(user.profile != null)
-
         baseEmail(user.email).apply {
             subject = "Verify your email address"
             setMsg(
                 """
-            Hello ${user.profile!!.firstName} ${user.profile!!.lastName},
+            Hello,
             
             to confirm your email address, use the following token:
             

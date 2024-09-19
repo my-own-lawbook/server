@@ -8,15 +8,16 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.config.AppConfig
 import org.koin.ktor.ext.inject
 
 /* Endpoints that can be accessed without having the profile set up.
- * Adding the profile via POST /user/profile/ is required to prevent a soft-lock situation.
+ * POST to /auth/signup/email-verify/ is required to let a user verify their email-address.
  */
 private val allowedEndpointsWithoutProfile = mapOf(
-    HttpMethod.Post to "/user/profile/"
+    HttpMethod.Post to "/auth/signup/email-verify/"
 )
 
 internal fun Application.authentication(appConfig: AppConfig, basePath: String) {
@@ -32,7 +33,11 @@ internal fun Application.authentication(appConfig: AppConfig, basePath: String) 
             verifier(verifier)
 
             validate { credential ->
-                val user = userService.getSpecific(email = credential.subject)
+                val user = try {
+                    userService.getSpecific(email = credential.subject)
+                } catch (e: ServiceException.UserNotFound) {
+                    null
+                }
 
                 val badAuthentication =
                     user == null || !user.isEmailVerified || (user.profile == null && !allowedEndpointsWithoutProfile.any { entry ->
