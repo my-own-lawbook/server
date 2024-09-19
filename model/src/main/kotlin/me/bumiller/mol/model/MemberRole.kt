@@ -47,6 +47,15 @@ sealed class MemberRole(val value: Int) {
     operator fun compareTo(other: MemberRole): Int =
         this.value.compareTo(other.value)
 
+    /**
+     * Utility function whether this role satisfies a required role
+     *
+     * @param requirement The requirement
+     * @return Whether the requirement is met
+     */
+    infix fun satisfies(requirement: MemberRole): Boolean =
+        this >= requirement
+
     companion object {
 
         /**
