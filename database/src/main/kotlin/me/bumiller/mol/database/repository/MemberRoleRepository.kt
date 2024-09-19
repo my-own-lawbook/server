@@ -35,7 +35,9 @@ internal class ExposedMemberRoleRepository : MemberRoleRepository {
     override suspend fun getMemberRole(userId: Long, bookId: Long): String? = suspendTransaction {
         LawBookMembersCrossref.Entity.find {
             (LawBookMembersCrossref.Table.member eq userId) and (LawBookMembersCrossref.Table.lawBook eq bookId)
-        }.singleOrNull()?.role
+        }
+            .limit(1)
+            .firstOrNull()?.role
     }
 
     override suspend fun setMemberRole(userId: Long, bookId: Long, role: String) = suspendTransaction {

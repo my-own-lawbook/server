@@ -27,7 +27,6 @@ class LawBooksTest {
 
     private val profile = profileModel(1L)
     private val user = User(1L, "email@domain.com", "username", "password", true, profile)
-    private val user2 = userModel(2L)
 
     @Test
     fun `GET law-books returns 200 with books by member and creator of user`() =
@@ -213,7 +212,7 @@ class LawBooksTest {
 
     @Test
     fun `GET law-books_{id}_members returns members of book`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.memberService.getMembersInBook(1L) } returns userModels(4L).map {
+        coEvery { services.memberContentService.getMembersInBook(1L) } returns userModels(4L).map {
             it.copy(
                 profile = profileModel(
                     1L
@@ -246,7 +245,7 @@ class LawBooksTest {
                     any(), any()
                 )
             } throws ServiceException.UserAlreadyMemberOfBook(1L, 1L)
-            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(4L).map { it.copy(profile = profile) }
+            coEvery { services.memberContentService.getMembersInBook(1L) } returns userModels(4L).map { it.copy(profile = profile) }
 
             val res = client.put("/test/api/law-books/1/members/1/")
 
@@ -291,8 +290,10 @@ class LawBooksTest {
     @Test
     fun `DELETE law-books_{id}_members_{id} returns 200 with current list of members if to be deleted user was not found`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.memberService.removeMemberFromBook(1L, 1L) } throws ServiceException.UserNotFound(1L)
-            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(3).map { it.copy(profile = profile) }
+            coEvery { services.memberService.removeMemberFromBook(1L, 1L) } throws ServiceException.UserNotFound(
+                1L
+            )
+            coEvery { services.memberContentService.getMembersInBook(1L) } returns userModels(3).map { it.copy(profile = profile) }
 
             val res = client.delete("/test/api/law-books/1/members/1/")
 
@@ -305,11 +306,16 @@ class LawBooksTest {
     @Test
     fun `DELETE law-books_{id}_members_{id} returns 200 with current list of members if to be deleted user was not member`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.memberService.removeMemberFromBook(1L, 1L) } throws ServiceException.UserNotMemberOfBook(
+            coEvery {
+                services.memberService.removeMemberFromBook(
+                    1L,
+                    1L
+                )
+            } throws ServiceException.UserNotMemberOfBook(
                 1L,
                 1L
             )
-            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(3).map { it.copy(profile = profile) }
+            coEvery { services.memberContentService.getMembersInBook(1L) } returns userModels(3).map { it.copy(profile = profile) }
 
             val res = client.delete("/test/api/law-books/1/members/1/")
 
@@ -353,8 +359,8 @@ class LawBooksTest {
     @Test
     fun `GET law-books_{id}_roles correctly combines members and roles and returns 200 with result`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.memberService.getMembersInBook(1L) } returns userModels(4L).map { it.copy(profile = profile) }
-            coEvery { services.memberService.getMemberRole(any(), 1L) } answers { m ->
+            coEvery { services.memberContentService.getMembersInBook(1L) } returns userModels(4L).map { it.copy(profile = profile) }
+            coEvery { services.memberContentService.getMemberRole(any(), 1L) } answers { m ->
                 when (m.invocation.args[0] as Long) {
                     1L -> MemberRole.Read
                     2L -> MemberRole.Write
@@ -395,7 +401,7 @@ class LawBooksTest {
     fun `GET law-books_{id}_roles_{id} correctly combines member and role and returns 200 with result`() =
         ktorEndpointTest(user) { services, client ->
             coEvery { services.userService.getSpecific(5L) } returns userModel(5L).copy(profile = profile)
-            coEvery { services.memberService.getMemberRole(5L, 1L) } returns MemberRole.Admin
+            coEvery { services.memberContentService.getMemberRole(5L, 1L) } returns MemberRole.Admin
 
             val res = client.get("/test/api/law-books/1/roles/5/")
 

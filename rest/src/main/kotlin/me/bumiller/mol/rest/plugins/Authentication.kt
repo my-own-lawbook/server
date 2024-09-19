@@ -24,6 +24,7 @@ private val allowedWithoutEmailVerified = mapOf(
  * POST to /user/profile/ is required to let a user set up their profile for the first time.
  */
 private val allowedWithoutProfileSet = mapOf(
+    HttpMethod.Post to "auth/signup/email-verify/",
     HttpMethod.Post to "user/profile/"
 )
 

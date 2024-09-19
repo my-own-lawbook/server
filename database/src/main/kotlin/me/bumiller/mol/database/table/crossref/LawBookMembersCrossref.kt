@@ -43,9 +43,14 @@ object LawBookMembersCrossref {
 
         val role = text("role").check("role-valid") {
             it inList Roles.entries.map(Roles::serializedName)
-        }
+        }.default(Roles.Read.serializedName)
 
         override val primaryKey = PrimaryKey(lawBook, member)
+
+        init {
+            addIdColumn(lawBook)
+            addIdColumn(member)
+        }
 
     }
 
@@ -55,7 +60,8 @@ object LawBookMembersCrossref {
         var member by User.Entity referencedOn Table.member
         var role by Table.role
 
-        override val asModel = Model(book.id.value, member.id.value, role)
+        override val asModel: Model
+            get() = Model(book.id.value, member.id.value, role)
 
         override fun populate(model: Model) {
             book = LawBook.Entity.findById(model.bookId)!!

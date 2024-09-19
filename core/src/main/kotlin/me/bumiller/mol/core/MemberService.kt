@@ -1,22 +1,13 @@
-package me.bumiller.mol.core.data
+package me.bumiller.mol.core
 
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.User
 
 /**
- * Service to access actions related to the members of specific law-books
+ * Service to perform actions on the members of books.
  */
 interface MemberService {
-
-    /**
-     * Gets all members of a specific book
-     *
-     * @param bookId The id of the book to query the members for
-     * @return The list of members in the book
-     * @throws ServiceException.LawBookNotFound If the book was not found
-     */
-    suspend fun getMembersInBook(bookId: Long): List<User>
 
     /**
      * Adds a member to a specific book
@@ -31,6 +22,7 @@ interface MemberService {
      */
     suspend fun addMemberToBook(bookId: Long, userId: Long): List<User>
 
+
     /**
      * Removes a member to a specific book
      *
@@ -40,23 +32,14 @@ interface MemberService {
      * @throws ServiceException.LawBookNotFound If the book could not be found
      * @throws ServiceException.UserNotFound If the user could not be found
      * @throws ServiceException.UserNotMemberOfBook If the user is not a member of the book
+     * @throws ServiceException.BookNoAdminLeft If no admin was left in the book afterward
      */
     suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User>
 
     /**
-     * Gets the book-wide role of a member
-     *
-     * @param userId The id of the user
-     * @param bookId The id of the book
-     * @return The role for the user in the book
-     * @throws ServiceException.UserNotFound If the user could not be found
-     * @throws ServiceException.LawBookNotFound If the book could not be found
-     * @throws ServiceException.UserNotMemberOfBook If the user is not a member of the book
-     */
-    suspend fun getMemberRole(userId: Long, bookId: Long): MemberRole
-
-    /**
      * Sets the book-wide role of a member
+     *
+     * Does **not** perform business-logic checks. Use [MemberService.removeMemberFromBook] if possible!
      *
      * @param userId The id of the user
      * @param bookId The id of the book
