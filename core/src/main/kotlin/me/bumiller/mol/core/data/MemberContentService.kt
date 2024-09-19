@@ -7,7 +7,7 @@ import me.bumiller.mol.model.User
 /**
  * Service to access actions related to the members of specific law-books
  */
-interface MemberService {
+interface MemberContentService {
 
     /**
      * Gets all members of a specific book

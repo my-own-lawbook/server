@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.data.LawContentService
-import me.bumiller.mol.core.data.MemberService
+import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.MemberRole
@@ -49,7 +49,7 @@ import org.koin.ktor.ext.inject
  */
 internal fun Route.lawBooks() {
     val lawContentService by inject<LawContentService>()
-    val memberService by inject<MemberService>()
+    val memberContentService by inject<MemberContentService>()
     val userService by inject<UserService>()
     val accessValidator by inject<AccessValidator>()
 
@@ -61,19 +61,19 @@ internal fun Route.lawBooks() {
         delete(lawContentService, accessValidator)
 
         route("{$PathBookId}/members/") {
-            getMembers(memberService, accessValidator)
+            getMembers(memberContentService, accessValidator)
             route("{$PathUserId}/") {
-                putMember(memberService, accessValidator)
-                removeMember(memberService, accessValidator)
+                putMember(memberContentService, accessValidator)
+                removeMember(memberContentService, accessValidator)
             }
         }
 
         route("/{$PathBookId}/roles/") {
-            memberRoles(memberService, accessValidator)
+            memberRoles(memberContentService, accessValidator)
 
             route("{$PathUserId}/") {
-                memberRole(memberService, userService, accessValidator)
-                putMemberRole(memberService, accessValidator)
+                memberRole(memberContentService, userService, accessValidator)
+                putMemberRole(memberContentService, accessValidator)
             }
         }
     }
@@ -210,12 +210,12 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
 /**
  * Endpoint for GET /law-books/:id/members/ that gets all members for a law-book
  */
-private fun Route.getMembers(memberService: MemberService, accessValidator: AccessValidator) = get {
+private fun Route.getMembers(memberContentService: MemberContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
     accessValidator.validateReadBook(user, bookId)
 
-    val members = memberService.getMembersInBook(bookId)
+    val members = memberContentService.getMembersInBook(bookId)
     val response = members.map(UserWithProfileResponse::create)
     call.respond(HttpStatusCode.OK, response)
 }
@@ -223,16 +223,16 @@ private fun Route.getMembers(memberService: MemberService, accessValidator: Acce
 /**
  * Endpoint to PUT /law-books/:id/members/:id/ that adds a new user to the members of a law-book
  */
-private fun Route.putMember(memberService: MemberService, accessValidator: AccessValidator) = put {
+private fun Route.putMember(memberContentService: MemberContentService, accessValidator: AccessValidator) = put {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
     accessValidator.validateWriteBook(user, bookId)
 
     val members = try {
-        memberService.addMemberToBook(bookId, userId)
+        memberContentService.addMemberToBook(bookId, userId)
     } catch (e: ServiceException.UserAlreadyMemberOfBook) {
-        memberService.getMembersInBook(bookId)
+        memberContentService.getMembersInBook(bookId)
     }
 
     val response = members.map(UserWithProfileResponse::create)
@@ -242,18 +242,18 @@ private fun Route.putMember(memberService: MemberService, accessValidator: Acces
 /**
  * Endpoint to DELETE /law-books/:id/members/:id/ that removes a user from the members of a law-book
  */
-private fun Route.removeMember(memberService: MemberService, accessValidator: AccessValidator) = delete {
+private fun Route.removeMember(memberContentService: MemberContentService, accessValidator: AccessValidator) = delete {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
     accessValidator.validateWriteBook(user, bookId)
 
     val members = try {
-        memberService.removeMemberFromBook(bookId, userId)
+        memberContentService.removeMemberFromBook(bookId, userId)
     } catch (e: ServiceException.UserNotMemberOfBook) {
-        memberService.getMembersInBook(bookId)
+        memberContentService.getMembersInBook(bookId)
     } catch (e: ServiceException.UserNotFound) {
-        memberService.getMembersInBook(bookId)
+        memberContentService.getMembersInBook(bookId)
     }
 
     val response = members.map(UserWithProfileResponse::create)
@@ -263,14 +263,14 @@ private fun Route.removeMember(memberService: MemberService, accessValidator: Ac
 /**
  * Endpoint to GET /law-books/:id/roles/ that gets all users and their role
  */
-private fun Route.memberRoles(memberService: MemberService, accessValidator: AccessValidator) = get {
+private fun Route.memberRoles(memberContentService: MemberContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
     accessValidator.validateReadBook(user, bookId)
 
-    val members = memberService.getMembersInBook(bookId)
+    val members = memberContentService.getMembersInBook(bookId)
     val rolesForMembers = members.map { member ->
-        memberService.getMemberRole(member.id, bookId)
+        memberContentService.getMemberRole(member.id, bookId)
     }
     val response = members.zip(rolesForMembers) { member, role ->
         BookRoleUserResponse.create(role.value, member)
@@ -282,7 +282,11 @@ private fun Route.memberRoles(memberService: MemberService, accessValidator: Acc
 /**
  * Endpoint to GET /law-books/:id/roles/:id/ that gets a user and it's role
  */
-private fun Route.memberRole(memberService: MemberService, userService: UserService, accessValidator: AccessValidator) =
+private fun Route.memberRole(
+    memberContentService: MemberContentService,
+    userService: UserService,
+    accessValidator: AccessValidator
+) =
     get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
@@ -291,7 +295,7 @@ private fun Route.memberRole(memberService: MemberService, userService: UserServ
 
         val user = userService.getSpecific(id = userId)
 
-        val role = memberService.getMemberRole(userId, bookId)
+        val role = memberContentService.getMemberRole(userId, bookId)
         val response = BookRoleUserResponse.create(role.value, user)
 
     call.respond(HttpStatusCode.OK, response)
@@ -300,7 +304,7 @@ private fun Route.memberRole(memberService: MemberService, userService: UserServ
 /**
  * Endpoint to PUT /law-books/:id/roles/:id/ that changes the role of a member.
  */
-private fun Route.putMemberRole(memberService: MemberService, accessValidator: AccessValidator) = put {
+private fun Route.putMemberRole(memberContentService: MemberContentService, accessValidator: AccessValidator) = put {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
@@ -309,7 +313,7 @@ private fun Route.putMemberRole(memberService: MemberService, accessValidator: A
     accessValidator.validateWriteBook(user, bookId)
 
     val role = MemberRole.roles.find { it.value == body.role }!!
-    memberService.setMemberRole(userId, bookId, role)
+    memberContentService.setMemberRole(userId, bookId, role)
 
     call.respond(HttpStatusCode.NoContent)
 }

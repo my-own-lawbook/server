@@ -1,6 +1,6 @@
 package me.bumiller.mol.core.impl
 
-import me.bumiller.mol.core.data.MemberService
+import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.core.mapping.mapUser
 import me.bumiller.mol.core.mapping.memberRoleFromString
@@ -12,11 +12,11 @@ import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.User
 import me.bumiller.mol.database.table.User.Model as UserModel
 
-internal class DatabaseMemberService(
+internal class DatabaseMemberContentService(
     private val bookRepository: LawBookRepository,
     private val userRepository: UserRepository,
     private val roleRepository: MemberRoleRepository
-) : MemberService {
+) : MemberContentService {
 
     override suspend fun getMembersInBook(bookId: Long): List<User> =
         bookRepository.getSpecific(bookId)

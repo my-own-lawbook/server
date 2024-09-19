@@ -5,7 +5,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
-import me.bumiller.mol.core.data.MemberService
+import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.database.repository.LawBookRepository
 import me.bumiller.mol.database.repository.MemberRoleRepository
@@ -22,13 +22,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-class DatabaseMemberServiceTest {
+class DatabaseMemberContentServiceTest {
 
     private lateinit var bookRepository: LawBookRepository
     private lateinit var userRepository: UserRepository
     private lateinit var roleRepository: MemberRoleRepository
 
-    private lateinit var memberService: MemberService
+    private lateinit var memberContentService: MemberContentService
 
     @BeforeEach
     fun setup() {
@@ -36,7 +36,7 @@ class DatabaseMemberServiceTest {
         userRepository = mockk()
         roleRepository = mockk()
 
-        memberService = DatabaseMemberService(bookRepository, userRepository, roleRepository)
+        memberContentService = DatabaseMemberContentService(bookRepository, userRepository, roleRepository)
     }
 
     @Test
@@ -44,7 +44,7 @@ class DatabaseMemberServiceTest {
         coEvery { bookRepository.getSpecific(1L) } returns null
 
         assertThrows<ServiceException.LawBookNotFound> {
-            memberService.getMembersInBook(1L)
+            memberContentService.getMembersInBook(1L)
         }
     }
 
@@ -55,7 +55,7 @@ class DatabaseMemberServiceTest {
 
         coEvery { bookRepository.getSpecific(bookEntity.id) } returns bookEntity
 
-        val returned = memberService.getMembersInBook(bookEntity.id)
+        val returned = memberContentService.getMembersInBook(bookEntity.id)
 
         assertArrayEquals((1L..10L).toList().toTypedArray(), returned.map(User::id).sorted().toTypedArray())
     }
@@ -65,14 +65,14 @@ class DatabaseMemberServiceTest {
         coEvery { bookRepository.getSpecific(1L) } returns null
 
         assertThrows<ServiceException.LawBookNotFound> {
-            memberService.addMemberToBook(1L, 1L)
+            memberContentService.addMemberToBook(1L, 1L)
         }
 
         coEvery { bookRepository.getSpecific(1L) } returns lawBookEntity(1L)
         coEvery { userRepository.getSpecific(1L) } returns null
 
         assertThrows<ServiceException.UserNotFound> {
-            memberService.addMemberToBook(1L, 1L)
+            memberContentService.addMemberToBook(1L, 1L)
         }
     }
 
@@ -89,10 +89,10 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(user2.id) } returns user2
 
         assertThrows<ServiceException.UserAlreadyMemberOfBook> {
-            memberService.addMemberToBook(book.id, user1.id)
+            memberContentService.addMemberToBook(book.id, user1.id)
         }
 
-        memberService.addMemberToBook(book.id, user2.id)
+        memberContentService.addMemberToBook(book.id, user2.id)
         coVerify(exactly = 1) { bookRepository.update(any()) }
     }
 
@@ -108,7 +108,7 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(user.id) } returns user
         coEvery { bookRepository.update(capture(bookSlot)) } returns book
 
-        memberService.addMemberToBook(book.id, user.id)
+        memberContentService.addMemberToBook(book.id, user.id)
 
         assertArrayEquals(
             arrayOf(1L, 2L, 3L, 4L),
@@ -129,7 +129,7 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(user.id) } returns user
         coEvery { bookRepository.update(capture(bookSlot)) } returns book1
 
-        val returned = memberService.addMemberToBook(book1.id, user.id)
+        val returned = memberContentService.addMemberToBook(book1.id, user.id)
 
         assertEquals(6, returned.size)
     }
@@ -144,7 +144,7 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(toAddUser.id) } returns toAddUser
 
         assertThrows<ServiceException.CreatorTriedAddedToBook> {
-            memberService.addMemberToBook(book.id, toAddUser.id)
+            memberContentService.addMemberToBook(book.id, toAddUser.id)
         }
     }
 
@@ -153,14 +153,14 @@ class DatabaseMemberServiceTest {
         coEvery { bookRepository.getSpecific(1L) } returns null
 
         assertThrows<ServiceException.LawBookNotFound> {
-            memberService.addMemberToBook(1L, 1L)
+            memberContentService.addMemberToBook(1L, 1L)
         }
 
         coEvery { bookRepository.getSpecific(1L) } returns lawBookEntity(1L)
         coEvery { userRepository.getSpecific(1L) } returns null
 
         assertThrows<ServiceException.UserNotFound> {
-            memberService.removeMemberFromBook(1L, 1L)
+            memberContentService.removeMemberFromBook(1L, 1L)
         }
     }
 
@@ -177,10 +177,10 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(user2.id) } returns user2
 
         assertThrows<ServiceException.UserNotMemberOfBook> {
-            memberService.removeMemberFromBook(book.id, user2.id)
+            memberContentService.removeMemberFromBook(book.id, user2.id)
         }
 
-        memberService.removeMemberFromBook(book.id, user1.id)
+        memberContentService.removeMemberFromBook(book.id, user1.id)
         coVerify(exactly = 1) { bookRepository.update(any()) }
     }
 
@@ -196,7 +196,7 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(user.id) } returns user
         coEvery { bookRepository.update(capture(bookSlot)) } returns book
 
-        memberService.removeMemberFromBook(book.id, user.id)
+        memberContentService.removeMemberFromBook(book.id, user.id)
 
         assertArrayEquals(
             arrayOf(1L, 3L),
@@ -217,7 +217,7 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(user.id) } returns user
         coEvery { bookRepository.update(capture(bookSlot)) } returns book1
 
-        val returned = memberService.addMemberToBook(book1.id, user.id)
+        val returned = memberContentService.addMemberToBook(book1.id, user.id)
 
         assertEquals(6, returned.size)
     }
@@ -227,14 +227,14 @@ class DatabaseMemberServiceTest {
         coEvery { userRepository.getSpecific(1L) } returns null
 
         assertThrows<ServiceException.UserNotFound> {
-            memberService.setMemberRole(1L, 1L, MemberRole.Read)
+            memberContentService.setMemberRole(1L, 1L, MemberRole.Read)
         }
 
         coEvery { userRepository.getSpecific(1L) } returns userEntity(1L)
         coEvery { bookRepository.getSpecific(1L) } returns null
 
         assertThrows<ServiceException.LawBookNotFound> {
-            memberService.setMemberRole(1L, 1L, MemberRole.Read)
+            memberContentService.setMemberRole(1L, 1L, MemberRole.Read)
         }
 
         coEvery { bookRepository.getSpecific(1L) } returns lawBookEntity(1L).copy(
@@ -242,7 +242,7 @@ class DatabaseMemberServiceTest {
         )
 
         assertThrows<ServiceException.UserNotMemberOfBook> {
-            memberService.setMemberRole(1L, 1L, MemberRole.Read)
+            memberContentService.setMemberRole(1L, 1L, MemberRole.Read)
         }
 
         coVerify(exactly = 0) { roleRepository.setMemberRole(any(), any(), any()) }
@@ -267,7 +267,7 @@ class DatabaseMemberServiceTest {
         }
 
         assertThrows<ServiceException.BookNoAdminLeft> {
-            memberService.setMemberRole(1L, 1L, MemberRole.Read)
+            memberContentService.setMemberRole(1L, 1L, MemberRole.Read)
         }
 
         coVerify(exactly = 4) { roleRepository.getMemberRole(any(), 1L) }
@@ -289,7 +289,7 @@ class DatabaseMemberServiceTest {
             }
         }
 
-        memberService.setMemberRole(1L, 1L, MemberRole.Read)
+        memberContentService.setMemberRole(1L, 1L, MemberRole.Read)
 
         coVerify(exactly = 1) { roleRepository.setMemberRole(1L, 1L, "read") }
     }
