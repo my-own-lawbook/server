@@ -115,8 +115,9 @@ internal data class PutUserBookRoleRequest(
 ) : Validatable {
 
     override suspend fun validate() {
-        val role = MemberRole.roles.find { it.value == role }
-        if (role == null) badFormat("role", this.role.toString())
+        if (MemberRole.roles.none {
+                it.value == this.role
+            }) badFormat("role", this.role.toString())
     }
 
 }

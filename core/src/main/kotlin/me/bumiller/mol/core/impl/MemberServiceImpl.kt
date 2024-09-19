@@ -27,7 +27,13 @@ internal class MemberServiceImpl(
     }
 
     override suspend fun removeMemberFromBook(bookId: Long, userId: Long): List<User> {
-        ensureUserInBookAndOtherAdmin(bookId, userId)
+        val membersInBook = memberContentService.getMembersInBook(bookId)
+        val book = lawContentService.getSpecificBook(id = bookId)
+        val role = memberContentService.getMemberRole(userId, bookId)
+
+        if (userId !in membersInBook.map(User::id)) throw ServiceException.UserNotMemberOfBook(userId, bookId)
+
+        if (role == MemberRole.Admin && !book.hasAdminApartFrom(userId)) throw ServiceException.BookNoAdminLeft(book.id)
 
         memberContentService.removeMemberFromBook(bookId, userId)
 
@@ -35,19 +41,18 @@ internal class MemberServiceImpl(
     }
 
     override suspend fun setMemberRole(userId: Long, bookId: Long, role: MemberRole) {
-        ensureUserInBookAndOtherAdmin(bookId, userId)
-
-        memberContentService.setMemberRole(bookId, userId, role)
-    }
-
-    // Throws the matching exception if the user is either not part of the book or no other admin is present
-    private suspend fun ensureUserInBookAndOtherAdmin(bookId: Long, userId: Long) {
         val membersInBook = memberContentService.getMembersInBook(bookId)
         val book = lawContentService.getSpecificBook(id = bookId)
+        val currentRole = memberContentService.getMemberRole(userId, bookId)
 
         if (userId !in membersInBook.map(User::id)) throw ServiceException.UserNotMemberOfBook(userId, bookId)
 
-        if (!book.hasAdminApartFrom(userId)) throw ServiceException.BookNoAdminLeft(book.id)
+        if (currentRole == MemberRole.Admin &&
+            role < MemberRole.Admin &&
+            !book.hasAdminApartFrom(userId)
+        ) throw ServiceException.BookNoAdminLeft(book.id)
+
+        memberContentService.setMemberRole(userId, bookId, role)
     }
 
     // Checks whether an admin apart from [allowedAdmins] is present
