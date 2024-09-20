@@ -42,7 +42,7 @@ internal fun Application.authentication(appConfig: AppConfig, basePath: String) 
 
             validate { credential ->
                 val user = try {
-                    userService.getSpecific(email = credential.subject)
+                    userService.getSpecific(email = credential.subject, onlyActive = false)
                 } catch (e: ServiceException.UserNotFound) {
                     null
                 }

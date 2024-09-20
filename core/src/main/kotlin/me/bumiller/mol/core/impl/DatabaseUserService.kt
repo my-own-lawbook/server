@@ -24,18 +24,19 @@ internal class DatabaseUserService(
     override suspend fun getAll(): List<User> = userRepository.getAll()
         .map(::mapUser)
 
-    override suspend fun getSpecific(id: Long?, email: String?, username: String?) = userRepository
+    override suspend fun getSpecific(id: Long?, email: String?, username: String?, onlyActive: Boolean) = userRepository
         .getSpecific(
             id = presentWhenNotNull(id),
             email = presentWhenNotNull(email),
-            username = presentWhenNotNull(username)
+            username = presentWhenNotNull(username),
+            onlyActive = onlyActive
         )?.let(::mapUser) ?: throw ServiceException.UserNotFound(id = id, email = email, username = username)
 
     override suspend fun createUser(email: String, password: String, username: String): User {
-        userRepository.getSpecific(email = present(email))?.let {
+        userRepository.getSpecific(email = present(email), onlyActive = false)?.let {
             throw ServiceException.UserEmailNotUnique(email)
         }
-        userRepository.getSpecific(username = present(username))?.let {
+        userRepository.getSpecific(username = present(username), onlyActive = false)?.let {
             throw ServiceException.UserUsernameNotUnique(username = username)
         }
 
@@ -51,7 +52,10 @@ internal class DatabaseUserService(
     }
 
     override suspend fun createProfile(userId: Long, profile: UserProfile): User {
-        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
+        val user =
+            userRepository.getSpecific(id = present(userId), onlyActive = false) ?: throw ServiceException.UserNotFound(
+                id = userId
+            )
         if (user.profile != null) throw ServiceException.UserProfileAlreadyPresent(userId = userId)
 
         val profileModel = ProfileModel(
@@ -78,7 +82,10 @@ internal class DatabaseUserService(
         password: Optional<String>,
         isEmailVerified: Optional<Boolean>
     ): User {
-        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
+        val user =
+            userRepository.getSpecific(id = present(userId), onlyActive = false) ?: throw ServiceException.UserNotFound(
+                id = userId
+            )
 
         email.ifPresentSuspend {
             userRepository.getSpecific(email = email)?.let {

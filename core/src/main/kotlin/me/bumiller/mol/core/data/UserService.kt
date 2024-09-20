@@ -16,7 +16,7 @@ interface UserService {
     /**
      * Gets all users
      *
-     * @return A list of all users
+     * @return A list of all users. Only returns active users
      */
     suspend fun getAll(): List<User>
 
@@ -26,10 +26,16 @@ interface UserService {
      * @param id The id  of the user
      * @param email The email of the user
      * @param username The username of the user
+     * @param onlyActive Whether only to return the user if it is active
      * @return The user matching all given non-null criteria
      * @throws ServiceException.UserNotFound If the user could not be found
      */
-    suspend fun getSpecific(id: Long? = null, email: String? = null, username: String? = null): User
+    suspend fun getSpecific(
+        id: Long? = null,
+        email: String? = null,
+        username: String? = null,
+        onlyActive: Boolean = true
+    ): User
 
     /**
      * Creates a new user entry in the database.

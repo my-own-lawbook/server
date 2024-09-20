@@ -77,6 +77,7 @@ fun ktorEndpointTest(
             services.userService.getSpecific(
                 any(),
                 eq(authenticatedUser.email),
+                any(),
                 any()
             )
         } returns authenticatedUser

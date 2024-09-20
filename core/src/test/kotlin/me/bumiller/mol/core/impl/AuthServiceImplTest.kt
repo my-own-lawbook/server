@@ -95,7 +95,7 @@ class AuthServiceImplTest {
 
     @Test
     fun `getAuthenticatedUser returns null for invalid credentials and found user`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user
         coEvery { encryptor.verify(any(), any()) } returns false
 
         val returned = authService.getAuthenticatedUser(null, "", "")
@@ -105,7 +105,7 @@ class AuthServiceImplTest {
 
     @Test
     fun `getAuthenticatedUser returns user when found and credentials valid`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user
         coEvery { encryptor.verify(any(), any()) } returns true
 
         val returned = authService.getAuthenticatedUser(null, "", "")
@@ -115,7 +115,11 @@ class AuthServiceImplTest {
 
     @Test
     fun `getAuthenticatedUser returns null when user is not found`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } throws ServiceException.UserNotFound(null, null, null)
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } throws ServiceException.UserNotFound(
+            null,
+            null,
+            null
+        )
 
         val returned = authService.getAuthenticatedUser("email", null, "password")
         assertNull(returned)
@@ -123,7 +127,7 @@ class AuthServiceImplTest {
 
     @Test
     fun `loginUser jwt contains user as subject`() = runTest {
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user
         coEvery { tokenService.create(any(), any(), any(), any(), any()) } returns token
 
         val subjectOfJwt = authService.loginUser(1L).jwt.let { jwt ->
@@ -152,7 +156,7 @@ class AuthServiceImplTest {
 
         val tokenIdSlots = mutableListOf<Long>()
 
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user
         coEvery {
             tokenService.getSpecific(
                 any(),
@@ -253,7 +257,7 @@ class AuthServiceImplTest {
     fun `validateEmailWithToken throws for user that has their email already verified`() = runTest {
         val now = Clock.System.now()
 
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user
 
         val token1 = TwoFactorToken(
             1L,
@@ -277,7 +281,7 @@ class AuthServiceImplTest {
     fun `validateEmailWithToken calls markAsUsed with the id of the token`() = runTest {
         val now = Clock.System.now()
 
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user.copy(isEmailVerified = false)
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user.copy(isEmailVerified = false)
         coEvery { tokenService.markAsUsed(any()) } returns token
         coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
 
@@ -303,7 +307,7 @@ class AuthServiceImplTest {
     fun `validateEmailWithToken calls updateUser with user id`() = runTest {
         val now = Clock.System.now()
 
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user.copy(isEmailVerified = false)
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user.copy(isEmailVerified = false)
         coEvery { tokenService.markAsUsed(any()) } returns token
         coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
 
@@ -329,7 +333,7 @@ class AuthServiceImplTest {
     fun `validateEmailWithToken returns user`() = runTest {
         val now = Clock.System.now()
 
-        coEvery { userService.getSpecific(any(), any(), any()) } returns user.copy(isEmailVerified = false)
+        coEvery { userService.getSpecific(any(), any(), any(), any()) } returns user.copy(isEmailVerified = false)
         coEvery { tokenService.markAsUsed(any()) } returns token
         coEvery { userService.update(any(), any(), any(), any(), any()) } returns user
 

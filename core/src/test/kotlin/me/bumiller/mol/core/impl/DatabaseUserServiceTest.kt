@@ -149,7 +149,7 @@ class DatabaseUserServiceTest {
 
     @Test
     fun `createUser passes arguments and creates correct user model`() = runTest {
-        coEvery { mockUserRepo.getSpecific(any(), any(), any()) } returns null
+        coEvery { mockUserRepo.getSpecific(any(), any(), any(), any()) } returns null
 
         val userModelSlot = slot<User.Model>()
 
@@ -165,7 +165,7 @@ class DatabaseUserServiceTest {
 
     @Test
     fun `createProfile throws when user is not found`() = runTest {
-        coEvery { mockUserRepo.getSpecific(1L) } returns null
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns null
 
         val mockProfile = mockk<UserProfile>()
 
@@ -183,7 +183,7 @@ class DatabaseUserServiceTest {
     fun `createProfile returns user with added profile`() = runTest {
         coEvery { mockUserRepo.update(any()) } answers { t -> t.invocation.args.first() as User.Model }  // Returns argument
 
-        coEvery { mockUserRepo.getSpecific(1L) } returns userNoProfile
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns userNoProfile
         coEvery { mockProfileRepo.create(any()) } returns userWithProfile.profile!!
 
         val profile = UserProfile(1L, LocalDate(2000, 1, 1), Gender.Male, "firstname", "lastname")
@@ -218,7 +218,7 @@ class DatabaseUserServiceTest {
 
     @Test
     fun `update throws when user is not found`() = runTest {
-        coEvery { mockUserRepo.getSpecific(1L) } returns null
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns null
 
         assertThrows<ServiceException.UserNotFound> {
             userService.update(1L)
@@ -229,7 +229,7 @@ class DatabaseUserServiceTest {
 
     @Test
     fun `update properly maps optionals to default value`() = runTest {
-        coEvery { mockUserRepo.getSpecific(1L) } returns user
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns user
         coEvery { mockUserRepo.update(any()) } returns user
         coEvery { mockUserRepo.getSpecific(any(), any(), any()) } returns null
 
@@ -246,7 +246,7 @@ class DatabaseUserServiceTest {
 
     @Test
     fun `update returns the user`() = runTest {
-        coEvery { mockUserRepo.getSpecific(1L) } returns user
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns user
         coEvery { mockUserRepo.update(any()) } returns user
 
         val returned = userService.update(1L)

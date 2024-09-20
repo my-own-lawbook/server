@@ -60,7 +60,7 @@ internal class AuthServiceImpl(
         require(validArgs) { "Both or neither of email and username were passed." }
 
         val user = try {
-            userService.getSpecific(email = email, username = username)
+            userService.getSpecific(email = email, username = username, onlyActive = false)
         } catch (e: ServiceException.UserNotFound) {
             return null
         }
@@ -76,7 +76,7 @@ internal class AuthServiceImpl(
         val expiringAtRefresh = now.plus(appConfig.refreshDuration)
         val expiringAtJwt = now.plus(appConfig.jwtDuration)
 
-        val user = userService.getSpecific(id = userId)
+        val user = userService.getSpecific(id = userId, onlyActive = false)
 
         val refreshToken = tokenService.create(
             type = TwoFactorTokenType.RefreshToken,
@@ -95,7 +95,7 @@ internal class AuthServiceImpl(
     }
 
     override suspend fun logoutUser(userId: Long, vararg tokens: UUID) {
-        val user = userService.getSpecific(id = userId)
+        val user = userService.getSpecific(id = userId, onlyActive = false)
 
         tokens.forEach { token ->
             val tokenModel = tokenService.getSpecific(token = token)
@@ -113,7 +113,7 @@ internal class AuthServiceImpl(
 
     override suspend fun validateEmailWithToken(tokenUUID: UUID): User {
         val token = validateToken(tokenUUID, TwoFactorTokenType.EmailConfirm)
-        val user = token.additionalInfo?.let { userService.getSpecific(email = it) }!!
+        val user = token.additionalInfo?.let { userService.getSpecific(email = it, onlyActive = false) }!!
 
         if (user.isEmailVerified)
             throw ServiceException.EmailTokenUserAlreadyVerified(tokenUUID)
