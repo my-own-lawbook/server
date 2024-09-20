@@ -17,8 +17,6 @@ internal class MemberServiceImpl(
         val book = lawContentService.getSpecificBook(id = bookId)
         val membersInBook = memberContentService.getMembersInBook(book.id)
 
-        if (book.creator.id == userId) throw ServiceException.CreatorTriedAddedToBook
-
         if (userId in membersInBook.map(User::id)) throw ServiceException.UserAlreadyMemberOfBook(userId, bookId)
 
         memberContentService.addMemberToBook(bookId, userId)

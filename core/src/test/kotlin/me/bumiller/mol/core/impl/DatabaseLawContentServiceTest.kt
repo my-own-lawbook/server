@@ -352,7 +352,7 @@ class DatabaseLawContentServiceTest {
         coEvery { entryRepository.getSpecific(any(), any(), any()) } returns null
 
         val entrySlot = slot<me.bumiller.mol.database.table.LawEntry.Model>()
-        coEvery { entryRepository.create(capture(entrySlot)) } returnsArgument 0
+        coEvery { entryRepository.create(capture(entrySlot), any()) } returnsArgument 0
 
         val returned = lawContentService.createEntry(
             key = "key82",
@@ -520,7 +520,7 @@ class DatabaseLawContentServiceTest {
         coEvery { sectionRepository.getSpecific(any(), any(), any()) } returns null
 
         val entitySlot = slot<LawSection.Model>()
-        coEvery { sectionRepository.create(capture(entitySlot)) } returnsArgument 0
+        coEvery { sectionRepository.create(capture(entitySlot), any()) } returnsArgument 0
 
 
         val returned = lawContentService.createSection("index-2", "name-3", "content-4", 1L)

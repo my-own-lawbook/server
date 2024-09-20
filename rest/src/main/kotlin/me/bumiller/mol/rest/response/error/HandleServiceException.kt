@@ -11,7 +11,6 @@ import me.bumiller.mol.model.http.notFoundIdentifier
  */
 internal fun ServiceException.handle(): Nothing = when (this) {
     is ServiceException.BookNoAdminLeft -> conflict("At least one admin per book is required.")
-    ServiceException.CreatorTriedAddedToBook -> conflict("The creator of a book cannot be added to the members of that book.")
     is ServiceException.EmailTokenUserAlreadyVerified -> conflict("The user for the given token is already verified.")
     is ServiceException.InvalidTwoFactorTokenType -> notFoundIdentifier("two-factor-token", token.toString())
     is ServiceException.LawBookKeyNotUnique -> conflictUnique("key", key)

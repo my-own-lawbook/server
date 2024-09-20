@@ -17,7 +17,6 @@ interface MemberService {
      * @return The list of members in the book after the update
      * @throws ServiceException.LawBookNotFound If the book was not found
      * @throws ServiceException.UserNotFound If the user was not found
-     * @throws ServiceException.CreatorTriedAddedToBook If the user with [userId] is the creator of the book
      * @throws ServiceException.UserAlreadyMemberOfBook If is already a member of the book
      */
     suspend fun addMemberToBook(bookId: Long, userId: Long): List<User>

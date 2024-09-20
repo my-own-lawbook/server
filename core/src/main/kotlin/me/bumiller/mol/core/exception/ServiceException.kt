@@ -53,11 +53,6 @@ sealed class ServiceException : RuntimeException() {
     data class LawSectionIndexNotUnique(val index: String) : ServiceException()
 
     /**
-     * A creator was tried to be added to its own group
-     */
-    data object CreatorTriedAddedToBook : ServiceException()
-
-    /**
      * A user that is already part of a book was tried to be added again
      */
     data class UserAlreadyMemberOfBook(val userId: Long, val bookId: Long) : ServiceException()
