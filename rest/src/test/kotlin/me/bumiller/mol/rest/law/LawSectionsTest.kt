@@ -167,7 +167,7 @@ class LawSectionsTest {
     @Test
     fun `PATCH law-sections_{id} calls updateSection with correct arguments and returns 200 with updated section`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
+            val book = lawBookModel(1L)
             val entry = lawEntryModel(1L)
             val section = lawSectionModel(1L)
 
@@ -237,7 +237,7 @@ class LawSectionsTest {
     @Test
     fun `DELETE law-sections_{id} calls deleteSection with correct id and returns section`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
+            val book = lawBookModel(1L)
             val entry = lawEntryModel(1L)
             val section = lawSectionModel(1L)
 
@@ -284,7 +284,7 @@ class LawSectionsTest {
     @Test
     fun `GET law-entries_{id}_law-sections returns only sections of entry`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user2)
+            val book = lawBookModel(1L)
             val entry = lawEntryModel(1L)
             val section = lawSectionModel(1L)
 
@@ -336,7 +336,7 @@ class LawSectionsTest {
     @Test
     fun `POST law-entries_{id}_law-sections calls createSection with correct arguments and returns the section`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
+            val book = lawBookModel(1L)
             val entry = lawEntryModel(1L)
             val section = lawSectionModel(1L)
 

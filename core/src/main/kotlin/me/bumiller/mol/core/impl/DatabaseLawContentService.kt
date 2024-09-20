@@ -53,11 +53,10 @@ internal class DatabaseLawContentService(
             key = key,
             name = name,
             description = description,
-            creator = user,
             members = listOf(user)
         )
 
-        val created = bookRepository.create(book, user.id)!!
+        val created = bookRepository.create(book)
             .let(::mapBook)
 
         memberRoleRepository.setMemberRole(user.id, created.id, LawBookMembersCrossref.Roles.Admin.serializedName)
@@ -71,7 +70,6 @@ internal class DatabaseLawContentService(
         key: Optional<String>,
         name: Optional<String>,
         description: Optional<String>,
-        creatorId: Optional<Long>,
         memberIds: Optional<List<Long>>
     ): LawBook {
         val book = bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
@@ -81,9 +79,6 @@ internal class DatabaseLawContentService(
             }
         }
 
-        val creator = creatorId.mapSuspend {
-            userRepository.getSpecific(it)
-        }
         val members = memberIds.mapSuspend { memberIds ->
             memberIds.map { memberId -> userRepository.getSpecific(memberId) }
         }
@@ -92,7 +87,6 @@ internal class DatabaseLawContentService(
             key = key.getOr(book.key),
             name = name.getOr(book.name),
             description = description.getOr(book.description),
-            creator = creator.getOr(book.creator) ?: throw ServiceException.UserNotFound(id = creatorId.get()),
             members = members.getOr(book.members).allNonNullOrNull() ?: throw ServiceException.UserNotFoundList(
                 memberIds.get()
             )

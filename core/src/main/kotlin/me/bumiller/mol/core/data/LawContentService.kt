@@ -79,10 +79,8 @@ interface LawContentService {
      * @param key The key
      * @param name The name
      * @param description The description
-     * @param creatorId The id of the new user
      * @param memberIds The ids of the new members
      * @return The updated [LawBook]
-     * @throws ServiceException.UserNotFound If the user was not found
      * @throws ServiceException.UserNotFoundList If any of the [memberIds] did not resolve to a user
      * @throws ServiceException.LawBookNotFound If the law-book was not found
      * @throws ServiceException.LawBookKeyNotUnique If the [key] already existed
@@ -92,7 +90,6 @@ interface LawContentService {
         key: Optional<String> = empty(),
         name: Optional<String> = empty(),
         description: Optional<String> = empty(),
-        creatorId: Optional<Long> = empty(),
         memberIds: Optional<List<Long>> = empty()
     ): LawBook
 

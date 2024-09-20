@@ -39,7 +39,6 @@ fun lawBookModel(key: Long) = LawBook(
     "key-$key",
     "name-$key",
     "description-$key",
-    userModel(key),
     (key..key + 3).map(::userModel)
 )
 

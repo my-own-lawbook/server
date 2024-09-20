@@ -79,7 +79,7 @@ class LawBooksTest {
 
     @Test
     fun `GET law-books_{id} returns 200 with book`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L, creator = user)
+        val book = lawBookModel(1L)
         coEvery { services.lawContentService.getSpecificBook(eq(book.id), any()) } returns book
 
         val res = client.get("/test/api/law-books/1/")
@@ -88,7 +88,6 @@ class LawBooksTest {
         assertEquals(200, res.status.value)
         assertEquals(book.id, body.id)
         assertEquals(book.key, body.key)
-        assertEquals(book.creator.id, body.creatorId)
         assertEquals(book.description, body.description)
     }
 
@@ -129,7 +128,6 @@ class LawBooksTest {
             assertEquals(book.name, body.name)
             assertEquals(book.key, body.key)
             assertEquals(book.description, body.description)
-            assertEquals(user.id, body.creatorId)
         }
 
     @Test
@@ -173,7 +171,6 @@ class LawBooksTest {
                     any(),
                     any(),
                     any(),
-                    any(),
                     any()
                 )
             } returns book
@@ -197,7 +194,6 @@ class LawBooksTest {
                     1L,
                     present("new-key"),
                     present("new-name"),
-                    empty(),
                     empty(),
                     empty()
                 )
@@ -232,7 +228,7 @@ class LawBooksTest {
 
     @Test
     fun `DELETE law-books_{id} calls deleteBook with right argument`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L).copy(creator = user)
+        val book = lawBookModel(1L)
         coEvery { services.lawContentService.deleteBook(1L) } returns book
 
         val res1 = client.delete("/test/api/law-books/1/")
@@ -329,7 +325,7 @@ class LawBooksTest {
     @Test
     fun `PUT law-books_{id}_members_{id} calls addMemberToBook with correct arguments and returns 200 with the result`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
+            val book = lawBookModel(1L)
             val toAddUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
 
             coEvery {
@@ -413,7 +409,7 @@ class LawBooksTest {
     @Test
     fun `DELETE law-books_{id}_members_{id} calls removeMemberFromBook with correct arguments and returns 200 with the result`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L).copy(creator = user)
+            val book = lawBookModel(1L)
             val toRemoveUser = userModel(7L).copy(isEmailVerified = true, profile = profile)
 
             coEvery {

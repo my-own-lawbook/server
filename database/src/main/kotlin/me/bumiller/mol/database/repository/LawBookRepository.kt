@@ -23,17 +23,15 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
      * Creates a new [LawBook] in the database
      *
      * @param model The model to take data from.
-     * @param creatorId The id of the user that created the [LawBook]
      *
      * @return The creates [LawBook], or null if the user was not found
      */
-    suspend fun create(model: Model, creatorId: Long): Model?
+    suspend fun create(model: Model): Model
 
     /**
      * Gets a specific [Model] matching all given criteria
      *
      * @param id The id of the law-book
-     * @param creatorId The id of the user that created the law book
      * @param key The key of the law-book
      * @return The singular [Model] matching all the given criteria, or null
      */
@@ -63,11 +61,8 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     LawBookRepository {
 
-    override suspend fun create(model: Model, creatorId: Long): Model? = suspendTransaction {
-        val user = User.Entity.findById(creatorId) ?: return@suspendTransaction null
-
+    override suspend fun create(model: Model): Model = suspendTransaction {
         Entity.new {
-            creator = user
             populate(model)
         }.asModel
     }

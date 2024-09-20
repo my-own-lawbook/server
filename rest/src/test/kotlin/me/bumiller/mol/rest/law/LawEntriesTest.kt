@@ -88,7 +88,7 @@ class LawEntriesTest {
 
     @Test
     fun `GET law-entries_{id} returns specific entry`() = ktorEndpointTest(user) { services, client ->
-        val book = lawBookModel(1L, creator = user)
+        val book = lawBookModel(1L)
         val entry = lawEntryModel(1L)
 
         coEvery { services.lawContentService.getBookByEntry(1L) } returns book
@@ -137,7 +137,7 @@ class LawEntriesTest {
     @Test
     fun `UPDATE law-entries_{id} calls updateEntry with correct arguments`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L, creator = user)
+            val book = lawBookModel(1L)
             val entry = lawEntryModel(1L)
 
             coEvery { services.lawContentService.getBookByEntry(1L) } returns book
@@ -200,7 +200,7 @@ class LawEntriesTest {
     @Test
     fun `DELETE law-entries_{id} calls deleteEntry with correct id and returns deleted entry`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L, creator = user)
+            val book = lawBookModel(1L)
             val entry = lawEntryModel(1L)
 
             coEvery { services.lawContentService.getBookByEntry(1L) } returns book
@@ -245,7 +245,7 @@ class LawEntriesTest {
     @Test
     fun `GET law-books_{id}_law-entries returns only entries of given book`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L, creator = user)
+            val book = lawBookModel(1L)
 
             coEvery { services.lawContentService.getBookByEntry(1L) } returns book
             coEvery { services.lawService.isUserMemberOfEntry(user.id, 1L) } returns true
@@ -304,7 +304,7 @@ class LawEntriesTest {
     @Test
     fun `CREATE law-books_{id}_law-entries calls createEntry with correct arguments`() =
         ktorEndpointTest(user) { services, client ->
-            val book = lawBookModel(1L, creator = user)
+            val book = lawBookModel(1L)
             val entry = lawEntryModel(1L)
 
             coEvery { services.lawContentService.getSpecificBook(1L) } returns book
