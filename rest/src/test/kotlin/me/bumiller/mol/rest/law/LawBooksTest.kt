@@ -19,6 +19,8 @@ import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.response.user.BookRoleUserResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.test.*
+import me.bumiller.mol.validation.LawPermission
+import me.bumiller.mol.validation.LawResourceScope
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -54,11 +56,25 @@ class LawBooksTest {
 
     @Test
     fun `GET law-books_{id} checks read access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.get("/test/api/law-books/1/")
 
-        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -119,7 +135,14 @@ class LawBooksTest {
     @Test
     fun `PATCH law-books_{id} checks write access`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
+            coEvery {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Book,
+                    LawPermission.Edit,
+                    1L,
+                    user.id
+                )
+            } throws RequestException(404, Unit)
 
             client.patch("/test/api/law-books/1/") {
                 contentType(ContentType.Application.Json)
@@ -130,7 +153,14 @@ class LawBooksTest {
                 )
             }
 
-            coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
+            coVerify(exactly = 1) {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Book,
+                    LawPermission.Edit,
+                    1L,
+                    user.id
+                )
+            }
         }
 
     @Test
@@ -180,10 +210,24 @@ class LawBooksTest {
 
     @Test
     fun `DELETE law-books_{id} checks for write access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.delete("/test/api/law-books/1/")
-        coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -202,11 +246,25 @@ class LawBooksTest {
 
     @Test
     fun `GET law-books_{id}_members checks user has read access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.get("/test/api/law-books/1/members/")
 
-        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -229,11 +287,25 @@ class LawBooksTest {
 
     @Test
     fun `PUT law-books_{id}_members_{id} checks user has write access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.put("/test/api/law-books/1/members/1/")
 
-        coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -279,11 +351,25 @@ class LawBooksTest {
     @Test
     fun `DELETE law-books_{id}_members_{id} checks user has write access`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
+            coEvery {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Book,
+                    LawPermission.Edit,
+                    1L,
+                    user.id
+                )
+            } throws RequestException(404, Unit)
 
             client.delete("/test/api/law-books/1/members/1/")
 
-            coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
+            coVerify(exactly = 1) {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Book,
+                    LawPermission.Edit,
+                    1L,
+                    user.id
+                )
+            }
         }
 
     @Test
@@ -348,11 +434,25 @@ class LawBooksTest {
 
     @Test
     fun `GET law-books_{id}_roles checks for read access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.get("/test/api/law-books/1/roles/")
 
-        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -389,11 +489,25 @@ class LawBooksTest {
 
     @Test
     fun `GET law-books_{id}_roles_{id} checks for read access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateReadBook(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.get("/test/api/law-books/1/roles/1/")
 
-        coVerify(exactly = 1) { services.accessValidator.validateReadBook(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -413,14 +527,28 @@ class LawBooksTest {
 
     @Test
     fun `PUT law-books_{id}_roles_{id} checks for write access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateWriteBook(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
-        val res = client.put("/test/api/law-books/1/roles/1/") {
+        client.put("/test/api/law-books/1/roles/1/") {
             contentType(ContentType.Application.Json)
             setBody(PutUserBookRoleRequest(1))
         }
 
-        coVerify(exactly = 1) { services.accessValidator.validateWriteBook(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Book,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test

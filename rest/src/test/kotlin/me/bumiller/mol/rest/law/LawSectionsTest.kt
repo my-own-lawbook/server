@@ -12,6 +12,8 @@ import me.bumiller.mol.model.http.RequestException
 import me.bumiller.mol.rest.http.law.CreateLawSectionRequest
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
 import me.bumiller.mol.test.*
+import me.bumiller.mol.validation.LawPermission
+import me.bumiller.mol.validation.LawResourceScope
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -93,11 +95,25 @@ class LawSectionsTest {
 
     @Test
     fun `GET law-sections_{id} checks user has read access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateReadSection(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Section,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.get("/test/api/law-sections/1/")
 
-        coVerify(exactly = 1) { services.accessValidator.validateReadSection(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Section,
+                LawPermission.Read,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -120,7 +136,14 @@ class LawSectionsTest {
 
     @Test
     fun `PATCH law-sections_{id} checks user has write access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateWriteSection(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Section,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.patch("/test/api/law-sections/1/") {
             contentType(ContentType.Application.Json)
@@ -131,7 +154,14 @@ class LawSectionsTest {
             )
         }
 
-        coVerify(exactly = 1) { services.accessValidator.validateWriteSection(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Section,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -183,11 +213,25 @@ class LawSectionsTest {
 
     @Test
     fun `DELETE law-sections_{id} checks user has write access`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.accessValidator.validateWriteSection(user, 1L) } throws RequestException(404, Unit)
+        coEvery {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Section,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        } throws RequestException(404, Unit)
 
         client.delete("/test/api/law-sections/1/")
 
-        coVerify(exactly = 1) { services.accessValidator.validateWriteSection(user, 1L) }
+        coVerify(exactly = 1) {
+            services.accessValidator.hasAccess(
+                LawResourceScope.Section,
+                LawPermission.Edit,
+                1L,
+                user.id
+            )
+        }
     }
 
     @Test
@@ -216,11 +260,25 @@ class LawSectionsTest {
     @Test
     fun `GET law-entries_{id}_law-sections checks user has read access`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.accessValidator.validateReadEntry(user, 1L) } throws RequestException(404, Unit)
+            coEvery {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Entry,
+                    LawPermission.Read,
+                    1L,
+                    user.id
+                )
+            } throws RequestException(404, Unit)
 
             client.get("/test/api/law-entries/1/law-sections/")
 
-            coVerify(exactly = 1) { services.accessValidator.validateReadEntry(user, 1L) }
+            coVerify(exactly = 1) {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Entry,
+                    LawPermission.Read,
+                    1L,
+                    user.id
+                )
+            }
         }
 
     @Test
@@ -251,14 +309,28 @@ class LawSectionsTest {
     @Test
     fun `POST law-entries_{id}_law-sections checks user has write access`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.accessValidator.validateWriteEntry(user, 1L) } throws RequestException(404, Unit)
+            coEvery {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Entry,
+                    LawPermission.Create,
+                    1L,
+                    user.id
+                )
+            } throws RequestException(404, Unit)
 
             client.post("/test/api/law-entries/1/law-sections/") {
                 contentType(ContentType.Application.Json)
                 setBody(CreateLawSectionRequest("index-123", "name-535", "content-296"))
             }
 
-            coVerify(exactly = 1) { services.accessValidator.validateWriteEntry(user, 1L) }
+            coVerify(exactly = 1) {
+                services.accessValidator.hasAccess(
+                    LawResourceScope.Entry,
+                    LawPermission.Create,
+                    1L,
+                    user.id
+                )
+            }
         }
 
     @Test
@@ -277,7 +349,7 @@ class LawSectionsTest {
                     present("index-123"),
                     present(1L)
                 )
-            } returns section//null
+            } returns section
 
             val res = client.post("/test/api/law-entries/1/law-sections/") {
                 contentType(ContentType.Application.Json)
