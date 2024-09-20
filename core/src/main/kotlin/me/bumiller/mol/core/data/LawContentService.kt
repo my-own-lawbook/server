@@ -24,28 +24,16 @@ interface LawContentService {
     suspend fun getBooks(): List<LawBook>
 
     /**
-     * Gets all the [LawBook]s created by a specific user
-     *
-     * @param userId The id of the creator
-     * @return All [LawBook] for the user
-     * @throws ServiceException.UserNotFound If the user could not be found
-     */
-    suspend fun getBooksByCreator(userId: Long): List<LawBook>
-
-    /**
      * Gets a specific [LawBook] matching all the given criteria
      *
      * @param id The id of the [LawBook]
      * @param key The key of the [LawBook]
-     * @param creatorId The id of the creator of the [LawBook]
      * @return The singular [LawBook]
      * @throws ServiceException.LawBookNotFound If the book could not be found
-     * @throws ServiceException.UserNotFound If the user could not be found
      */
     suspend fun getSpecificBook(
         id: Long? = null,
-        key: String? = null,
-        creatorId: Long? = null
+        key: String? = null
     ): LawBook
 
     /**
@@ -91,10 +79,8 @@ interface LawContentService {
      * @param key The key
      * @param name The name
      * @param description The description
-     * @param creatorId The id of the new user
      * @param memberIds The ids of the new members
      * @return The updated [LawBook]
-     * @throws ServiceException.UserNotFound If the user was not found
      * @throws ServiceException.UserNotFoundList If any of the [memberIds] did not resolve to a user
      * @throws ServiceException.LawBookNotFound If the law-book was not found
      * @throws ServiceException.LawBookKeyNotUnique If the [key] already existed
@@ -104,7 +90,6 @@ interface LawContentService {
         key: Optional<String> = empty(),
         name: Optional<String> = empty(),
         description: Optional<String> = empty(),
-        creatorId: Optional<Long> = empty(),
         memberIds: Optional<List<Long>> = empty()
     ): LawBook
 

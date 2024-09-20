@@ -10,7 +10,9 @@ import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import me.bumiller.mol.core.AuthService
 import me.bumiller.mol.core.EncryptionService
 import me.bumiller.mol.core.LawService
@@ -83,12 +85,7 @@ fun ktorEndpointTest(
     /*
      * AccessService is mocked to always return true for access. Can be overwritten
      */
-    coEvery { services.accessValidator.validateReadBook(any(), any()) } just Runs
-    coEvery { services.accessValidator.validateReadEntry(any(), any()) } just Runs
-    coEvery { services.accessValidator.validateReadSection(any(), any()) } just Runs
-    coEvery { services.accessValidator.validateWriteBook(any(), any()) } just Runs
-    coEvery { services.accessValidator.validateWriteEntry(any(), any()) } just Runs
-    coEvery { services.accessValidator.validateWriteSection(any(), any()) } just Runs
+    coEvery { services.accessValidator.hasAccess(any(), any(), any(), any(), any()) } returns true
 
     application {
         install(Koin) {

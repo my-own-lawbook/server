@@ -39,7 +39,6 @@ fun lawBookEntity(key: Long) = LawBook.Model(
     "key-$key",
     "name-$key",
     "description-$key",
-    userEntity(key),
     (key..key + 3).map(::userEntity)
 )
 

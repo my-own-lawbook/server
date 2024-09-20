@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.ReferenceOption
 
 object User {
 
@@ -60,7 +61,7 @@ object User {
 
         val isEmailVerified = bool("email_verified").default(false)
 
-        val profileId = reference("profile_id", UserProfile.Table).nullable()
+        val profileId = reference("profile_id", UserProfile.Table, ReferenceOption.SET_NULL).nullable()
     }
 
     internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {

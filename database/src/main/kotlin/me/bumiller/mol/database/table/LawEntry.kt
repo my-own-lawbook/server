@@ -6,6 +6,7 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 
 object LawEntry {
 
@@ -26,7 +27,7 @@ object LawEntry {
 
         val name = text("name")
 
-        val parentBook = reference("book_id", LawBook.Table)
+        val parentBook = reference("book_id", LawBook.Table, ReferenceOption.CASCADE)
 
         init {
             index(true, key, parentBook)

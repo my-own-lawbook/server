@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import java.util.*
 
@@ -64,7 +65,7 @@ object TwoFactorToken {
 
     object Table : LongIdTable("two_factor_token") {
 
-        val user = reference("user_id", User.Table)
+        val user = reference("user_id", User.Table, ReferenceOption.CASCADE)
 
         val token = uuid("token").uniqueIndex()
 

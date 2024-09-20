@@ -16,9 +16,7 @@ import me.bumiller.mol.rest.http.PathSectionId
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.AccessValidator
-import me.bumiller.mol.validation.Validatable
-import me.bumiller.mol.validation.validated
+import me.bumiller.mol.validation.*
 import org.koin.ktor.ext.inject
 
 /**
@@ -84,9 +82,7 @@ internal data class CreateLawSectionRequest(
  */
 private fun Route.getAll(lawContentService: LawContentService) = get {
     val booksForUser = try {
-        val booksForUserCreated = lawContentService.getBooksByCreator(user.id)
-        val booksForUserMember = lawContentService.getBooksForMember(user.id)
-        booksForUserCreated + booksForUserMember
+        lawContentService.getBooksForMember(user.id)
     } catch (e: ServiceException.UserNotFound) {
         internal()
     }
@@ -118,7 +114,7 @@ private fun Route.getSpecific(lawContentService: LawContentService, accessValida
     get("{$PathSectionId}/") {
     val sectionId = call.parameters.longOrBadRequest(PathSectionId)
 
-        accessValidator.validateReadSection(user, sectionId)
+        accessValidator.hasAccess(LawResourceScope.Section, LawPermission.Read, sectionId, user.id)
 
         val section = lawContentService.getSpecificSection(id = present(sectionId))
 
@@ -135,7 +131,7 @@ private fun Route.update(lawContentService: LawContentService, accessValidator: 
 
     val body = call.validated<UpdateLawSectionRequest>()
 
-        accessValidator.validateWriteSection(user, sectionId)
+        accessValidator.hasAccess(LawResourceScope.Section, LawPermission.Edit, sectionId, user.id)
 
     val updated = lawContentService.updateSection(
         sectionId = sectionId,
@@ -155,7 +151,7 @@ private fun Route.deleteSpecific(lawContentService: LawContentService, accessVal
     delete("{$PathSectionId}/") {
     val sectionId = call.parameters.longOrBadRequest(PathSectionId)
 
-        accessValidator.validateWriteSection(user, sectionId)
+        accessValidator.hasAccess(LawResourceScope.Section, LawPermission.Edit, sectionId, user.id)
 
         val deleted = lawContentService.deleteSection(sectionId)
 
@@ -169,7 +165,7 @@ private fun Route.deleteSpecific(lawContentService: LawContentService, accessVal
 private fun Route.getByEntry(lawContentService: LawContentService, accessValidator: AccessValidator) = get {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-    accessValidator.validateReadEntry(user, entryId)
+    accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Read, entryId, user.id)
 
     val sections = lawContentService.getSectionsByEntry(entryId)
 
@@ -185,7 +181,7 @@ private fun Route.create(lawContentService: LawContentService, accessValidator: 
 
     val body = call.validated<CreateLawSectionRequest>()
 
-    accessValidator.validateWriteEntry(user, entryId)
+    accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Create, entryId, user.id)
 
     val created = lawContentService.createSection(
         index = body.index,

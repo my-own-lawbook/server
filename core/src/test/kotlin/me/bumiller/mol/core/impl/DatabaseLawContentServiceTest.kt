@@ -1,19 +1,13 @@
 package me.bumiller.mol.core.impl
 
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
-import io.mockk.slot
+import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.exception.ServiceException
-import me.bumiller.mol.database.repository.LawBookRepository
-import me.bumiller.mol.database.repository.LawEntryRepository
-import me.bumiller.mol.database.repository.LawSectionRepository
-import me.bumiller.mol.database.repository.UserRepository
+import me.bumiller.mol.database.repository.*
 import me.bumiller.mol.database.table.LawSection
 import me.bumiller.mol.model.LawBook
 import me.bumiller.mol.test.util.*
@@ -28,6 +22,7 @@ class DatabaseLawContentServiceTest {
     private lateinit var entryRepository: LawEntryRepository
     private lateinit var sectionRepository: LawSectionRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var memberRoleRepository: MemberRoleRepository
 
     private lateinit var lawContentService: LawContentService
 
@@ -37,9 +32,16 @@ class DatabaseLawContentServiceTest {
         entryRepository = mockk()
         sectionRepository = mockk()
         userRepository = mockk()
+        memberRoleRepository = mockk()
 
         lawContentService =
-            DatabaseLawContentService(bookRepository, entryRepository, sectionRepository, userRepository)
+            DatabaseLawContentService(
+                bookRepository,
+                entryRepository,
+                sectionRepository,
+                userRepository,
+                memberRoleRepository
+            )
 
         coEvery { bookRepository.getAll() } returns lawBookEntities(5)
     }
@@ -52,66 +54,38 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `getBooksByCreator throws if the user is not found`() = runTest {
-        coEvery { userRepository.getSpecific(any<Long>()) } returns null
-
-        assertThrows<ServiceException.UserNotFound> {
-            lawContentService.getBooksByCreator(1L)
-        }
-    }
-
-    @Test
-    fun `getBooksByCreator calls repository method with correct user id and returns those books`() = runTest {
-        coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
-
-        val userIdSlot = slot<Long>()
-        coEvery { bookRepository.getForCreator(capture(userIdSlot)) } returns lawBookEntities(3)
-
-        val returned = lawContentService.getBooksByCreator(1L)
-
-        coVerify(exactly = 1) { userRepository.getSpecific(1L) }
-        assertArrayEquals((1..3L).toList().toTypedArray(), returned.map(LawBook::id).toTypedArray())
-    }
-
-    @Test
     fun `getSpecificBook properly maps nullables to optionals`() = runTest {
         val idSlots = mutableListOf<Optional<Long>>()
-        val creatorIdSlots = mutableListOf<Optional<Long>>()
         val keySlots = mutableListOf<Optional<String>>()
 
         coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
         coEvery {
             bookRepository.getSpecific(
                 capture(idSlots),
-                capture(creatorIdSlots),
                 capture(keySlots)
             )
         } returns lawBookEntity(1L)
 
-        lawContentService.getSpecificBook(null, null, null)
+        lawContentService.getSpecificBook(null, null)
         assertFalse(idSlots[0].isPresent)
-        assertFalse(creatorIdSlots[0].isPresent)
         assertFalse(keySlots[0].isPresent)
 
-        lawContentService.getSpecificBook(1L, null, null)
+        lawContentService.getSpecificBook(1L, null)
         assertEquals(1L, idSlots[1].get())
-        assertFalse(creatorIdSlots[1].isPresent)
         assertFalse(keySlots[1].isPresent)
 
-        lawContentService.getSpecificBook(1L, "fds", null)
+        lawContentService.getSpecificBook(1L, "fds")
         assertEquals(1L, idSlots[2].get())
         assertEquals("fds", keySlots[2].get())
-        assertFalse(creatorIdSlots[2].isPresent)
 
-        lawContentService.getSpecificBook(null, null, 4L)
+        lawContentService.getSpecificBook(null, null)
         assertFalse(idSlots[3].isPresent)
         assertFalse(keySlots[3].isPresent)
-        assertEquals(4L, creatorIdSlots[3].get())
     }
 
     @Test
     fun `getSpecificBook throws when it is not found`() = runTest {
-        coEvery { bookRepository.getSpecific(any(), any(), any()) } returns null
+        coEvery { bookRepository.getSpecific(any(), any()) } returns null
 
         assertThrows<ServiceException.LawBookNotFound> {
             lawContentService.getSpecificBook()
@@ -177,7 +151,7 @@ class DatabaseLawContentServiceTest {
     @Test
     fun `createBook throws when key is not unique`() = runTest {
         coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
-        coEvery { bookRepository.getSpecific(any(), any(), any()) } returns lawBookEntity(1L)
+        coEvery { bookRepository.getSpecific(any(), any()) } returns lawBookEntity(1L)
 
         assertThrows<ServiceException.LawBookKeyNotUnique> {
             lawContentService.createBook("", "", "", 1L)
@@ -185,14 +159,14 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `createBook calls repository with correctly created book model and user id and returns created book`() =
+    fun `createBook calls repository with correctly created book model and returns created book`() =
         runTest {
             coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(12L)
-            coEvery { bookRepository.getSpecific(any(), any(), any()) } returns null
+            coEvery { bookRepository.getSpecific(any(), any()) } returns null
+            coEvery { memberRoleRepository.setMemberRole(any(), any(), any()) } just runs
 
             val bookSlot = slot<me.bumiller.mol.database.table.LawBook.Model>()
-            val userIdSlot = slot<Long>()
-            coEvery { bookRepository.create(capture(bookSlot), capture(userIdSlot)) } returnsArgument 0
+            coEvery { bookRepository.create(capture(bookSlot)) } returnsArgument 0
 
             val returned = lawContentService.createBook("key153", "name", "description", 12L)
 
@@ -201,14 +175,28 @@ class DatabaseLawContentServiceTest {
                 assertEquals("key153", key)
                 assertEquals("name", name)
                 assertEquals("description", description)
-                assertEquals(12L, creator.id)
-                assertEquals(0, members.size)
+                assertEquals(1, members.size)
+                assertEquals(12L, members.first().id)
             }
-            assertEquals(12L, userIdSlot.captured)
-            coVerify(exactly = 1) { bookRepository.create(any(), any()) }
+            coVerify(exactly = 1) { bookRepository.create(any()) }
 
             assertEquals(-1L, returned.id)
             assertEquals("key153", returned.key)
+        }
+
+    @Test
+    fun `createBook sets role of creator to admin after creating the book`() =
+        runTest {
+            coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(12L)
+            coEvery { bookRepository.getSpecific(any(), any()) } returns null
+            coEvery { memberRoleRepository.setMemberRole(any(), any(), any()) } just runs
+
+            val bookSlot = slot<me.bumiller.mol.database.table.LawBook.Model>()
+            coEvery { bookRepository.create(capture(bookSlot)) } returnsArgument 0
+
+            lawContentService.createBook("key153", "name", "description", 12L)
+
+            coVerify { memberRoleRepository.setMemberRole(12L, any(), "admin") }
         }
 
     @Test
@@ -221,23 +209,21 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `updateBook fetches creator and member ids from database only when id's are passed`() = runTest {
+    fun `updateBook fetches member ids from database only when id's are passed`() = runTest {
         coEvery { bookRepository.getSpecific(any<Long>()) } returns lawBookEntity(1L)
         coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
         coEvery { bookRepository.update(any()) } returnsArgument 0
 
         lawContentService.updateBook(
             bookId = 1L,
-            creatorId = present(5L),
             memberIds = present(listOf(4L, 3L, 8L, 5))
         )
         lawContentService.updateBook(
             bookId = 1L,
-            creatorId = empty(),
             memberIds = present(listOf(4L, 3L, 8L, 5))
         )
 
-        coVerify(exactly = 9) { userRepository.getSpecific(any<Long>()) }
+        coVerify(exactly = 8) { userRepository.getSpecific(any<Long>()) }
     }
 
     @Test
@@ -352,7 +338,7 @@ class DatabaseLawContentServiceTest {
         coEvery { entryRepository.getSpecific(any(), any(), any()) } returns null
 
         val entrySlot = slot<me.bumiller.mol.database.table.LawEntry.Model>()
-        coEvery { entryRepository.create(capture(entrySlot)) } returnsArgument 0
+        coEvery { entryRepository.create(capture(entrySlot), any()) } returnsArgument 0
 
         val returned = lawContentService.createEntry(
             key = "key82",
@@ -520,7 +506,7 @@ class DatabaseLawContentServiceTest {
         coEvery { sectionRepository.getSpecific(any(), any(), any()) } returns null
 
         val entitySlot = slot<LawSection.Model>()
-        coEvery { sectionRepository.create(capture(entitySlot)) } returnsArgument 0
+        coEvery { sectionRepository.create(capture(entitySlot), any()) } returnsArgument 0
 
 
         val returned = lawContentService.createSection("index-2", "name-3", "content-4", 1L)

@@ -20,8 +20,6 @@ object LawBook {
 
         val description: String,
 
-        val creator: User.Model,
-
         val members: List<User.Model>
 
     ) : BaseModel<Long>
@@ -34,8 +32,6 @@ object LawBook {
 
         val description = text("description")
 
-        val creator = reference("creator_id", User.Table)
-
     }
 
     internal class Entity(id: EntityID<Long>) : LongEntity(id), ModelMappableEntity<Model> {
@@ -43,7 +39,6 @@ object LawBook {
         var key by Table.key
         var name by Table.name
         var description by Table.description
-        var creator by User.Entity referencedOn Table.creator
 
         var members by User.Entity via LawBookMembersCrossref.Table
 
@@ -51,12 +46,11 @@ object LawBook {
             key = model.key
             name = model.name
             description = model.description
-            creator = User.Entity.findById(model.creator.id)!!
             members = User.Entity.forIds(model.members.map(BaseModel<Long>::id))
         }
 
         override val asModel: Model
-            get() = Model(id.value, key, name, description, creator.asModel, members.map { it.asModel })
+            get() = Model(id.value, key, name, description, members.map { it.asModel })
 
         companion object : LongEntityClass<Entity>(Table)
 

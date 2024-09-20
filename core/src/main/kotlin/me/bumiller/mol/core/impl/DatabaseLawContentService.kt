@@ -9,10 +9,8 @@ import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.core.mapping.mapBook
 import me.bumiller.mol.core.mapping.mapEntry
 import me.bumiller.mol.core.mapping.mapSection
-import me.bumiller.mol.database.repository.LawBookRepository
-import me.bumiller.mol.database.repository.LawEntryRepository
-import me.bumiller.mol.database.repository.LawSectionRepository
-import me.bumiller.mol.database.repository.UserRepository
+import me.bumiller.mol.database.repository.*
+import me.bumiller.mol.database.table.crossref.LawBookMembersCrossref
 import me.bumiller.mol.model.LawBook
 import me.bumiller.mol.model.LawEntry
 import me.bumiller.mol.model.LawSection
@@ -24,27 +22,16 @@ internal class DatabaseLawContentService(
     val bookRepository: LawBookRepository,
     val entryRepository: LawEntryRepository,
     val sectionRepository: LawSectionRepository,
-    val userRepository: UserRepository
+    val userRepository: UserRepository,
+    val memberRoleRepository: MemberRoleRepository
 ) : LawContentService {
 
     override suspend fun getBooks(): List<LawBook> = bookRepository
         .getAll().map(::mapBook)
 
-    override suspend fun getBooksByCreator(userId: Long): List<LawBook> {
-        userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
-
-        return bookRepository.getForCreator(userId)
-            .map(::mapBook)
-    }
-
-    override suspend fun getSpecificBook(id: Long?, key: String?, creatorId: Long?): LawBook {
-        if (creatorId != null) {
-            userRepository.getSpecific(id = creatorId) ?: throw ServiceException.UserNotFound(id = creatorId)
-        }
-
+    override suspend fun getSpecificBook(id: Long?, key: String?): LawBook {
         return bookRepository.getSpecific(
             id = presentWhenNotNull(id),
-            creatorId = presentWhenNotNull(creatorId),
             key = presentWhenNotNull(key)
         )?.let(::mapBook) ?: throw ServiceException.LawBookNotFound(id = id, key = key)
     }
@@ -66,12 +53,15 @@ internal class DatabaseLawContentService(
             key = key,
             name = name,
             description = description,
-            creator = user,
-            members = listOf()
+            members = listOf(user)
         )
 
-        return bookRepository.create(book, user.id)!!
+        val created = bookRepository.create(book)
             .let(::mapBook)
+
+        memberRoleRepository.setMemberRole(user.id, created.id, LawBookMembersCrossref.Roles.Admin.serializedName)
+
+        return created
     }
 
     @Suppress("NAME_SHADOWING")
@@ -80,7 +70,6 @@ internal class DatabaseLawContentService(
         key: Optional<String>,
         name: Optional<String>,
         description: Optional<String>,
-        creatorId: Optional<Long>,
         memberIds: Optional<List<Long>>
     ): LawBook {
         val book = bookRepository.getSpecific(bookId) ?: throw ServiceException.LawBookNotFound(id = bookId)
@@ -90,9 +79,6 @@ internal class DatabaseLawContentService(
             }
         }
 
-        val creator = creatorId.mapSuspend {
-            userRepository.getSpecific(it)
-        }
         val members = memberIds.mapSuspend { memberIds ->
             memberIds.map { memberId -> userRepository.getSpecific(memberId) }
         }
@@ -101,7 +87,6 @@ internal class DatabaseLawContentService(
             key = key.getOr(book.key),
             name = name.getOr(book.name),
             description = description.getOr(book.description),
-            creator = creator.getOr(book.creator) ?: throw ServiceException.UserNotFound(id = creatorId.get()),
             members = members.getOr(book.members).allNonNullOrNull() ?: throw ServiceException.UserNotFoundList(
                 memberIds.get()
             )

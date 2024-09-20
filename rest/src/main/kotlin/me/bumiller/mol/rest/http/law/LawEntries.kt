@@ -16,9 +16,7 @@ import me.bumiller.mol.rest.http.PathEntryId
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.AccessValidator
-import me.bumiller.mol.validation.Validatable
-import me.bumiller.mol.validation.validated
+import me.bumiller.mol.validation.*
 import org.koin.ktor.ext.inject
 
 /**
@@ -81,9 +79,7 @@ internal data class CreateLawEntryRequest(
  */
 private fun Route.getAll(lawContentService: LawContentService) = get {
     val allBooks = try {
-        val booksForUserCreated = lawContentService.getBooksByCreator(user.id)
-        val booksForUserMember = lawContentService.getBooksForMember(user.id)
-        booksForUserCreated + booksForUserMember
+        lawContentService.getBooksForMember(user.id)
     } catch (e: ServiceException.UserNotFound) {
         internal()
     }
@@ -108,7 +104,7 @@ private fun Route.getById(lawContentService: LawContentService, accessValidator:
     get("{$PathEntryId}/") {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-        accessValidator.validateReadEntry(user, entryId)
+        accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Read, entryId, user.id)
 
         val entry = lawContentService.getSpecificEntry(id = present(entryId))
 
@@ -125,7 +121,7 @@ private fun Route.update(lawContentService: LawContentService, accessValidator: 
 
     val body = call.validated<UpdateLawEntryRequest>()
 
-        accessValidator.validateWriteEntry(user, entryId)
+        accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Edit, entryId, user.id)
 
     val updated = lawContentService.updateEntry(
         entryId = entryId,
@@ -144,7 +140,7 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
     delete("{$PathEntryId}/") {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-        accessValidator.validateWriteEntry(user, entryId)
+        accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Edit, entryId, user.id)
 
         val deleted = lawContentService.deleteEntry(entryId)
 
@@ -158,7 +154,7 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
 private fun Route.getByBook(lawContentService: LawContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    accessValidator.validateReadBook(user, bookId)
+    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, bookId, user.id)
 
     val entries = lawContentService.getEntriesByBook(bookId)
 
@@ -173,7 +169,7 @@ private fun Route.create(lawContentService: LawContentService, accessValidator: 
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val body = call.validated<CreateLawEntryRequest>()
 
-    accessValidator.validateWriteBook(user, bookId)
+    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Create, bookId, user.id)
 
     val created = lawContentService.createEntry(
         key = body.key,

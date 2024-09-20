@@ -12,7 +12,6 @@ internal fun mapBook(book: LawBookModel) = LawBook(
     key = book.key,
     description = book.description,
     name = book.name,
-    creator = mapUser(book.creator),
     members = book.members.map { mapUser(it) }
 )
 

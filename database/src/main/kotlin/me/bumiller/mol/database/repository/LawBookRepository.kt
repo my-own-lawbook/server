@@ -23,33 +23,22 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
      * Creates a new [LawBook] in the database
      *
      * @param model The model to take data from.
-     * @param creatorId The id of the user that created the [LawBook]
      *
      * @return The creates [LawBook], or null if the user was not found
      */
-    suspend fun create(model: Model, creatorId: Long): Model?
+    suspend fun create(model: Model): Model
 
     /**
      * Gets a specific [Model] matching all given criteria
      *
      * @param id The id of the law-book
-     * @param creatorId The id of the user that created the law book
      * @param key The key of the law-book
      * @return The singular [Model] matching all the given criteria, or null
      */
     suspend fun getSpecific(
         id: Optional<Long> = empty(),
-        creatorId: Optional<Long> = empty(),
         key: Optional<String> = empty()
     ): Model?
-
-    /**
-     * Gets all the [Model]s that were created by a specific creator
-     *
-     * @param creatorId The id of the creator
-     * @return All matching models
-     */
-    suspend fun getForCreator(creatorId: Long): List<Model>
 
     /**
      * Gets the [LawBook] that is the parent of a specific entry
@@ -72,32 +61,21 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
 internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, Table, Entity.Companion>(Table, Entity),
     LawBookRepository {
 
-    override suspend fun create(model: Model, creatorId: Long): Model? = suspendTransaction {
-        val user = User.Entity.findById(creatorId) ?: return@suspendTransaction null
-
+    override suspend fun create(model: Model): Model = suspendTransaction {
         Entity.new {
-            creator = user
             populate(model)
         }.asModel
     }
 
-    override suspend fun getSpecific(id: Optional<Long>, creatorId: Optional<Long>, key: Optional<String>): Model? =
+    override suspend fun getSpecific(id: Optional<Long>, key: Optional<String>): Model? =
         suspendTransaction {
             Entity.find {
                 (Table.id eqOpt id) and
-                        (Table.creator eqOpt creatorId) and
                         (Table.key eqOpt key)
             }
                 .singleOrNull()
                 ?.asModel
         }
-
-    override suspend fun getForCreator(creatorId: Long): List<Model> = suspendTransaction {
-        Entity.find {
-            Table.creator eq creatorId
-        }
-            .map { it.asModel }
-    }
 
     override suspend fun getForEntry(entryId: Long): Model? = suspendTransaction {
         LawEntry.Entity.find {

@@ -1,7 +1,7 @@
 package me.bumiller.mol.model
 
 /**
- * Model for a law-book that represents a top entry in the law-hierarchy. A law-book is created by one user and can contain other users (= 'members').
+ * Model for a law-book that represents a top entry in the law-hierarchy. A law-book contains users (= 'members').
  *
  * The children of a law-book are [LawEntry]s.
  */
@@ -26,11 +26,6 @@ data class LawBook(
      * The description
      */
     val description: String,
-
-    /**
-     * The user that created and owns this law-book.
-     */
-    val creator: User,
 
     /**
      * The members of this law-book that can access it
