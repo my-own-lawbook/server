@@ -18,7 +18,7 @@ val dataServiceModule = module {
     single<UserService> { DatabaseUserService(get(), get()) }
     single<TwoFactorTokenService> { DatabaseTwoFactorTokenService(get(), get()) }
     single<MemberContentService> { DatabaseMemberContentService(get(), get(), get()) }
-    single<LawContentService> { DatabaseLawContentService(get(), get(), get(), get()) }
+    single<LawContentService> { DatabaseLawContentService(get(), get(), get(), get(), get()) }
 }
 
 /**

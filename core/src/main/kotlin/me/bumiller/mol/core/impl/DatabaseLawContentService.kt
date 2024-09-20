@@ -9,10 +9,8 @@ import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.core.mapping.mapBook
 import me.bumiller.mol.core.mapping.mapEntry
 import me.bumiller.mol.core.mapping.mapSection
-import me.bumiller.mol.database.repository.LawBookRepository
-import me.bumiller.mol.database.repository.LawEntryRepository
-import me.bumiller.mol.database.repository.LawSectionRepository
-import me.bumiller.mol.database.repository.UserRepository
+import me.bumiller.mol.database.repository.*
+import me.bumiller.mol.database.table.crossref.LawBookMembersCrossref
 import me.bumiller.mol.model.LawBook
 import me.bumiller.mol.model.LawEntry
 import me.bumiller.mol.model.LawSection
@@ -24,7 +22,8 @@ internal class DatabaseLawContentService(
     val bookRepository: LawBookRepository,
     val entryRepository: LawEntryRepository,
     val sectionRepository: LawSectionRepository,
-    val userRepository: UserRepository
+    val userRepository: UserRepository,
+    val memberRoleRepository: MemberRoleRepository
 ) : LawContentService {
 
     override suspend fun getBooks(): List<LawBook> = bookRepository
@@ -55,11 +54,15 @@ internal class DatabaseLawContentService(
             name = name,
             description = description,
             creator = user,
-            members = listOf()
+            members = listOf(user)
         )
 
-        return bookRepository.create(book, user.id)!!
+        val created = bookRepository.create(book, user.id)!!
             .let(::mapBook)
+
+        memberRoleRepository.setMemberRole(user.id, created.id, LawBookMembersCrossref.Roles.Admin.serializedName)
+
+        return created
     }
 
     @Suppress("NAME_SHADOWING")

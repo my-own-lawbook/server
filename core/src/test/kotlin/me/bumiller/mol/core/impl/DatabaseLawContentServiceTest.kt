@@ -1,19 +1,13 @@
 package me.bumiller.mol.core.impl
 
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
-import io.mockk.slot
+import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.exception.ServiceException
-import me.bumiller.mol.database.repository.LawBookRepository
-import me.bumiller.mol.database.repository.LawEntryRepository
-import me.bumiller.mol.database.repository.LawSectionRepository
-import me.bumiller.mol.database.repository.UserRepository
+import me.bumiller.mol.database.repository.*
 import me.bumiller.mol.database.table.LawSection
 import me.bumiller.mol.model.LawBook
 import me.bumiller.mol.test.util.*
@@ -28,6 +22,7 @@ class DatabaseLawContentServiceTest {
     private lateinit var entryRepository: LawEntryRepository
     private lateinit var sectionRepository: LawSectionRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var memberRoleRepository: MemberRoleRepository
 
     private lateinit var lawContentService: LawContentService
 
@@ -37,9 +32,16 @@ class DatabaseLawContentServiceTest {
         entryRepository = mockk()
         sectionRepository = mockk()
         userRepository = mockk()
+        memberRoleRepository = mockk()
 
         lawContentService =
-            DatabaseLawContentService(bookRepository, entryRepository, sectionRepository, userRepository)
+            DatabaseLawContentService(
+                bookRepository,
+                entryRepository,
+                sectionRepository,
+                userRepository,
+                memberRoleRepository
+            )
 
         coEvery { bookRepository.getAll() } returns lawBookEntities(5)
     }
@@ -161,6 +163,7 @@ class DatabaseLawContentServiceTest {
         runTest {
             coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(12L)
             coEvery { bookRepository.getSpecific(any(), any()) } returns null
+            coEvery { memberRoleRepository.setMemberRole(any(), any(), any()) } just runs
 
             val bookSlot = slot<me.bumiller.mol.database.table.LawBook.Model>()
             val userIdSlot = slot<Long>()
@@ -174,13 +177,30 @@ class DatabaseLawContentServiceTest {
                 assertEquals("name", name)
                 assertEquals("description", description)
                 assertEquals(12L, creator.id)
-                assertEquals(0, members.size)
+                assertEquals(1, members.size)
+                assertEquals(12L, members.first().id)
             }
             assertEquals(12L, userIdSlot.captured)
             coVerify(exactly = 1) { bookRepository.create(any(), any()) }
 
             assertEquals(-1L, returned.id)
             assertEquals("key153", returned.key)
+        }
+
+    @Test
+    fun `createBook sets role of creator to admin after creating the book`() =
+        runTest {
+            coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(12L)
+            coEvery { bookRepository.getSpecific(any(), any()) } returns null
+            coEvery { memberRoleRepository.setMemberRole(any(), any(), any()) } just runs
+
+            val bookSlot = slot<me.bumiller.mol.database.table.LawBook.Model>()
+            val userIdSlot = slot<Long>()
+            coEvery { bookRepository.create(capture(bookSlot), capture(userIdSlot)) } returnsArgument 0
+
+            val returned = lawContentService.createBook("key153", "name", "description", 12L)
+
+            coVerify { memberRoleRepository.setMemberRole(12L, any(), "admin") }
         }
 
     @Test
