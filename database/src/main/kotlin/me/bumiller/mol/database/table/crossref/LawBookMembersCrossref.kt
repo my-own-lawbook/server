@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.CompositeEntityClass
 import org.jetbrains.exposed.dao.id.CompositeID
 import org.jetbrains.exposed.dao.id.CompositeIdTable
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.ReferenceOption
 
 object LawBookMembersCrossref {
 
@@ -37,9 +38,9 @@ object LawBookMembersCrossref {
 
     object Table : CompositeIdTable(name = "law_bow_members") {
 
-        var lawBook = reference("law_book_id", LawBook.Table)
+        var lawBook = reference("law_book_id", LawBook.Table, ReferenceOption.CASCADE)
 
-        val member = reference("user_id", User.Table)
+        val member = reference("user_id", User.Table, ReferenceOption.CASCADE)
 
         val role = text("role").check("role-valid") {
             it inList Roles.entries.map(Roles::serializedName)

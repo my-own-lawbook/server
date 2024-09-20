@@ -113,7 +113,7 @@ internal data class PutUserBookRoleRequest(
 ) : Validatable {
 
     override suspend fun validate() {
-        if (MemberRole.roles.none {
+        if (MemberRole.entries.none {
                 it.value == this.role
             }) badFormat("role", this.role.toString())
     }
@@ -323,7 +323,7 @@ private fun Route.putMemberRole(
 
     accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, bookId, user.id)
 
-    val role = MemberRole.roles.find { it.value == body.role }!!
+    val role = MemberRole.entries.find { it.value == body.role }!!
     memberService.setMemberRole(userId, bookId, role)
 
     call.respond(HttpStatusCode.NoContent)
