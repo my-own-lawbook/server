@@ -39,17 +39,8 @@ interface LawBookRepository : IEntityRepository<Long, Model> {
      */
     suspend fun getSpecific(
         id: Optional<Long> = empty(),
-        creatorId: Optional<Long> = empty(),
         key: Optional<String> = empty()
     ): Model?
-
-    /**
-     * Gets all the [Model]s that were created by a specific creator
-     *
-     * @param creatorId The id of the creator
-     * @return All matching models
-     */
-    suspend fun getForCreator(creatorId: Long): List<Model>
 
     /**
      * Gets the [LawBook] that is the parent of a specific entry
@@ -81,23 +72,15 @@ internal class ExposedLawBookRepository : EntityRepository<Long, Model, Entity, 
         }.asModel
     }
 
-    override suspend fun getSpecific(id: Optional<Long>, creatorId: Optional<Long>, key: Optional<String>): Model? =
+    override suspend fun getSpecific(id: Optional<Long>, key: Optional<String>): Model? =
         suspendTransaction {
             Entity.find {
                 (Table.id eqOpt id) and
-                        (Table.creator eqOpt creatorId) and
                         (Table.key eqOpt key)
             }
                 .singleOrNull()
                 ?.asModel
         }
-
-    override suspend fun getForCreator(creatorId: Long): List<Model> = suspendTransaction {
-        Entity.find {
-            Table.creator eq creatorId
-        }
-            .map { it.asModel }
-    }
 
     override suspend fun getForEntry(entryId: Long): Model? = suspendTransaction {
         LawEntry.Entity.find {

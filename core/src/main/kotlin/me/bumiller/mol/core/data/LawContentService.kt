@@ -24,28 +24,16 @@ interface LawContentService {
     suspend fun getBooks(): List<LawBook>
 
     /**
-     * Gets all the [LawBook]s created by a specific user
-     *
-     * @param userId The id of the creator
-     * @return All [LawBook] for the user
-     * @throws ServiceException.UserNotFound If the user could not be found
-     */
-    suspend fun getBooksByCreator(userId: Long): List<LawBook>
-
-    /**
      * Gets a specific [LawBook] matching all the given criteria
      *
      * @param id The id of the [LawBook]
      * @param key The key of the [LawBook]
-     * @param creatorId The id of the creator of the [LawBook]
      * @return The singular [LawBook]
      * @throws ServiceException.LawBookNotFound If the book could not be found
-     * @throws ServiceException.UserNotFound If the user could not be found
      */
     suspend fun getSpecificBook(
         id: Long? = null,
-        key: String? = null,
-        creatorId: Long? = null
+        key: String? = null
     ): LawBook
 
     /**

@@ -29,9 +29,8 @@ class LawBooksTest {
     private val user = User(1L, "email@domain.com", "username", "password", true, profile)
 
     @Test
-    fun `GET law-books returns 200 with books by member and creator of user`() =
+    fun `GET law-books returns 200 with books by member`() =
         ktorEndpointTest(user) { services, client ->
-        coEvery { services.lawContentService.getBooksByCreator(user.id) } returns lawBookModels(3, 1L)
         coEvery { services.lawContentService.getBooksForMember(user.id) } returns lawBookModels(3, 4L)
 
             val res = client.get("/test/api/law-books/")
@@ -39,14 +38,14 @@ class LawBooksTest {
 
             assertEquals(200, res.status.value)
         assertArrayEquals(
-            (1L..6L).toList().sorted().toTypedArray(),
+            (4L..6L).toList().sorted().toTypedArray(),
             body.map(LawBookResponse::id).sorted().toTypedArray()
         )
     }
 
     @Test
     fun `GET law-books returns 500 if user not found`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.lawContentService.getBooksByCreator(user.id) } throws ServiceException.UserNotFound(user.id)
+        coEvery { services.lawContentService.getBooksForMember(user.id) } throws ServiceException.UserNotFound(user.id)
 
         val res = client.get("/test/api/law-books/")
 

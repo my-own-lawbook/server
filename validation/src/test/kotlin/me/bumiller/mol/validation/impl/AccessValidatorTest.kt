@@ -56,18 +56,18 @@ class AccessValidatorTest {
     fun `throws 404 resource is not found and is set to throw`() = runTest {
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
 
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } throws ServiceException.LawBookNotFound(1L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } throws ServiceException.LawBookNotFound(1L)
         val ex1 = assertThrows<RequestException> {
             accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, 1L, 1L)
         }
 
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { lawContentService.getBookByEntry(any()) } throws ServiceException.LawBookNotFound(1L)
         val ex2 = assertThrows<RequestException> {
             accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Edit, 1L, 1L)
         }
 
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { lawContentService.getBookByEntry(any()) } returns book
         coEvery { lawContentService.getEntryForSection(any()) } throws ServiceException.LawEntryNotFound(1L)
         val ex3 = assertThrows<RequestException> {
@@ -83,14 +83,14 @@ class AccessValidatorTest {
     fun `returns null if resource is not found and is not set to throw`() = runTest {
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
 
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } throws ServiceException.LawBookNotFound(1L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } throws ServiceException.LawBookNotFound(1L)
         val returned1 = accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, 1L, 1L, false)
 
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { lawContentService.getBookByEntry(any()) } throws ServiceException.LawBookNotFound(1L)
         val returned2 = accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Edit, 1L, 1L, false)
 
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { lawContentService.getBookByEntry(any()) } returns book
         coEvery { lawContentService.getEntryForSection(any()) } throws ServiceException.LawEntryNotFound(1L)
         val returned3 = accessValidator.hasAccess(LawResourceScope.Section, LawPermission.Edit, 1L, 1L, false)
@@ -103,7 +103,7 @@ class AccessValidatorTest {
     @Test
     fun `throws 404 if user is not a member of the book and is set to throw`() = runTest {
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { memberContentService.getMemberRole(any(), any()) } throws ServiceException.UserNotMemberOfBook(1L, 1L)
 
         val ex = assertThrows<RequestException> {
@@ -117,7 +117,7 @@ class AccessValidatorTest {
     @Test
     fun `returns false if user is not a member of the book and is not set to throw`() = runTest {
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { memberContentService.getMemberRole(any(), any()) } throws ServiceException.UserNotMemberOfBook(1L, 1L)
 
         val returned = accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, 1L, 1L, false)
@@ -129,7 +129,7 @@ class AccessValidatorTest {
     @Test
     fun `returns true if access should be granted`() = runTest {
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { lawContentService.getBookByEntry(any()) } returns book
         coEvery { lawContentService.getEntryForSection(any()) } returns entry
 
@@ -184,7 +184,7 @@ class AccessValidatorTest {
     @Test
     fun `returns false if access should not be granted and is not set to throw`() = runTest {
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { lawContentService.getBookByEntry(any()) } returns book
         coEvery { lawContentService.getEntryForSection(any()) } returns entry
 
@@ -228,7 +228,7 @@ class AccessValidatorTest {
     @Test
     fun `throws 404 or 401 false if access should not be granted and is not to throw`() = runTest {
         coEvery { userService.getSpecific(any(), any(), any()) } returns user
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns book
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns book
         coEvery { lawContentService.getBookByEntry(any()) } returns book
         coEvery { lawContentService.getEntryForSection(any()) } returns entry
 

@@ -30,21 +30,9 @@ internal class DatabaseLawContentService(
     override suspend fun getBooks(): List<LawBook> = bookRepository
         .getAll().map(::mapBook)
 
-    override suspend fun getBooksByCreator(userId: Long): List<LawBook> {
-        userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
-
-        return bookRepository.getForCreator(userId)
-            .map(::mapBook)
-    }
-
-    override suspend fun getSpecificBook(id: Long?, key: String?, creatorId: Long?): LawBook {
-        if (creatorId != null) {
-            userRepository.getSpecific(id = creatorId) ?: throw ServiceException.UserNotFound(id = creatorId)
-        }
-
+    override suspend fun getSpecificBook(id: Long?, key: String?): LawBook {
         return bookRepository.getSpecific(
             id = presentWhenNotNull(id),
-            creatorId = presentWhenNotNull(creatorId),
             key = presentWhenNotNull(key)
         )?.let(::mapBook) ?: throw ServiceException.LawBookNotFound(id = id, key = key)
     }

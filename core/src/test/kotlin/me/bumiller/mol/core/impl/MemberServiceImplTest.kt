@@ -33,7 +33,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `addMemberToBook throws if user is already member`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(8L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(8L)
         coEvery { memberContentService.getMembersInBook(8L) } returns (userModels(4L) + user)
 
         assertThrows<ServiceException.UserAlreadyMemberOfBook> {
@@ -43,7 +43,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `addMemberToBook calls addMemberToBook with correct arguments`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(8L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(8L)
         coEvery { memberContentService.getMembersInBook(any()) } returns emptyList()
         coEvery { memberContentService.addMemberToBook(any(), any()) } just runs
 
@@ -54,7 +54,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `addMemberToBook returns members`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(8L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(8L)
         coEvery { memberContentService.getMembersInBook(any()) } returns userModels(6L)
         coEvery { memberContentService.addMemberToBook(any(), any()) } just runs
 
@@ -65,7 +65,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `removeMemberFromBook throws if user is not member of book`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(8L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(8L)
         coEvery { memberContentService.getMembersInBook(any()) } returns userModels(6L)
         coEvery { memberContentService.getMemberRole(any(), any()) } returns MemberRole.Admin
 
@@ -76,7 +76,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `removeMemberFromBook throws if no other user is admin`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(1L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(1L)
         coEvery { memberContentService.getMembersInBook(any()) } returns (userModels(6L) + user)
         coEvery { memberContentService.getMemberRole(any(), 1L) } answers { m ->
             when (m.invocation.args[0] as Long) {
@@ -92,7 +92,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `removeMemberFromBook calls removeMemberFromBook with correct arguments`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(1L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(1L)
         coEvery { memberContentService.getMembersInBook(any()) } returns (userModels(6L) + user)
         coEvery { memberContentService.getMemberRole(any(), 1L) } returns MemberRole.Admin
         coEvery { memberContentService.removeMemberFromBook(any(), any()) } just runs
@@ -104,7 +104,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `removeMemberFromBook returns members`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(1L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(1L)
         coEvery { memberContentService.getMembersInBook(any()) } returns (userModels(6L) + user)
         coEvery { memberContentService.getMemberRole(any(), 1L) } returns MemberRole.Admin
         coEvery { memberContentService.removeMemberFromBook(any(), any()) } just runs
@@ -116,7 +116,7 @@ class MemberServiceImplTest {
 
     @Test
     fun `setMemberRole throws if no other user is admin`() = runTest {
-        coEvery { lawContentService.getSpecificBook(any(), any(), any()) } returns lawBookModel(1L)
+        coEvery { lawContentService.getSpecificBook(any(), any()) } returns lawBookModel(1L)
         coEvery { memberContentService.getMembersInBook(any()) } returns (userModels(6L) + user)
         coEvery { memberContentService.getMemberRole(any(), any()) } returns MemberRole.Admin
 

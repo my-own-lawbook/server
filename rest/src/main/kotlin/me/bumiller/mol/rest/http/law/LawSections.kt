@@ -84,9 +84,7 @@ internal data class CreateLawSectionRequest(
  */
 private fun Route.getAll(lawContentService: LawContentService) = get {
     val booksForUser = try {
-        val booksForUserCreated = lawContentService.getBooksByCreator(user.id)
-        val booksForUserMember = lawContentService.getBooksForMember(user.id)
-        booksForUserCreated + booksForUserMember
+        lawContentService.getBooksForMember(user.id)
     } catch (e: ServiceException.UserNotFound) {
         internal()
     }

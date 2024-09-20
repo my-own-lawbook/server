@@ -22,7 +22,7 @@ class LawEntriesTest {
     @Test
     fun `GET law-entries returns 500 if user is not found`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.lawContentService.getBooksByCreator(1L) } throws ServiceException.UserNotFound(1L)
+            coEvery { services.lawContentService.getBooksForMember(1L) } throws ServiceException.UserNotFound(1L)
 
             val res = client.get("/test/api/law-entries/")
 
@@ -32,7 +32,6 @@ class LawEntriesTest {
     @Test
     fun `GET law-entries returns 500 if book is not found`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.lawContentService.getBooksByCreator(1L) } returns lawBookModels(2)
             coEvery { services.lawContentService.getBooksForMember(1L) } returns lawBookModels(2, 3)
             coEvery { services.lawContentService.getEntriesByBook(any()) } throws ServiceException.LawBookNotFound(1L)
 
@@ -44,12 +43,10 @@ class LawEntriesTest {
     @Test
     fun `GET law-entries returns 200 with all law entries the user had access to`() =
         ktorEndpointTest(user) { services, client ->
-            coEvery { services.lawContentService.getBooksByCreator(1L) } returns lawBookModels(2)
             coEvery { services.lawContentService.getBooksForMember(1L) } returns lawBookModels(2, 3)
+
             coEvery { services.lawContentService.getEntriesByBook(any()) } answers { m ->
                 when ((m.invocation.args[0] as Long)) {
-                    1L -> lawEntryModels(2, 1)
-                    2L -> lawEntryModels(2, 3)
                     3L -> lawEntryModels(2, 5)
                     4L -> lawEntryModels(2, 7)
                     else -> throw Error()
@@ -61,7 +58,7 @@ class LawEntriesTest {
             assertEquals(200, res.status.value)
 
             val body = res.body<List<LawEntryResponse>>()
-            assertArrayEquals((1L..8L).toList().toTypedArray(), body.map(LawEntryResponse::id).sorted().toTypedArray())
+            assertArrayEquals((5L..8L).toList().toTypedArray(), body.map(LawEntryResponse::id).sorted().toTypedArray())
         }
 
     @Test

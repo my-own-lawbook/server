@@ -52,66 +52,38 @@ class DatabaseLawContentServiceTest {
     }
 
     @Test
-    fun `getBooksByCreator throws if the user is not found`() = runTest {
-        coEvery { userRepository.getSpecific(any<Long>()) } returns null
-
-        assertThrows<ServiceException.UserNotFound> {
-            lawContentService.getBooksByCreator(1L)
-        }
-    }
-
-    @Test
-    fun `getBooksByCreator calls repository method with correct user id and returns those books`() = runTest {
-        coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
-
-        val userIdSlot = slot<Long>()
-        coEvery { bookRepository.getForCreator(capture(userIdSlot)) } returns lawBookEntities(3)
-
-        val returned = lawContentService.getBooksByCreator(1L)
-
-        coVerify(exactly = 1) { userRepository.getSpecific(1L) }
-        assertArrayEquals((1..3L).toList().toTypedArray(), returned.map(LawBook::id).toTypedArray())
-    }
-
-    @Test
     fun `getSpecificBook properly maps nullables to optionals`() = runTest {
         val idSlots = mutableListOf<Optional<Long>>()
-        val creatorIdSlots = mutableListOf<Optional<Long>>()
         val keySlots = mutableListOf<Optional<String>>()
 
         coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
         coEvery {
             bookRepository.getSpecific(
                 capture(idSlots),
-                capture(creatorIdSlots),
                 capture(keySlots)
             )
         } returns lawBookEntity(1L)
 
-        lawContentService.getSpecificBook(null, null, null)
+        lawContentService.getSpecificBook(null, null)
         assertFalse(idSlots[0].isPresent)
-        assertFalse(creatorIdSlots[0].isPresent)
         assertFalse(keySlots[0].isPresent)
 
-        lawContentService.getSpecificBook(1L, null, null)
+        lawContentService.getSpecificBook(1L, null)
         assertEquals(1L, idSlots[1].get())
-        assertFalse(creatorIdSlots[1].isPresent)
         assertFalse(keySlots[1].isPresent)
 
-        lawContentService.getSpecificBook(1L, "fds", null)
+        lawContentService.getSpecificBook(1L, "fds")
         assertEquals(1L, idSlots[2].get())
         assertEquals("fds", keySlots[2].get())
-        assertFalse(creatorIdSlots[2].isPresent)
 
-        lawContentService.getSpecificBook(null, null, 4L)
+        lawContentService.getSpecificBook(null, null)
         assertFalse(idSlots[3].isPresent)
         assertFalse(keySlots[3].isPresent)
-        assertEquals(4L, creatorIdSlots[3].get())
     }
 
     @Test
     fun `getSpecificBook throws when it is not found`() = runTest {
-        coEvery { bookRepository.getSpecific(any(), any(), any()) } returns null
+        coEvery { bookRepository.getSpecific(any(), any()) } returns null
 
         assertThrows<ServiceException.LawBookNotFound> {
             lawContentService.getSpecificBook()
@@ -177,7 +149,7 @@ class DatabaseLawContentServiceTest {
     @Test
     fun `createBook throws when key is not unique`() = runTest {
         coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(1L)
-        coEvery { bookRepository.getSpecific(any(), any(), any()) } returns lawBookEntity(1L)
+        coEvery { bookRepository.getSpecific(any(), any()) } returns lawBookEntity(1L)
 
         assertThrows<ServiceException.LawBookKeyNotUnique> {
             lawContentService.createBook("", "", "", 1L)
@@ -188,7 +160,7 @@ class DatabaseLawContentServiceTest {
     fun `createBook calls repository with correctly created book model and user id and returns created book`() =
         runTest {
             coEvery { userRepository.getSpecific(any<Long>()) } returns userEntity(12L)
-            coEvery { bookRepository.getSpecific(any(), any(), any()) } returns null
+            coEvery { bookRepository.getSpecific(any(), any()) } returns null
 
             val bookSlot = slot<me.bumiller.mol.database.table.LawBook.Model>()
             val userIdSlot = slot<Long>()

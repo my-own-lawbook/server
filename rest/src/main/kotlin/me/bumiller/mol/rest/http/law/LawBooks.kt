@@ -131,10 +131,9 @@ internal data class PutUserBookRoleRequest(
  */
 private fun Route.getAll(lawContentService: LawContentService) = get {
     try {
-        val booksByCreator = lawContentService.getBooksByCreator(user.id)
         val booksByMember = lawContentService.getBooksForMember(user.id)
 
-        val responses = (booksByCreator + booksByMember)
+        val responses = booksByMember
             .map(LawBookResponse.Companion::create)
 
         call.respond(HttpStatusCode.OK, responses)

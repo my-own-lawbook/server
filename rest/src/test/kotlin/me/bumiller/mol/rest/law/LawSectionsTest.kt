@@ -23,7 +23,7 @@ class LawSectionsTest {
 
     @Test
     fun `GET law-sections returns 500 if user is not found`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.lawContentService.getBooksByCreator(user.id) } throws ServiceException.UserNotFound(1L)
+        coEvery { services.lawContentService.getBooksForMember(user.id) } throws ServiceException.UserNotFound(1L)
 
         val res = client.get("/test/api/law-sections/")
 
@@ -32,7 +32,6 @@ class LawSectionsTest {
 
     @Test
     fun `GET law-sections returns 500 if book is not found`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.lawContentService.getBooksByCreator(user.id) } returns lawBookModels(2, 1L)
         coEvery { services.lawContentService.getBooksForMember(user.id) } returns lawBookModels(1, 3L)
 
         coEvery { services.lawContentService.getEntriesByBook(any()) } throws ServiceException.LawBookNotFound(1L)
@@ -44,7 +43,6 @@ class LawSectionsTest {
 
     @Test
     fun `GET law-sections returns 500 if entry is not found`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.lawContentService.getBooksByCreator(user.id) } returns lawBookModels(2, 1L)
         coEvery { services.lawContentService.getBooksForMember(user.id) } returns lawBookModels(1, 3L)
 
         coEvery { services.lawContentService.getEntriesByBook(any()) } answers { m ->
@@ -65,22 +63,17 @@ class LawSectionsTest {
 
     @Test
     fun `GET law-sections returns 200 with sections for the user`() = ktorEndpointTest(user) { services, client ->
-        coEvery { services.lawContentService.getBooksByCreator(user.id) } returns lawBookModels(2, 1L)
         coEvery { services.lawContentService.getBooksForMember(user.id) } returns lawBookModels(1, 3L)
 
         coEvery { services.lawContentService.getEntriesByBook(any()) } answers { m ->
             when (m.invocation.args[0] as Long) {
-                1L -> lawEntryModels(2, 1L)
-                2L -> lawEntryModels(1, 3L)
-                3L -> lawEntryModels(1, 4L)
+                3L -> lawEntryModels(2, 3L)
                 else -> throw Error()
             }
         }
 
         coEvery { services.lawContentService.getSectionsByEntry(any()) } answers { m ->
             when (m.invocation.args[0] as Long) {
-                1L -> lawSectionModels(2, 1L)
-                2L -> lawSectionModels(3, 6L)
                 3L -> lawSectionModels(2, 10L)
                 4L -> lawSectionModels(1, 15L)
                 else -> throw Error()
@@ -93,7 +86,7 @@ class LawSectionsTest {
 
         val body = res.body<List<LawSectionResponse>>()
         assertArrayEquals(
-            listOf(1L, 2L, 6L, 7L, 8L, 10L, 11L, 15L).toTypedArray(),
+            listOf(10L, 11L, 15L).toTypedArray(),
             body.map(LawSectionResponse::id).sorted().toTypedArray()
         )
     }
