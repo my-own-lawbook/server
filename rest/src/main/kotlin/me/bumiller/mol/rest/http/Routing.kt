@@ -9,6 +9,7 @@ import me.bumiller.mol.rest.http.law.lawBooks
 import me.bumiller.mol.rest.http.law.lawEntries
 import me.bumiller.mol.rest.http.law.lawSections
 import me.bumiller.mol.rest.http.user.profile
+import me.bumiller.mol.rest.http.users.users
 
 /**
  * Will set up the applications endpoints.
@@ -22,6 +23,7 @@ internal fun Application.restRouting(basePath: String) = routing {
             lawBooks()
             lawEntries()
             lawSections()
+            users()
         }
 
         route("auth/") {
