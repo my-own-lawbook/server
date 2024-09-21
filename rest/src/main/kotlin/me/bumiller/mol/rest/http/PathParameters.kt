@@ -24,3 +24,8 @@ const val PathUserId = "userId"
  * Path parameter name for the id of a profile
  */
 const val PathProfileId = "profileId"
+
+/**
+ * Path parameter name for the id of a book invitation
+ */
+const val PathInvitationId = "invitationId"

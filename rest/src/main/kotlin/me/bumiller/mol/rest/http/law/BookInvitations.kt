@@ -6,8 +6,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.rest.http.PathInvitationId
 import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
+import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
+import me.bumiller.mol.validation.AccessValidator
+import me.bumiller.mol.validation.LawPermission
+import me.bumiller.mol.validation.LawResourceScope
 import org.koin.ktor.ext.inject
 
 /**
@@ -33,9 +38,14 @@ import org.koin.ktor.ext.inject
 internal fun Route.bookInvitations() {
     val lawContentService by inject<LawContentService>()
     val invitationContentService by inject<InvitationContentService>()
+    val accessValidator by inject<AccessValidator>()
 
     route("book-invitations/") {
         getAll(lawContentService, invitationContentService)
+
+        route("{$PathInvitationId}/") {
+            getSpecific(invitationContentService, accessValidator)
+        }
     }
 }
 
@@ -57,6 +67,24 @@ private fun Route.getAll(
     }.flatten()
 
     val response = invitations.map(BookInvitationResponse::create)
+
+    call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to GET /book-invitations/ that gets invitations for all books the user is member of
+ */
+private fun Route.getSpecific(
+    invitationContentService: InvitationContentService,
+    accessValidator: AccessValidator
+) = get {
+    val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
+    val invitation = invitationContentService.getInvitationById(invitationId)
+
+    // TODO: Change this. If the invitation is not found by getInvitationById another error message will be returned than if the user does not have access to it. Should be reworked in AccessValidator.
+    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, invitation.targetBook.id, user.id)
+
+    val response = BookInvitationResponse.create(invitation)
 
     call.respond(HttpStatusCode.OK, response)
 }
