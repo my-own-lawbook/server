@@ -5,6 +5,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import me.bumiller.mol.rest.http.auth.login
 import me.bumiller.mol.rest.http.auth.signup
+import me.bumiller.mol.rest.http.law.bookInvitations
 import me.bumiller.mol.rest.http.law.lawBooks
 import me.bumiller.mol.rest.http.law.lawEntries
 import me.bumiller.mol.rest.http.law.lawSections
@@ -24,6 +25,7 @@ internal fun Application.restRouting(basePath: String) = routing {
             lawEntries()
             lawSections()
             users()
+            bookInvitations()
         }
 
         route("auth/") {
