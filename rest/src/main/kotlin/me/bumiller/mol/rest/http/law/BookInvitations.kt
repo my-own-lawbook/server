@@ -12,7 +12,6 @@ import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.InvitationService
 import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.model.MemberRole
-import me.bumiller.mol.model.http.unauthorized
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathInvitationId
 import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
@@ -53,13 +52,13 @@ internal fun Route.bookInvitations() {
             getSpecific(invitationContentService, accessValidator)
 
             route("accept/") {
-                accept(invitationContentService, invitationService, accessValidator)
+                accept(invitationService, accessValidator)
             }
             route("deny/") {
-                deny(invitationContentService, invitationService, accessValidator)
+                deny(invitationService, accessValidator)
             }
             route("revoke/") {
-                revoke(invitationContentService, invitationService, accessValidator)
+                revoke(invitationService, accessValidator)
             }
         }
     }
@@ -124,18 +123,13 @@ private fun Route.getSpecific(
  * Endpoint to POST /book-invitations/:id/accept/ that accepts an invitation
  */
 private fun Route.accept(
-    invitationContentService: InvitationContentService,
     invitationService: InvitationService,
     accessValidator: AccessValidator
 ) = post {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
     accessValidator.resolveScoped(ScopedPermission.Invitations.Accept(invitationId), user.id)
 
-    val invitation = invitationContentService.getInvitationById(invitationId)
-
-    if (invitation.recipient.id != user.id)
-        unauthorized()
-    invitationService.acceptInvitation(invitation.id)
+    invitationService.acceptInvitation(invitationId)
 
     call.respond(HttpStatusCode.NoContent)
 }
@@ -144,18 +138,13 @@ private fun Route.accept(
  * Endpoint to POST /book-invitations/:id/deny/ that denies an invitation
  */
 private fun Route.deny(
-    invitationContentService: InvitationContentService,
     invitationService: InvitationService,
     accessValidator: AccessValidator
 ) = post {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
     accessValidator.resolveScoped(ScopedPermission.Invitations.Deny(invitationId), user.id)
 
-    val invitation = invitationContentService.getInvitationById(invitationId)
-
-    if (invitation.recipient.id != user.id)
-        unauthorized()
-    invitationService.denyInvitation(invitation.id)
+    invitationService.denyInvitation(invitationId)
 
     call.respond(HttpStatusCode.NoContent)
 }
@@ -164,16 +153,13 @@ private fun Route.deny(
  * Endpoint to POST /book-invitations/:id/revoke/ that revokes an invitation
  */
 private fun Route.revoke(
-    invitationContentService: InvitationContentService,
     invitationService: InvitationService,
     accessValidator: AccessValidator
 ) = post {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
     accessValidator.resolveScoped(ScopedPermission.Invitations.Revoke(invitationId), user.id)
 
-    val invitation = invitationContentService.getInvitationById(invitationId)
-
-    invitationService.revokeInvitation(invitation.id)
+    invitationService.revokeInvitation(invitationId)
 
     call.respond(HttpStatusCode.NoContent)
 }
