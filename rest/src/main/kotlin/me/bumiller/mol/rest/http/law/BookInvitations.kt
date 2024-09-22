@@ -11,7 +11,6 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.InvitationService
 import me.bumiller.mol.core.data.InvitationContentService
-import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.BookInvitation
 import me.bumiller.mol.model.MemberRole
@@ -47,14 +46,11 @@ import org.koin.ktor.ext.inject
  * - GET /user/book-invitations/: Gets all invitations for the user
  */
 internal fun Route.bookInvitations() {
-    val lawContentService by inject<LawContentService>()
     val invitationContentService by inject<InvitationContentService>()
     val invitationService by inject<InvitationService>()
     val accessValidator by inject<AccessValidator>()
 
     route("book-invitations/") {
-        getAll(lawContentService, invitationContentService, accessValidator)
-
         route("{$PathInvitationId}/") {
             getSpecific(invitationContentService, accessValidator)
 
@@ -152,28 +148,6 @@ private data class CreateInvitationRequest(
 //
 // Endpoints
 //
-
-/**
- * Endpoint to GET /book-invitations/ that gets invitations for all books the user is member of
- */
-private fun Route.getAll(
-    lawContentService: LawContentService,
-    invitationContentService: InvitationContentService,
-    accessValidator: AccessValidator
-) = get {
-    val books = lawContentService.getBooksForMember(user.id)
-
-    val invitations = books.map { book ->
-        val canAccessInvitations =
-            accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations(book.id), user.id, false)
-        if (canAccessInvitations) invitationContentService.getAll(targetBookId = book.id)
-        else emptyList()
-    }.flatten()
-
-    val response = invitations.map(BookInvitationResponse::create)
-
-    call.respond(HttpStatusCode.OK, response)
-}
 
 /**
  * Endpoint to GET /book-invitations/ that gets invitations for all books the user is member of
