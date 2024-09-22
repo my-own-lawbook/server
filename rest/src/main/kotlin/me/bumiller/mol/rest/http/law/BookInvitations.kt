@@ -4,19 +4,26 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.InvitationService
 import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.BookInvitation
+import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.http.unauthorized
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathInvitationId
 import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.AccessValidator
-import me.bumiller.mol.validation.ScopedPermission
+import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.actions.isInFuture
+import me.bumiller.mol.validation.actions.isMemberRole
 import org.koin.ktor.ext.inject
 
 /**
@@ -65,6 +72,7 @@ internal fun Route.bookInvitations() {
 
     route("law-books/{$PathBookId}/book-invitations/") {
         allForBook(invitationContentService, accessValidator)
+        createInvitation(invitationService, accessValidator)
     }
 }
 
@@ -107,6 +115,38 @@ private suspend fun AccessValidator.validateManageAccessToInvitation(
     )
 
     return invitation!!
+}
+
+//
+// Request bodies
+//
+@Serializable
+private data class CreateInvitationRequest(
+
+    @SerialName("target_book_id")
+    val targetBookId: Long,
+
+    @SerialName("recipient_id")
+    val recipientId: Long,
+
+    val role: Optional<Int> = empty(),
+
+    @SerialName("expires_at")
+    val expiresAt: Optional<Instant?> = empty(),
+
+    val message: Optional<String?> = empty()
+
+) : Validatable {
+
+    override suspend fun validate() {
+        validateThatOptional(role)?.isMemberRole()
+        expiresAt.ifPresent { instant ->
+            instant?.let {
+                validateThat(instant).isInFuture()
+            }
+        }
+    }
+
 }
 
 //
@@ -217,4 +257,33 @@ private fun Route.allForBook(
 
     val response = invitations.map(BookInvitationResponse::create)
     call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to POST /law-books/:id/book-invitations/ that creates a new invitation for a specific book
+ */
+private fun Route.createInvitation(
+    invitationService: InvitationService,
+    accessValidator: AccessValidator
+) = post {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+
+    accessValidator.resolveScoped(ScopedPermission.Books.Members.ManageInvitations(bookId), user.id)
+
+    val body = call.validated<CreateInvitationRequest>()
+    val role = if (body.role.isPresent)
+        MemberRole.entries.first { it.value == body.role.get() }
+    else MemberRole.Member
+
+    val invitation = invitationService.createInvitation(
+        authorId = user.id,
+        targetBookId = bookId,
+        recipientId = body.recipientId,
+        role = role,
+        expiresAt = body.expiresAt.getOrNull(),
+        message = body.message.getOrNull()
+    )
+
+    val response = BookInvitationResponse.create(invitation)
+    call.respond(HttpStatusCode.Created, response)
 }

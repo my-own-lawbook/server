@@ -2,6 +2,7 @@ package me.bumiller.mol.validation.actions
 
 import io.ktor.server.plugins.requestvalidation.*
 import me.bumiller.mol.common.toUUIDSafe
+import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.http.badFormat
 import me.bumiller.mol.validation.ValidatableWrapper
 import java.util.regex.Pattern
@@ -66,4 +67,13 @@ private val ProfileNameRegex = Pattern.compile(
  */
 fun ValidatableWrapper<String>.isProfileName() =
     if (!ProfileNameRegex.matcher(value).matches()) badFormat("name", value)
+    else null
+
+/**
+ * Validates whether an int is a valid member-role
+ */
+fun ValidatableWrapper<Int>.isMemberRole() =
+    if (MemberRole.entries.none {
+            it.value == this.value
+        }) badFormat("role", this.value.toString())
     else null

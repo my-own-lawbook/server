@@ -13,7 +13,6 @@ import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.MemberRole
-import me.bumiller.mol.model.http.badFormat
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathUserId
@@ -22,10 +21,8 @@ import me.bumiller.mol.rest.response.user.BookRoleUserResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.AccessValidator
-import me.bumiller.mol.validation.ScopedPermission
-import me.bumiller.mol.validation.Validatable
-import me.bumiller.mol.validation.validated
+import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.actions.isMemberRole
 import org.koin.ktor.ext.inject
 
 /**
@@ -115,9 +112,7 @@ internal data class PutUserBookRoleRequest(
 ) : Validatable {
 
     override suspend fun validate() {
-        if (MemberRole.entries.none {
-                it.value == this.role
-            }) badFormat("role", this.role.toString())
+        validateThat(role).isMemberRole()
     }
 
 }

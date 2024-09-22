@@ -1,9 +1,6 @@
 package me.bumiller.mol.validation.actions
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 import me.bumiller.mol.model.http.badFormat
 import me.bumiller.mol.validation.ValidatableWrapper
 
@@ -16,4 +13,13 @@ fun ValidatableWrapper<LocalDate>.isInPast() {
     val isFuture = utcLocalDate <= value
 
     if (isFuture) badFormat("'date in past'", toString())
+}
+
+/**
+ * Validates that a given [Instant] is in the future
+ */
+fun ValidatableWrapper<Instant>.isInFuture() {
+    val now = Clock.System.now()
+
+    if (value < now) badFormat("'date in future'", toString())
 }
