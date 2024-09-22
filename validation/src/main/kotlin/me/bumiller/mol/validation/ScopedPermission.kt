@@ -175,4 +175,39 @@ sealed class ScopedPermission(
 
     }
 
+    /**
+     * Permissions related to book-invitations
+     */
+    sealed class Invitations(id: Long) : ScopedPermission("book-invitation", id) {
+
+        /**
+         * Permission to read a specific invitation
+         *
+         * @param id The id of the invitation
+         */
+        data class Read(override val id: Long) : Invitations(id)
+
+        /**
+         * Permission to accept a specific invitation
+         *
+         * @param id The id of the invitation
+         */
+        data class Accept(override val id: Long) : Invitations(id)
+
+        /**
+         * Permission to deny a specific invitation
+         *
+         * @param id The id of the invitation
+         */
+        data class Deny(override val id: Long) : Invitations(id)
+
+        /**
+         * Permission to revoke a specific invitation
+         *
+         * @param id The id of the invitation
+         */
+        data class Revoke(override val id: Long) : Invitations(id)
+
+    }
+
 }

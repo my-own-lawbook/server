@@ -1,5 +1,6 @@
 package me.bumiller.mol.validation.impl
 
+import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.data.UserService
@@ -14,7 +15,8 @@ import me.bumiller.mol.validation.ScopedPermission
 internal class ServiceAccessValidator(
     private val lawContentService: LawContentService,
     private val memberContentService: MemberContentService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val invitationContentService: InvitationContentService
 ) : AccessValidator {
 
 
@@ -91,6 +93,26 @@ internal class ServiceAccessValidator(
         }
     }
 
+    private suspend fun resolveInvitationPermission(
+        permission: ScopedPermission.Invitations,
+        userId: Long
+    ): Boolean {
+        val invitation = try {
+            invitationContentService.getInvitationById(permission.id)
+        } catch (e: ServiceException.InvitationNotFound) {
+            return false
+        }
+
+        val memberRole = memberContentService.getMemberRole(userId, invitation.targetBook.id)
+
+        return when (permission) {
+            is ScopedPermission.Invitations.Accept -> invitation.recipient.id == userId
+            is ScopedPermission.Invitations.Deny -> invitation.recipient.id == userId
+            is ScopedPermission.Invitations.Read -> memberRole satisfies MemberRole.Moderator
+            is ScopedPermission.Invitations.Revoke -> memberRole satisfies MemberRole.Admin
+        }
+    }
+
     private fun resolveUserPermission(
         permission: ScopedPermission.Users
     ): Boolean = when (permission) {
@@ -113,6 +135,8 @@ internal class ServiceAccessValidator(
             is ScopedPermission.Books,
             is ScopedPermission.Entries,
             is ScopedPermission.Sections -> resolveLawPermission(permission, userId)
+
+            is ScopedPermission.Invitations -> resolveInvitationPermission(permission, userId)
 
             is ScopedPermission.Users -> resolveUserPermission(permission)
         }

@@ -3,6 +3,7 @@ package me.bumiller.mol.validation.impl
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.data.UserService
@@ -10,10 +11,7 @@ import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.http.RequestException
 import me.bumiller.mol.model.satisfies
-import me.bumiller.mol.test.util.lawBookModel
-import me.bumiller.mol.test.util.lawEntryModel
-import me.bumiller.mol.test.util.lawSectionModel
-import me.bumiller.mol.test.util.userModel
+import me.bumiller.mol.test.util.*
 import me.bumiller.mol.validation.AccessValidator
 import me.bumiller.mol.validation.ScopedPermission
 import org.junit.jupiter.api.Assertions.*
@@ -29,6 +27,7 @@ class ServiceAccessValidatorTest {
     private lateinit var lawContentService: LawContentService
     private lateinit var memberContentService: MemberContentService
     private lateinit var userService: UserService
+    private lateinit var invitationContentService: InvitationContentService
 
     private lateinit var accessValidator: AccessValidator
 
@@ -37,8 +36,10 @@ class ServiceAccessValidatorTest {
         lawContentService = mockk()
         memberContentService = mockk()
         userService = mockk()
+        invitationContentService = mockk()
 
-        accessValidator = ServiceAccessValidator(lawContentService, memberContentService, userService)
+        accessValidator =
+            ServiceAccessValidator(lawContentService, memberContentService, userService, invitationContentService)
     }
 
     @Test
@@ -57,9 +58,11 @@ class ServiceAccessValidatorTest {
     }
 
     private val user = userModel(1L)
+    private val user2 = userModel(2L)
     private val book = lawBookModel(1L)
     private val entry = lawEntryModel(1L)
     private val section = lawSectionModel(1L)
+    private val invitation = invitationModel(1L)
 
     @Test
     fun `resolveScoped for book permission throws 404 if book is not found`() = runTest {
@@ -187,5 +190,107 @@ class ServiceAccessValidatorTest {
         )
 
     }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Invitations throws 404 or returns false if invitation is not found`() =
+        runTest {
+            coEvery { invitationContentService.getInvitationById(invitation.id) } throws ServiceException.InvitationNotFound(
+                invitation.id
+            )
+            coEvery { userService.getSpecific(user.id) } returns user
+
+            val ex = assertThrows<RequestException> {
+                accessValidator.resolveScoped(ScopedPermission.Invitations.Read(invitation.id), 1L)
+            }
+            assertEquals(404, ex.code)
+        }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Invitations#Read throws 404 or returns false if permission is not met`() =
+        runTest {
+            coEvery { invitationContentService.getInvitationById(invitation.id) } returns invitation
+            coEvery { userService.getSpecific(user.id) } returns user
+            coEvery { memberContentService.getMemberRole(user.id, invitation.targetBook.id) } returnsMany listOf(
+                MemberRole.Member,
+                MemberRole.Moderator,
+                MemberRole.Admin
+            )
+
+            val ex = assertThrows<RequestException> {
+                accessValidator.resolveScoped(ScopedPermission.Invitations.Read(invitation.id), 1L)
+            }
+            assertEquals(404, ex.code)
+
+            repeat(2) {
+                val returned = accessValidator.resolveScoped(ScopedPermission.Invitations.Read(invitation.id), 1L)
+                assertTrue(returned)
+            }
+
+        }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Invitations#Revoke throws 404 or returns false if permission is not met`() =
+        runTest {
+            coEvery { invitationContentService.getInvitationById(invitation.id) } returns invitation
+            coEvery { userService.getSpecific(user.id) } returns user
+            coEvery { memberContentService.getMemberRole(user.id, invitation.targetBook.id) } returnsMany listOf(
+                MemberRole.Member,
+                MemberRole.Moderator,
+                MemberRole.Admin
+            )
+
+            repeat(2) {
+                val ex = assertThrows<RequestException> {
+                    accessValidator.resolveScoped(ScopedPermission.Invitations.Revoke(invitation.id), 1L)
+                }
+                assertEquals(404, ex.code)
+            }
+
+            val returned = accessValidator.resolveScoped(ScopedPermission.Invitations.Revoke(invitation.id), 1L)
+            assertTrue(returned)
+
+        }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Invitations#Accept throws 404 or returns false if permission is not met`() =
+        runTest {
+            coEvery { invitationContentService.getInvitationById(invitation.id) } returnsMany listOf(
+                invitation.copy(
+                    recipient = user
+                ), invitation.copy(recipient = user2)
+            )
+            coEvery { userService.getSpecific(user.id) } returns user
+            coEvery { memberContentService.getMemberRole(user.id, invitation.targetBook.id) } returns MemberRole.Member
+
+            val returned = accessValidator.resolveScoped(ScopedPermission.Invitations.Accept(invitation.id), 1L)
+            assertTrue(returned)
+
+            val ex = assertThrows<RequestException> {
+                accessValidator.resolveScoped(ScopedPermission.Invitations.Accept(invitation.id), 1L)
+            }
+            assertEquals(404, ex.code)
+
+        }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Invitations#Deny throws 404 or returns false if permission is not met`() =
+        runTest {
+            coEvery { invitationContentService.getInvitationById(invitation.id) } returnsMany listOf(
+                invitation.copy(
+                    recipient = user
+                ), invitation.copy(recipient = user2)
+            )
+            coEvery { userService.getSpecific(user.id) } returns user
+            coEvery { memberContentService.getMemberRole(user.id, invitation.targetBook.id) } returns MemberRole.Member
+
+            val returned = accessValidator.resolveScoped(ScopedPermission.Invitations.Deny(invitation.id), 1L)
+            assertTrue(returned)
+
+            val ex = assertThrows<RequestException> {
+                accessValidator.resolveScoped(ScopedPermission.Invitations.Deny(invitation.id), 1L)
+            }
+            assertEquals(404, ex.code)
+
+        }
 
 }
