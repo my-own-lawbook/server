@@ -4,13 +4,18 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.exception.ServiceException
+import me.bumiller.mol.model.BookInvitation
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.response.law.book.LawBookResponse
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
+import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
 import me.bumiller.mol.rest.util.user
+import me.bumiller.mol.validation.AccessValidator
+import me.bumiller.mol.validation.ScopedPermission
 import org.koin.ktor.ext.inject
 
 /**
@@ -22,6 +27,8 @@ import org.koin.ktor.ext.inject
  */
 internal fun Route.userBundled() {
     val lawContentService by inject<LawContentService>()
+    val invitationContentService by inject<InvitationContentService>()
+    val accessValidator by inject<AccessValidator>()
 
     route("user/") {
         route("law-books/") {
@@ -32,6 +39,9 @@ internal fun Route.userBundled() {
         }
         route("law-sections/") {
             allSections(lawContentService)
+        }
+        route("book-invitations/") {
+            allInvitations(invitationContentService, lawContentService, accessValidator)
         }
     }
 }
@@ -102,5 +112,30 @@ private fun Route.allSections(lawContentService: LawContentService) = get {
     }.flatten()
 
     val response = sections.map(LawSectionResponse.Companion::create)
+    call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to GET /user/book-invitations/ that gets all invitations the user has access to
+ */
+private fun Route.allInvitations(
+    invitationContentService: InvitationContentService,
+    lawContentService: LawContentService,
+    accessValidator: AccessValidator
+) = get {
+    val byRecipient = invitationContentService.getAll(recipientId = user.id)
+    val byAuthor = invitationContentService.getAll(authorId = user.id)
+
+    val allBooks = lawContentService.getBooksForMember(user.id)
+    val byBooks = allBooks.map { book ->
+        val hasAccessToInvitations =
+            accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations(book.id), user.id)
+        if (hasAccessToInvitations) invitationContentService.getAll(targetBookId = book.id)
+        else emptyList()
+    }.flatten()
+
+    val allInvitations = (byRecipient + byAuthor + byBooks).distinctBy(BookInvitation::id)
+
+    val response = allInvitations.map(BookInvitationResponse::create)
     call.respond(HttpStatusCode.OK, response)
 }
