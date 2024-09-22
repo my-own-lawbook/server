@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":common"))
 
     testImplementation(libs.junit)
+    testImplementation(libs.junit.params)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.mockk)
 }

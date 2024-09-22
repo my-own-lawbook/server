@@ -147,7 +147,7 @@ class DatabaseMemberContentServiceTest {
             }
         }
 
-        memberContentService.setMemberRole(1L, 1L, MemberRole.Read)
+        memberContentService.setMemberRole(1L, 1L, MemberRole.Member)
 
         coVerify(exactly = 1) { roleRepository.setMemberRole(1L, 1L, "read") }
     }

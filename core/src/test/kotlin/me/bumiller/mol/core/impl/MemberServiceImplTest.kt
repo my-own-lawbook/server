@@ -81,7 +81,7 @@ class MemberServiceImplTest {
         coEvery { memberContentService.getMemberRole(any(), 1L) } answers { m ->
             when (m.invocation.args[0] as Long) {
                 9L -> MemberRole.Admin
-                else -> MemberRole.Read
+                else -> MemberRole.Member
             }
         }
 
@@ -123,12 +123,12 @@ class MemberServiceImplTest {
         coEvery { memberContentService.getMemberRole(any(), 1L) } answers { m ->
             when (m.invocation.args[0] as Long) {
                 9L -> MemberRole.Admin
-                else -> MemberRole.Read
+                else -> MemberRole.Member
             }
         }
 
         assertThrows<ServiceException.BookNoAdminLeft> {
-            memberServiceImpl.setMemberRole(1L, user.id, MemberRole.Read)
+            memberServiceImpl.setMemberRole(1L, user.id, MemberRole.Member)
         }
     }
 

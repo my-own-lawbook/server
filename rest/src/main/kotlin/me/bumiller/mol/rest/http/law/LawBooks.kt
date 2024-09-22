@@ -22,7 +22,10 @@ import me.bumiller.mol.rest.response.user.BookRoleUserResponse
 import me.bumiller.mol.rest.response.user.UserWithProfileResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.AccessValidator
+import me.bumiller.mol.validation.ScopedPermission
+import me.bumiller.mol.validation.Validatable
+import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
 
 /**
@@ -54,7 +57,6 @@ internal fun Route.lawBooks() {
     val accessValidator by inject<AccessValidator>()
 
     route("law-books/") {
-        getAll(lawContentService)
         getById(lawContentService, accessValidator)
         create(lawContentService)
         update(lawContentService, accessValidator)
@@ -125,29 +127,13 @@ internal data class PutUserBookRoleRequest(
 //
 
 /**
- * Endpoint to GET /law-books/ that returns the law-books the user has access to
- */
-private fun Route.getAll(lawContentService: LawContentService) = get {
-    try {
-        val booksByMember = lawContentService.getBooksForMember(user.id)
-
-        val responses = booksByMember
-            .map(LawBookResponse.Companion::create)
-
-        call.respond(HttpStatusCode.OK, responses)
-    } catch (e: ServiceException.UserNotFound) {
-        internal()
-    }
-}
-
-/**
  * Endpoint to GET /law-books/:id that returns a specific law-book
  */
 private fun Route.getById(lawContentService: LawContentService, accessValidator: AccessValidator) =
     get("{$PathBookId}/") {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-        accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, bookId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Books.Read(bookId), user.id)
 
         val book = lawContentService.getSpecificBook(id = bookId)
     val response = LawBookResponse.create(book)
@@ -179,7 +165,7 @@ private fun Route.update(lawContentService: LawContentService, accessValidator: 
     val body = call.validated<UpdateLawBookRequest>()
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-        accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, bookId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Books.Write(bookId), user.id)
 
     val updated = lawContentService.updateBook(
         bookId = bookId,
@@ -199,7 +185,7 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
     delete("{$PathBookId}/") {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-        accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, bookId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Books.Write(bookId), user.id)
 
         val deleted = lawContentService.deleteBook(bookId)
     val response = LawBookResponse.create(deleted)
@@ -213,7 +199,7 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
 private fun Route.getMembers(memberContentService: MemberContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, bookId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Members.Read(bookId), user.id)
 
     val members = memberContentService.getMembersInBook(bookId)
     val response = members.map(UserWithProfileResponse::create)
@@ -231,7 +217,7 @@ private fun Route.putMember(
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, bookId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Members.ManageInvitations(bookId), user.id)
 
     val members = try {
         memberService.addMemberToBook(bookId, userId)
@@ -254,7 +240,7 @@ private fun Route.removeMember(
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, bookId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Members.Remove(bookId), user.id)
 
     val members = try {
         memberService.removeMemberFromBook(bookId, userId)
@@ -274,7 +260,7 @@ private fun Route.removeMember(
 private fun Route.memberRoles(memberContentService: MemberContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, bookId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Members.Read(bookId), user.id)
 
     val members = memberContentService.getMembersInBook(bookId)
     val rolesForMembers = members.map { member ->
@@ -299,7 +285,7 @@ private fun Route.memberRole(
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-        accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, bookId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Books.Members.Read(bookId), user.id)
 
         val user = userService.getSpecific(id = userId)
 
@@ -321,7 +307,8 @@ private fun Route.putMemberRole(
 
     val body = call.validated<PutUserBookRoleRequest>()
 
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Edit, bookId, user.id)
+    //TODO: Probably a new permission needed specifically for roles
+    accessValidator.resolveScoped(ScopedPermission.Books.Members.ManageInvitations(bookId), user.id)
 
     val role = MemberRole.entries.find { it.value == body.role }!!
     memberService.setMemberRole(userId, bookId, role)

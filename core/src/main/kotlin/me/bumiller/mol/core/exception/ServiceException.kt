@@ -2,7 +2,6 @@ package me.bumiller.mol.core.exception
 
 import kotlinx.datetime.Instant
 import me.bumiller.mol.model.InvitationStatus
-import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.TwoFactorTokenType
 import java.util.*
 
@@ -128,16 +127,6 @@ sealed class ServiceException : RuntimeException() {
      * A book-invitation cannot be accepted because it is expired
      */
     data class InvitationExpired(val id: Long) : ServiceException()
-
-    /**
-     * A user does not have the required role in a book to perform a given action
-     */
-    data class UserInvalidRoleInBook(
-        val userId: Long,
-        val bookId: Long,
-        val role: MemberRole,
-        val required: MemberRole
-    ) : ServiceException()
 
     /**
      * An invitation for a specific user to a specific book is already open at the moment, thus another cannot be added

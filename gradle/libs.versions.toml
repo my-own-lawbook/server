@@ -20,6 +20,7 @@ kover = "0.8.0"
 [libraries]
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 junit = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
+junit-params = { group = "org.junit.jupiter", name = "junit-jupiter-params", version.ref = "junit" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 apache-email = { group = "org.apache.commons", name = "commons-email", version.ref = "apache_email" }
 exposed = { group = "org.jetbrains.exposed", name = "exposed-core", version.ref = "exposed" }
@@ -56,5 +57,5 @@ kotlin-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]
 ktor = ["ktor", "ktor-netty", "ktor-content-negotiation", "ktor-serialization", "ktor-auth", "ktor-auth-jwt", "ktor-validation", "ktor-statuspages", "ktor-dataconversion", "ktor-yaml"]
 ktor-test = ["ktor-test", "ktor-client-content-negotiation"]
-test = ["junit", "mockk", "coroutines-test"]
+test = ["junit", "junit-params", "mockk", "coroutines-test"]
 koin = ["koin", "koin-ktor"]

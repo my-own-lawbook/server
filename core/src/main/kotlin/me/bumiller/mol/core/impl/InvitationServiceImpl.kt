@@ -24,15 +24,6 @@ internal class InvitationServiceImpl(
         expiresAt: Instant?,
         message: String?
     ): BookInvitation {
-        val memberRole = memberContentService.getMemberRole(authorId, targetBookId)
-
-        if (!(memberRole satisfies MemberRole.Admin)) throw ServiceException.UserInvalidRoleInBook(
-            authorId,
-            targetBookId,
-            memberRole,
-            MemberRole.Admin
-        )
-
         val membersForBook = memberContentService.getMembersInBook(targetBookId)
         val userInBook = recipientId in membersForBook.map(User::id)
         if (userInBook) throw ServiceException.UserAlreadyMemberOfBook(recipientId, targetBookId)

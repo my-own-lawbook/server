@@ -11,8 +11,6 @@ import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.validation.AccessValidator
-import me.bumiller.mol.validation.LawPermission
-import me.bumiller.mol.validation.LawResourceScope
 import org.koin.ktor.ext.inject
 
 /**
@@ -82,7 +80,7 @@ private fun Route.getSpecific(
     val invitation = invitationContentService.getInvitationById(invitationId)
 
     // TODO: Change this. If the invitation is not found by getInvitationById another error message will be returned than if the user does not have access to it. Should be reworked in AccessValidator.
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, invitation.targetBook.id, user.id)
+    //accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations())
 
     val response = BookInvitationResponse.create(invitation)
 

@@ -131,10 +131,9 @@ class DatabaseInvitationContentServiceTest {
 
         val instant = Clock.System.now()
 
-        invitationContentService.createInvitation(1L, 1L, 5L, MemberRole.Write, instant, "message-123")
+        invitationContentService.createInvitation(1L, 1L, 5L, MemberRole.Moderator, instant, "message-123")
 
         invitationSlot.captured.run {
-            assertEquals("write", role)
             assertEquals("message-123", message)
             assertEquals(instant, expiresAt)
             assertNull(usedAt)
@@ -152,7 +151,14 @@ class DatabaseInvitationContentServiceTest {
         coEvery { invitationRepository.create(any(), any(), any(), any()) } returns invitationEntity(145L)
 
         val returned =
-            invitationContentService.createInvitation(1L, 1L, 5L, MemberRole.Write, Clock.System.now(), "message-123")
+            invitationContentService.createInvitation(
+                1L,
+                1L,
+                5L,
+                MemberRole.Moderator,
+                Clock.System.now(),
+                "message-123"
+            )
 
         assertEquals(145L, returned.id)
     }

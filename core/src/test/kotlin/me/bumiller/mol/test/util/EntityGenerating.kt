@@ -64,8 +64,7 @@ fun lawSectionEntities(count: Long) = (1L..count).map(::lawSectionEntity)
 
 fun roleString(key: Long) =
     if (key % 2 == 0L) "admin"
-    else if (key % 3 == 0L) "write"
-    else if (key % 5 == 0L) "update"
+    else if (key % 3 == 0L) "update"
     else "read"
 
 fun invitationStatusEntity(key: Long) =

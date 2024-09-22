@@ -10,6 +10,7 @@ import me.bumiller.mol.rest.http.law.lawBooks
 import me.bumiller.mol.rest.http.law.lawEntries
 import me.bumiller.mol.rest.http.law.lawSections
 import me.bumiller.mol.rest.http.user.profile
+import me.bumiller.mol.rest.http.user.userBundled
 import me.bumiller.mol.rest.http.users.users
 
 /**
@@ -22,21 +23,19 @@ internal fun Application.restRouting(basePath: String) = routing {
 
         authenticate {
             lawBooks()
+            bookInvitations()
+
             lawEntries()
             lawSections()
+
             users()
-            bookInvitations()
+            profile()
+            userBundled()
         }
 
         route("auth/") {
             signup()
             login()
-        }
-
-        authenticate {
-            route("user/") {
-                profile()
-            }
         }
 
     }

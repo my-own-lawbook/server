@@ -53,7 +53,7 @@ abstract class InvitationContentService {
         authorId: Long,
         targetBookId: Long,
         recipientId: Long,
-        role: MemberRole = MemberRole.Read,
+        role: MemberRole = MemberRole.Member,
         expiresAt: Instant? = null,
         message: String? = null
     ): BookInvitation

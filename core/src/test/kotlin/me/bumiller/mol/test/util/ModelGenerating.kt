@@ -64,9 +64,8 @@ fun lawSectionModels(count: Long) = (1L..count).map(::lawSectionModel)
 
 fun memberRole(key: Long) =
     if (key % 2 == 0L) MemberRole.Admin
-    else if (key % 3 == 0L) MemberRole.Write
-    else if (key % 5 == 0L) MemberRole.Update
-    else MemberRole.Read
+    else if (key % 3 == 0L) MemberRole.Moderator
+    else MemberRole.Member
 
 fun invitationModel(key: Long) = BookInvitation(
     key,

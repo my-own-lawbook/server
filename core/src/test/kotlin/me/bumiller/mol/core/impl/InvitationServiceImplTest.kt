@@ -32,15 +32,6 @@ class InvitationServiceImplTest {
     }
 
     @Test
-    fun `createInvitation throws if author is not admin of the book`() = runTest {
-        coEvery { memberContentService.getMemberRole(1L, 1L) } returns MemberRole.Write
-
-        assertThrows<ServiceException.UserInvalidRoleInBook> {
-            invitationService.createInvitation(1L, 1L, 1L)
-        }
-    }
-
-    @Test
     fun `createInvitation throws if recipient is already member of the book`() = runTest {
         coEvery { memberContentService.getMemberRole(1L, 1L) } returns MemberRole.Admin
         coEvery { memberContentService.getMembersInBook(1L) } returns userModels(4L)
