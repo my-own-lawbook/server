@@ -13,14 +13,8 @@ import io.ktor.server.testing.*
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import me.bumiller.mol.core.AuthService
-import me.bumiller.mol.core.EncryptionService
-import me.bumiller.mol.core.LawService
-import me.bumiller.mol.core.MemberService
-import me.bumiller.mol.core.data.LawContentService
-import me.bumiller.mol.core.data.MemberContentService
-import me.bumiller.mol.core.data.TwoFactorTokenService
-import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.*
+import me.bumiller.mol.core.data.*
 import me.bumiller.mol.model.User
 import me.bumiller.mol.model.config.AppConfig
 import me.bumiller.mol.rest.restApi
@@ -54,7 +48,11 @@ data class Services(
 
     val memberService: MemberService = mockk(),
 
-    val accessValidator: AccessValidator = mockk()
+    val accessValidator: AccessValidator = mockk(),
+
+    val invitationService: InvitationService = mockk(),
+
+    val invitationContentService: InvitationContentService = mockk()
 
 )
 
@@ -86,7 +84,8 @@ fun ktorEndpointTest(
     /*
      * AccessService is mocked to always return true for access. Can be overwritten
      */
-    coEvery { services.accessValidator.hasAccess(any(), any(), any(), any(), any()) } returns true
+    coEvery { services.accessValidator.resolveScoped(any(), any(), any()) } returns true
+    coEvery { services.accessValidator.resolveGlobal(any(), any(), any()) } returns true
 
     application {
         install(Koin) {
@@ -101,6 +100,8 @@ fun ktorEndpointTest(
                     single { memberService }
                     single { memberContentService }
                     single { accessValidator }
+                    single { invitationService }
+                    single { invitationContentService }
                 })
             }
         }

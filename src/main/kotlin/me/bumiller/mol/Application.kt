@@ -47,6 +47,7 @@ private fun setupDatabase(appConfig: AppConfig) {
             UserProfile.Table,
             TwoFactorToken.Table,
             LawBook.Table,
+            BookInvitation.Table,
             LawEntry.Table,
             LawSection.Table,
             LawBookMembersCrossref.Table

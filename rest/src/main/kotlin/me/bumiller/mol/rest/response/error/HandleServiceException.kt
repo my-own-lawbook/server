@@ -30,4 +30,8 @@ internal fun ServiceException.handle(): Nothing = when (this) {
     is ServiceException.UserProfileAlreadyPresent -> conflict("User with id '$userId' already has a profile set.")
     is ServiceException.UserProfileNotPresent -> conflict("User with id '$userId' does not yet have a profile set.")
     is ServiceException.UserUsernameNotUnique -> conflictUnique("username", username)
+    is ServiceException.InvitationExpired -> conflict("Invitation with id '$id' is expired.")
+    is ServiceException.InvitationNotFound -> notFoundIdentifier("book-invitation", id.toString())
+    is ServiceException.InvitationNotOpen -> conflict("Invitation with id '$id' is not open.")
+    is ServiceException.OpenInvitationAlreadyPresent -> conflict("User with id 'userId' already has an open invitation to book with id '$bookId'.")
 }

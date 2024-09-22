@@ -36,7 +36,7 @@ import org.koin.ktor.ext.inject
 internal fun Route.profile() {
     val userService by inject<UserService>()
 
-    route("profile/") {
+    route("user/profile/") {
         createProfile(userService)
         getProfile()
         updateProfile(userService)

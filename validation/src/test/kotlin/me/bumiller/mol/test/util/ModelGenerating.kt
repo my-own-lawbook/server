@@ -1,6 +1,7 @@
 package me.bumiller.mol.test.util
 
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import me.bumiller.mol.model.*
@@ -60,3 +61,16 @@ fun lawSectionModel(key: Long) = LawSection(
 )
 
 fun lawSectionModels(count: Long) = (1L..count).map(::lawSectionModel)
+
+fun invitationModel(key: Long) = BookInvitation(
+    key,
+    userModel(key),
+    lawBookModel(key),
+    userModel(key),
+    MemberRole.Admin,
+    Instant.fromEpochSeconds(key * 1000),
+    null,
+    InvitationStatus.Open,
+    null,
+    null
+)

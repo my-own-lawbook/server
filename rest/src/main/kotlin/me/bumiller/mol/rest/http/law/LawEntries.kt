@@ -9,14 +9,15 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
-import me.bumiller.mol.core.exception.ServiceException
-import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathEntryId
 import me.bumiller.mol.rest.response.law.entry.LawEntryResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.AccessValidator
+import me.bumiller.mol.validation.ScopedPermission
+import me.bumiller.mol.validation.Validatable
+import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
 
 /**
@@ -37,7 +38,6 @@ internal fun Route.lawEntries() {
     val accessValidator by inject<AccessValidator>()
 
     route("law-entries/") {
-        getAll(lawContentService)
         getById(lawContentService, accessValidator)
         update(lawContentService, accessValidator)
         delete(lawContentService, accessValidator)
@@ -75,36 +75,13 @@ internal data class CreateLawEntryRequest(
 //
 
 /**
- * Endpoint to GET /law-entries/ that gets all the entries the user has access to
- */
-private fun Route.getAll(lawContentService: LawContentService) = get {
-    val allBooks = try {
-        lawContentService.getBooksForMember(user.id)
-    } catch (e: ServiceException.UserNotFound) {
-        internal()
-    }
-
-    val allEntries = allBooks.map { book ->
-        try {
-            lawContentService.getEntriesByBook(book.id)
-        } catch (e: ServiceException.LawBookNotFound) {
-            internal()
-        }
-    }.flatten()
-
-    val response = allEntries.map(LawEntryResponse.Companion::create)
-
-    call.respond(HttpStatusCode.OK, response)
-}
-
-/**
  * Endpoint to GET /law-entries/:id/ that gets a specific law entry
  */
 private fun Route.getById(lawContentService: LawContentService, accessValidator: AccessValidator) =
     get("{$PathEntryId}/") {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-        accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Read, entryId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Entries.Read(entryId), user.id)
 
         val entry = lawContentService.getSpecificEntry(id = present(entryId))
 
@@ -121,7 +98,7 @@ private fun Route.update(lawContentService: LawContentService, accessValidator: 
 
     val body = call.validated<UpdateLawEntryRequest>()
 
-        accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Edit, entryId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Entries.Write(entryId), user.id)
 
     val updated = lawContentService.updateEntry(
         entryId = entryId,
@@ -140,7 +117,7 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
     delete("{$PathEntryId}/") {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-        accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Edit, entryId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Entries.Write(entryId), user.id)
 
         val deleted = lawContentService.deleteEntry(entryId)
 
@@ -154,7 +131,7 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
 private fun Route.getByBook(lawContentService: LawContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Read, bookId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Children.Read(bookId), user.id)
 
     val entries = lawContentService.getEntriesByBook(bookId)
 
@@ -169,7 +146,7 @@ private fun Route.create(lawContentService: LawContentService, accessValidator: 
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val body = call.validated<CreateLawEntryRequest>()
 
-    accessValidator.hasAccess(LawResourceScope.Book, LawPermission.Create, bookId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Children.Create(bookId), user.id)
 
     val created = lawContentService.createEntry(
         key = body.key,

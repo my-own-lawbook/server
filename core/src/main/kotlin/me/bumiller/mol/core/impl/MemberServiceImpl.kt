@@ -7,6 +7,7 @@ import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.LawBook
 import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.User
+import me.bumiller.mol.model.satisfies
 
 internal class MemberServiceImpl(
     private val memberContentService: MemberContentService,

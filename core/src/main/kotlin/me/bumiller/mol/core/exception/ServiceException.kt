@@ -1,6 +1,7 @@
 package me.bumiller.mol.core.exception
 
 import kotlinx.datetime.Instant
+import me.bumiller.mol.model.InvitationStatus
 import me.bumiller.mol.model.TwoFactorTokenType
 import java.util.*
 
@@ -111,5 +112,25 @@ sealed class ServiceException : RuntimeException() {
      * The user for an email token is already verified
      */
     data class EmailTokenUserAlreadyVerified(val token: UUID) : ServiceException()
+
+    /**
+     * A book-invitation was not found
+     */
+    data class InvitationNotFound(val id: Long) : ServiceException()
+
+    /**
+     * A book-invitation cannot be accepted because it is not open anymore
+     */
+    data class InvitationNotOpen(val id: Long, val status: InvitationStatus) : ServiceException()
+
+    /**
+     * A book-invitation cannot be accepted because it is expired
+     */
+    data class InvitationExpired(val id: Long) : ServiceException()
+
+    /**
+     * An invitation for a specific user to a specific book is already open at the moment, thus another cannot be added
+     */
+    data class OpenInvitationAlreadyPresent(val userId: Long, val bookId: Long) : ServiceException()
 
 }

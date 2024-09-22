@@ -93,7 +93,7 @@ class DatabaseTwoFactorTokenServiceTest {
                 any()
             )
         } answers { c -> c.invocation.args[0] as TwoFactorTokenModel }
-        coEvery { mockUserRepository.getSpecific(any<Long>()) } returns userModel
+        coEvery { mockUserRepository.getSpecific(id = any<Optional<Long>>(), onlyActive = false) } returns userModel
 
         val time = Clock.System.now()
 
@@ -110,7 +110,7 @@ class DatabaseTwoFactorTokenServiceTest {
 
     @Test
     fun `create throws when user is not found`() = runTest {
-        coEvery { mockUserRepository.getSpecific(any<Long>()) } returns null
+        coEvery { mockUserRepository.getSpecific(id = any<Optional<Long>>(), onlyActive = false) } returns null
 
         val time = Clock.System.now()
 

@@ -1,6 +1,7 @@
 package me.bumiller.mol.core.impl
 
 import kotlinx.datetime.Instant
+import me.bumiller.mol.common.present
 import me.bumiller.mol.common.presentWhenNotNull
 import me.bumiller.mol.core.data.TwoFactorTokenService
 import me.bumiller.mol.core.exception.ServiceException
@@ -33,7 +34,10 @@ internal class DatabaseTwoFactorTokenService(
         issuedAt: Instant,
         additionalContent: String?
     ): TwoFactorToken {
-        val user = userRepository.getSpecific(userId) ?: throw ServiceException.UserNotFound(id = userId)
+        val user =
+            userRepository.getSpecific(id = present(userId), onlyActive = false) ?: throw ServiceException.UserNotFound(
+                id = userId
+            )
         val model = TwoFactorTokenModel(
             id = -1,
             token = UUID.randomUUID(),

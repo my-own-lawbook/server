@@ -9,14 +9,15 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.LawContentService
-import me.bumiller.mol.core.exception.ServiceException
-import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.http.PathEntryId
 import me.bumiller.mol.rest.http.PathSectionId
 import me.bumiller.mol.rest.response.law.section.LawSectionResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
-import me.bumiller.mol.validation.*
+import me.bumiller.mol.validation.AccessValidator
+import me.bumiller.mol.validation.ScopedPermission
+import me.bumiller.mol.validation.Validatable
+import me.bumiller.mol.validation.validated
 import org.koin.ktor.ext.inject
 
 /**
@@ -36,7 +37,6 @@ internal fun Route.lawSections() {
     val accessValidator by inject<AccessValidator>()
 
     route("law-sections/") {
-        getAll(lawContentService)
         getSpecific(lawContentService, accessValidator)
         update(lawContentService, accessValidator)
         deleteSpecific(lawContentService, accessValidator)
@@ -78,43 +78,13 @@ internal data class CreateLawSectionRequest(
 //
 
 /**
- * Endpoint to GET /law-sections/ that gets all law-sections the user has access to
- */
-private fun Route.getAll(lawContentService: LawContentService) = get {
-    val booksForUser = try {
-        lawContentService.getBooksForMember(user.id)
-    } catch (e: ServiceException.UserNotFound) {
-        internal()
-    }
-
-    val entries = booksForUser.map { book ->
-        try {
-            lawContentService.getEntriesByBook(book.id)
-        } catch (e: ServiceException.LawBookNotFound) {
-            internal()
-        }
-    }.flatten()
-
-    val sections = entries.map { entry ->
-        try {
-            lawContentService.getSectionsByEntry(entry.id)
-        } catch (e: ServiceException.LawEntryNotFound) {
-            internal()
-        }
-    }.flatten()
-
-    val response = sections.map(LawSectionResponse.Companion::create)
-    call.respond(HttpStatusCode.OK, response)
-}
-
-/**
  * Endpoint to GET /law-sections/:id/ that gets a specific section
  */
 private fun Route.getSpecific(lawContentService: LawContentService, accessValidator: AccessValidator) =
     get("{$PathSectionId}/") {
     val sectionId = call.parameters.longOrBadRequest(PathSectionId)
 
-        accessValidator.hasAccess(LawResourceScope.Section, LawPermission.Read, sectionId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Sections.Read(sectionId), user.id)
 
         val section = lawContentService.getSpecificSection(id = present(sectionId))
 
@@ -131,7 +101,7 @@ private fun Route.update(lawContentService: LawContentService, accessValidator: 
 
     val body = call.validated<UpdateLawSectionRequest>()
 
-        accessValidator.hasAccess(LawResourceScope.Section, LawPermission.Edit, sectionId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Sections.Write(sectionId), user.id)
 
     val updated = lawContentService.updateSection(
         sectionId = sectionId,
@@ -151,7 +121,7 @@ private fun Route.deleteSpecific(lawContentService: LawContentService, accessVal
     delete("{$PathSectionId}/") {
     val sectionId = call.parameters.longOrBadRequest(PathSectionId)
 
-        accessValidator.hasAccess(LawResourceScope.Section, LawPermission.Edit, sectionId, user.id)
+        accessValidator.resolveScoped(ScopedPermission.Sections.Write(sectionId), user.id)
 
         val deleted = lawContentService.deleteSection(sectionId)
 
@@ -165,7 +135,7 @@ private fun Route.deleteSpecific(lawContentService: LawContentService, accessVal
 private fun Route.getByEntry(lawContentService: LawContentService, accessValidator: AccessValidator) = get {
     val entryId = call.parameters.longOrBadRequest(PathEntryId)
 
-    accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Read, entryId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Entries.Children.Read(entryId), user.id)
 
     val sections = lawContentService.getSectionsByEntry(entryId)
 
@@ -181,7 +151,7 @@ private fun Route.create(lawContentService: LawContentService, accessValidator: 
 
     val body = call.validated<CreateLawSectionRequest>()
 
-    accessValidator.hasAccess(LawResourceScope.Entry, LawPermission.Create, entryId, user.id)
+    accessValidator.resolveScoped(ScopedPermission.Entries.Children.Create(entryId), user.id)
 
     val created = lawContentService.createSection(
         index = body.index,
