@@ -4,9 +4,12 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import me.bumiller.mol.core.InvitationService
 import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.exception.ServiceException
+import me.bumiller.mol.model.BookInvitation
+import me.bumiller.mol.model.http.unauthorized
 import me.bumiller.mol.rest.http.PathInvitationId
 import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
@@ -38,6 +41,7 @@ import org.koin.ktor.ext.inject
 internal fun Route.bookInvitations() {
     val lawContentService by inject<LawContentService>()
     val invitationContentService by inject<InvitationContentService>()
+    val invitationService by inject<InvitationService>()
     val accessValidator by inject<AccessValidator>()
 
     route("book-invitations/") {
@@ -45,8 +49,59 @@ internal fun Route.bookInvitations() {
 
         route("{$PathInvitationId}/") {
             getSpecific(invitationContentService, accessValidator)
+
+            route("accept/") {
+                accept(invitationContentService, invitationService, accessValidator)
+            }
+            route("deny/") {
+                deny(invitationContentService, invitationService, accessValidator)
+            }
+            route("revoke/") {
+                revoke(invitationContentService, invitationService, accessValidator)
+            }
         }
     }
+}
+
+//
+// Utility functions
+//
+private suspend fun AccessValidator.validateReadAccessToInvitation(
+    userId: Long,
+    invitationId: Long,
+    invitationContentService: InvitationContentService
+): BookInvitation {
+    val invitation = try {
+        invitationContentService.getInvitationById(invitationId)
+    } catch (e: ServiceException.InvitationNotFound) {
+        null
+    }
+
+    resolveScoped(
+        ScopedPermission.Books.Members.ReadInvitations(invitation?.targetBook?.id ?: -1),
+        userId
+    )
+
+    return invitation!!
+}
+
+private suspend fun AccessValidator.validateManageAccessToInvitation(
+    userId: Long,
+    invitationId: Long,
+    invitationContentService: InvitationContentService
+): BookInvitation {
+    val invitation = try {
+        invitationContentService.getInvitationById(invitationId)
+    } catch (e: ServiceException.InvitationNotFound) {
+        null
+    }
+
+    resolveScoped(
+        ScopedPermission.Books.Members.ManageInvitations(invitation?.targetBook?.id ?: -1),
+        userId
+    )
+
+    return invitation!!
 }
 
 //
@@ -83,18 +138,61 @@ private fun Route.getSpecific(
     accessValidator: AccessValidator
 ) = get {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
-    val invitation = try {
-        invitationContentService.getInvitationById(invitationId)
-    } catch (e: ServiceException.InvitationNotFound) {
-        null
-    }
+    val invitation = accessValidator.validateReadAccessToInvitation(user.id, invitationId, invitationContentService)
 
-    accessValidator.resolveScoped(
-        ScopedPermission.Books.Members.ReadInvitations(invitation?.targetBook?.id ?: -1),
-        user.id
-    )
-
-    val response = BookInvitationResponse.create(invitation!!)
+    val response = BookInvitationResponse.create(invitation)
 
     call.respond(HttpStatusCode.OK, response)
+}
+
+/**
+ * Endpoint to POST /book-invitations/:id/accept/ that accepts an invitation
+ */
+private fun Route.accept(
+    invitationContentService: InvitationContentService,
+    invitationService: InvitationService,
+    accessValidator: AccessValidator
+) = post {
+    val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
+    val invitation = accessValidator.validateReadAccessToInvitation(user.id, invitationId, invitationContentService)
+
+    if (invitation.recipient.id != user.id)
+        unauthorized()
+    invitationService.acceptInvitation(invitation.id)
+
+    call.respond(HttpStatusCode.NoContent)
+}
+
+/**
+ * Endpoint to POST /book-invitations/:id/deny/ that denies an invitation
+ */
+private fun Route.deny(
+    invitationContentService: InvitationContentService,
+    invitationService: InvitationService,
+    accessValidator: AccessValidator
+) = post {
+    val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
+    val invitation = accessValidator.validateReadAccessToInvitation(user.id, invitationId, invitationContentService)
+
+    if (invitation.recipient.id != user.id)
+        unauthorized()
+    invitationService.denyInvitation(invitation.id)
+
+    call.respond(HttpStatusCode.NoContent)
+}
+
+/**
+ * Endpoint to POST /book-invitations/:id/revoke/ that revokes an invitation
+ */
+private fun Route.revoke(
+    invitationContentService: InvitationContentService,
+    invitationService: InvitationService,
+    accessValidator: AccessValidator
+) = post {
+    val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
+    val invitation = accessValidator.validateManageAccessToInvitation(user.id, invitationId, invitationContentService)
+
+    invitationService.revokeInvitation(invitation.id)
+
+    call.respond(HttpStatusCode.NoContent)
 }
