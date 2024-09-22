@@ -76,9 +76,6 @@ internal fun Route.bookInvitations() {
 @Serializable
 private data class CreateInvitationRequest(
 
-    @SerialName("target_book_id")
-    val targetBookId: Long,
-
     @SerialName("recipient_id")
     val recipientId: Long,
 
