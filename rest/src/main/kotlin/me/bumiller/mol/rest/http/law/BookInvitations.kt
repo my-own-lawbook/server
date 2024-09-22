@@ -6,11 +6,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import me.bumiller.mol.core.data.InvitationContentService
 import me.bumiller.mol.core.data.LawContentService
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.rest.http.PathInvitationId
 import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
 import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.validation.AccessValidator
+import me.bumiller.mol.validation.ScopedPermission
 import org.koin.ktor.ext.inject
 
 /**
@@ -39,7 +41,7 @@ internal fun Route.bookInvitations() {
     val accessValidator by inject<AccessValidator>()
 
     route("book-invitations/") {
-        getAll(lawContentService, invitationContentService)
+        getAll(lawContentService, invitationContentService, accessValidator)
 
         route("{$PathInvitationId}/") {
             getSpecific(invitationContentService, accessValidator)
@@ -56,12 +58,16 @@ internal fun Route.bookInvitations() {
  */
 private fun Route.getAll(
     lawContentService: LawContentService,
-    invitationContentService: InvitationContentService
+    invitationContentService: InvitationContentService,
+    accessValidator: AccessValidator
 ) = get {
     val books = lawContentService.getBooksForMember(user.id)
 
     val invitations = books.map { book ->
-        invitationContentService.getAll(targetBookId = book.id)
+        val canAccessInvitations =
+            accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations(book.id), user.id, false)
+        if (canAccessInvitations) invitationContentService.getAll(targetBookId = book.id)
+        else emptyList()
     }.flatten()
 
     val response = invitations.map(BookInvitationResponse::create)
@@ -77,12 +83,18 @@ private fun Route.getSpecific(
     accessValidator: AccessValidator
 ) = get {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
-    val invitation = invitationContentService.getInvitationById(invitationId)
+    val invitation = try {
+        invitationContentService.getInvitationById(invitationId)
+    } catch (e: ServiceException.InvitationNotFound) {
+        null
+    }
 
-    // TODO: Change this. If the invitation is not found by getInvitationById another error message will be returned than if the user does not have access to it. Should be reworked in AccessValidator.
-    //accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations())
+    accessValidator.resolveScoped(
+        ScopedPermission.Books.Members.ReadInvitations(invitation?.targetBook?.id ?: -1),
+        user.id
+    )
 
-    val response = BookInvitationResponse.create(invitation)
+    val response = BookInvitationResponse.create(invitation!!)
 
     call.respond(HttpStatusCode.OK, response)
 }
