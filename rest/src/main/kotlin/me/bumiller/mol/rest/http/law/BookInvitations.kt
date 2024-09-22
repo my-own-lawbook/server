@@ -11,8 +11,6 @@ import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
 import me.bumiller.mol.core.InvitationService
 import me.bumiller.mol.core.data.InvitationContentService
-import me.bumiller.mol.core.exception.ServiceException
-import me.bumiller.mol.model.BookInvitation
 import me.bumiller.mol.model.MemberRole
 import me.bumiller.mol.model.http.unauthorized
 import me.bumiller.mol.rest.http.PathBookId
@@ -73,47 +71,6 @@ internal fun Route.bookInvitations() {
 }
 
 //
-// Utility functions
-//
-private suspend fun AccessValidator.validateReadAccessToInvitation(
-    userId: Long,
-    invitationId: Long,
-    invitationContentService: InvitationContentService
-): BookInvitation {
-    val invitation = try {
-        invitationContentService.getInvitationById(invitationId)
-    } catch (e: ServiceException.InvitationNotFound) {
-        null
-    }
-
-    resolveScoped(
-        ScopedPermission.Books.Members.ReadInvitations(invitation?.targetBook?.id ?: -1),
-        userId
-    )
-
-    return invitation!!
-}
-
-private suspend fun AccessValidator.validateManageAccessToInvitation(
-    userId: Long,
-    invitationId: Long,
-    invitationContentService: InvitationContentService
-): BookInvitation {
-    val invitation = try {
-        invitationContentService.getInvitationById(invitationId)
-    } catch (e: ServiceException.InvitationNotFound) {
-        null
-    }
-
-    resolveScoped(
-        ScopedPermission.Books.Members.ManageInvitations(invitation?.targetBook?.id ?: -1),
-        userId
-    )
-
-    return invitation!!
-}
-
-//
 // Request bodies
 //
 @Serializable
@@ -157,7 +114,9 @@ private fun Route.getSpecific(
     accessValidator: AccessValidator
 ) = get {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
-    val invitation = accessValidator.validateReadAccessToInvitation(user.id, invitationId, invitationContentService)
+    accessValidator.resolveScoped(ScopedPermission.Invitations.Read(invitationId), user.id)
+
+    val invitation = invitationContentService.getInvitationById(invitationId)
 
     val response = BookInvitationResponse.create(invitation)
 
@@ -173,7 +132,9 @@ private fun Route.accept(
     accessValidator: AccessValidator
 ) = post {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
-    val invitation = accessValidator.validateReadAccessToInvitation(user.id, invitationId, invitationContentService)
+    accessValidator.resolveScoped(ScopedPermission.Invitations.Accept(invitationId), user.id)
+
+    val invitation = invitationContentService.getInvitationById(invitationId)
 
     if (invitation.recipient.id != user.id)
         unauthorized()
@@ -191,7 +152,9 @@ private fun Route.deny(
     accessValidator: AccessValidator
 ) = post {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
-    val invitation = accessValidator.validateReadAccessToInvitation(user.id, invitationId, invitationContentService)
+    accessValidator.resolveScoped(ScopedPermission.Invitations.Deny(invitationId), user.id)
+
+    val invitation = invitationContentService.getInvitationById(invitationId)
 
     if (invitation.recipient.id != user.id)
         unauthorized()
@@ -209,7 +172,9 @@ private fun Route.revoke(
     accessValidator: AccessValidator
 ) = post {
     val invitationId = call.parameters.longOrBadRequest(PathInvitationId)
-    val invitation = accessValidator.validateManageAccessToInvitation(user.id, invitationId, invitationContentService)
+    accessValidator.resolveScoped(ScopedPermission.Invitations.Revoke(invitationId), user.id)
+
+    val invitation = invitationContentService.getInvitationById(invitationId)
 
     invitationService.revokeInvitation(invitation.id)
 
