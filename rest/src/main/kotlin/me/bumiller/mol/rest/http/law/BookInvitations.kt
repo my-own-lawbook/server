@@ -10,6 +10,7 @@ import me.bumiller.mol.core.data.LawContentService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.BookInvitation
 import me.bumiller.mol.model.http.unauthorized
+import me.bumiller.mol.rest.http.PathBookId
 import me.bumiller.mol.rest.http.PathInvitationId
 import me.bumiller.mol.rest.response.law.invitation.BookInvitationResponse
 import me.bumiller.mol.rest.util.longOrBadRequest
@@ -60,6 +61,10 @@ internal fun Route.bookInvitations() {
                 revoke(invitationContentService, invitationService, accessValidator)
             }
         }
+    }
+
+    route("law-books/{$PathBookId}/book-invitations/") {
+        allForBook(invitationContentService, accessValidator)
     }
 }
 
@@ -195,4 +200,21 @@ private fun Route.revoke(
     invitationService.revokeInvitation(invitation.id)
 
     call.respond(HttpStatusCode.NoContent)
+}
+
+/**
+ * Endpoint to /law-books/:id/book-invitations/ that gets all invitations for a specific book
+ */
+private fun Route.allForBook(
+    invitationContentService: InvitationContentService,
+    accessValidator: AccessValidator
+) = get {
+    val bookId = call.parameters.longOrBadRequest(PathBookId)
+
+    accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations(bookId), user.id)
+
+    val invitations = invitationContentService.getAll(targetBookId = bookId)
+
+    val response = invitations.map(BookInvitationResponse::create)
+    call.respond(HttpStatusCode.OK, response)
 }
