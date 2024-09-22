@@ -25,7 +25,6 @@ interface InvitationService {
      * @throws ServiceException.UserNotFound If the author or the recipient could not be found
      * @throws ServiceException.LawBookNotFound If the book could not be found
      * @throws ServiceException.UserNotMemberOfBook If the author is not a member of the book
-     * @throws ServiceException.UserInvalidRoleInBook If the author does not have the required role to create a permission
      * @throws ServiceException.OpenInvitationAlreadyPresent If an invitation for the recipient to the target book is already open
      * @throws ServiceException.UserAlreadyMemberOfBook If the user is already a member of the book
      */
