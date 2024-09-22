@@ -103,7 +103,11 @@ internal class ServiceAccessValidator(
             return false
         }
 
-        val memberRole = memberContentService.getMemberRole(userId, invitation.targetBook.id)
+        val memberRole = try {
+            memberContentService.getMemberRole(userId, invitation.targetBook.id)
+        } catch (e: ServiceException.UserNotMemberOfBook) {
+            null
+        }
 
         return when (permission) {
             is ScopedPermission.Invitations.Accept -> invitation.recipient.id == userId
