@@ -37,6 +37,7 @@ ktor-validation = { group = "io.ktor", name = "ktor-server-request-validation", 
 ktor-statuspages = { group = "io.ktor", name = "ktor-server-status-pages", version.ref = "ktor" }
 ktor-dataconversion = { group = "io.ktor", name = "ktor-server-data-conversion", version.ref = "ktor" }
 ktor-yaml = { group = "io.ktor", name = "ktor-server-config-yaml", version.ref = "ktor" }
+ktor-cors = { group = "io.ktor", name = "ktor-server-cors", version.ref = "ktor" }
 ktor-test = { group = "io.ktor", name = "ktor-server-test-host", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 koin = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
@@ -55,7 +56,7 @@ kotlin-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 [bundles]
 exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]
-ktor = ["ktor", "ktor-netty", "ktor-content-negotiation", "ktor-serialization", "ktor-auth", "ktor-auth-jwt", "ktor-validation", "ktor-statuspages", "ktor-dataconversion", "ktor-yaml"]
+ktor = ["ktor", "ktor-cors", "ktor-netty", "ktor-content-negotiation", "ktor-serialization", "ktor-auth", "ktor-auth-jwt", "ktor-validation", "ktor-statuspages", "ktor-dataconversion", "ktor-yaml"]
 ktor-test = ["ktor-test", "ktor-client-content-negotiation"]
 test = ["junit", "junit-params", "mockk", "coroutines-test"]
 koin = ["koin", "koin-ktor"]
