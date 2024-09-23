@@ -6,7 +6,8 @@ import me.bumiller.mol.core.data.MemberContentService
 import me.bumiller.mol.core.data.UserService
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.MemberRole
-import me.bumiller.mol.model.http.RequestException
+import me.bumiller.mol.model.http.internal
+import me.bumiller.mol.model.http.notFoundIdentifier
 import me.bumiller.mol.model.satisfies
 import me.bumiller.mol.validation.AccessValidator
 import me.bumiller.mol.validation.GlobalPermission
@@ -132,7 +133,7 @@ internal class ServiceAccessValidator(
         try {
             userService.getSpecific(id = userId)
         } catch (e: ServiceException.UserNotFound) {
-            throw RequestException(500, "")
+            internal()
         }
 
         val granted = when (permission) {
@@ -146,10 +147,7 @@ internal class ServiceAccessValidator(
         }
 
         if (throwOnRestricted && !granted)
-            throw RequestException(
-                404,
-                "Could not find resource of type '${permission.resourceName}' with identifier '${permission.id}'. The resource may not exist, or you may not have access to it."
-            )
+            notFoundIdentifier(permission.resourceName, permission.id.toString())
         else return granted
     }
 
