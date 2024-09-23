@@ -23,7 +23,7 @@ data class RequestException(
  * @param message Description of error
  */
 fun bad(message: String? = null): Nothing {
-    throw RequestException(400, DefaultErrorBody(message))
+    throw RequestException(400, DefaultErrorBody(errorType = "bad", info = message))
 }
 
 /**
@@ -33,7 +33,7 @@ fun bad(message: String? = null): Nothing {
  * @param value The value
  */
 fun badFormat(format: String, value: String): Nothing {
-    bad("Value '$value' violates the format '$format''")
+    throw RequestException(400, DefaultErrorBody(errorType = "bad_format", info = BadFormatInfo(format, value)))
 }
 
 /**
@@ -42,7 +42,7 @@ fun badFormat(format: String, value: String): Nothing {
  * @param message Description of error
  */
 fun unauthorized(message: String? = null): Nothing {
-    throw RequestException(401, DefaultErrorBody(message))
+    throw RequestException(401, DefaultErrorBody(errorType = "unauthorized", info = message))
 }
 
 /**
@@ -51,7 +51,7 @@ fun unauthorized(message: String? = null): Nothing {
  * @param message Description of error
  */
 fun forbidden(message: String? = null): Nothing {
-    throw RequestException(403, DefaultErrorBody(message))
+    throw RequestException(403, DefaultErrorBody(errorType = "forbidden", info = message))
 }
 
 /**
@@ -60,7 +60,12 @@ fun forbidden(message: String? = null): Nothing {
  * @param message Description of error
  */
 fun notFound(message: String? = null): Nothing {
-    throw RequestException(404, DefaultErrorBody(message))
+    throw RequestException(
+        404, DefaultErrorBody(
+            errorType = "not_found",
+            info = message
+        )
+    )
 }
 
 /**
@@ -70,7 +75,12 @@ fun notFound(message: String? = null): Nothing {
  * @param identifier Identifier of the resource that was not found
  */
 fun notFoundIdentifier(type: String, identifier: String): Nothing {
-    throw RequestException(404, DefaultErrorBody("Did not find $type with identifier '$identifier'"))
+    throw RequestException(
+        404, DefaultErrorBody(
+            errorType = "not_found",
+            info = NotFoundIdentifierInfo(type, identifier)
+        )
+    )
 }
 
 /**
@@ -79,7 +89,12 @@ fun notFoundIdentifier(type: String, identifier: String): Nothing {
  * @param message Description of error
  */
 fun conflict(message: String? = null): Nothing {
-    throw RequestException(409, DefaultErrorBody(message))
+    throw RequestException(
+        409, DefaultErrorBody(
+            errorType = "conflict",
+            info = message
+        )
+    )
 }
 
 /**
@@ -89,7 +104,12 @@ fun conflict(message: String? = null): Nothing {
  * @param value Value of the field
  */
 fun conflictUnique(field: String, value: String): Nothing {
-    throw RequestException(409, DefaultErrorBody("Value '$value' is already taken for '$field'"))
+    throw RequestException(
+        409, DefaultErrorBody(
+            errorType = "conflict_unique",
+            info = ConflictUniqueInfo(field, value)
+        )
+    )
 }
 
 /**
@@ -100,17 +120,73 @@ fun internal() : Nothing {
 }
 
 /**
+ * Error body for a 409 response.
+ */
+data class ConflictUniqueInfo(
+
+    /**
+     * The field that already has the value set
+     */
+    val field: String,
+
+    /**
+     * The value of the field
+     */
+    val value: String
+
+)
+
+/**
+ * Error body for a 404 response
+ */
+data class NotFoundIdentifierInfo(
+
+    /**
+     * The name of the resource type
+     */
+    val resourceType: String,
+
+    /**
+     * The identifier that was searched by
+     */
+    val identifier: String
+
+)
+
+/**
+ * Error body for 400 when a format rule was violated
+ */
+data class BadFormatInfo(
+
+    /**
+     * The required format
+     */
+    val format: String,
+
+    /**
+     * The passed value
+     */
+    val value: String
+
+)
+
+/**
  * Default error body for a [RequestException] for nice format of the HTTP-body.
  */
 data class DefaultErrorBody(
 
     /**
-     * Description of the error that occurred.
+     * More detailed description of the error.
      */
-    val error: String?
+    val info: Any?,
+
+    /**
+     * The type of error
+     */
+    val errorType: String? = null
 
 ) {
 
-    override fun toString() = error ?: ""
+    override fun toString() = info?.toString() ?: ""
 
 }
