@@ -3,6 +3,7 @@ package me.bumiller.mol.rest
 import io.ktor.server.application.*
 import me.bumiller.mol.model.config.AppConfig
 import me.bumiller.mol.rest.http.restRouting
+import me.bumiller.mol.rest.plugins.*
 import me.bumiller.mol.rest.plugins.authentication
 import me.bumiller.mol.rest.plugins.contentNegotiation
 import me.bumiller.mol.rest.plugins.dataConversion
@@ -19,6 +20,7 @@ fun Application.restApi(appConfig: AppConfig, basePath: String = "/api/v1/") {
 }
 
 private fun Application.setupPlugins(appConfig: AppConfig, basePath: String) {
+    cors()
     contentNegotiation()
     exceptionHandling()
     dataConversion()
