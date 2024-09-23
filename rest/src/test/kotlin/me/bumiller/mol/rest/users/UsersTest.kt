@@ -25,7 +25,7 @@ class UsersTest {
                 GlobalPermission.Users.Read(profile = true, email = false),
                 user.id
             )
-        } throws RequestException(404, "")
+        } throws RequestException(404, null)
 
         val res = client.get("/test/api/users/")
 

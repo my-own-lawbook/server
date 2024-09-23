@@ -36,7 +36,7 @@ class LawBooksTest {
                 ScopedPermission.Books.Read(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.get("/test/api/law-books/1/")
 
@@ -109,7 +109,7 @@ class LawBooksTest {
                     ScopedPermission.Books.Write(1L),
                     user.id
                 )
-            } throws RequestException(404, Unit)
+            } throws RequestException(404, null)
 
             client.patch("/test/api/law-books/1/") {
                 contentType(ContentType.Application.Json)
@@ -178,7 +178,7 @@ class LawBooksTest {
                 ScopedPermission.Books.Write(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.delete("/test/api/law-books/1/")
         coVerify(exactly = 1) {
@@ -210,7 +210,7 @@ class LawBooksTest {
                 ScopedPermission.Books.Members.Read(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.get("/test/api/law-books/1/members/")
 
@@ -247,7 +247,7 @@ class LawBooksTest {
                 ScopedPermission.Books.Members.ManageInvitations(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.put("/test/api/law-books/1/members/1/")
 
@@ -307,7 +307,7 @@ class LawBooksTest {
                     ScopedPermission.Books.Members.Remove(1L),
                     user.id
                 )
-            } throws RequestException(404, Unit)
+            } throws RequestException(404, null)
 
             client.delete("/test/api/law-books/1/members/1/")
 
@@ -386,7 +386,7 @@ class LawBooksTest {
                 ScopedPermission.Books.Members.Read(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.get("/test/api/law-books/1/roles/")
 
@@ -435,7 +435,7 @@ class LawBooksTest {
                 ScopedPermission.Books.Members.Read(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.get("/test/api/law-books/1/roles/1/")
 
@@ -469,7 +469,7 @@ class LawBooksTest {
                 ScopedPermission.Books.Members.ManageInvitations(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.put("/test/api/law-books/1/roles/1/") {
             contentType(ContentType.Application.Json)

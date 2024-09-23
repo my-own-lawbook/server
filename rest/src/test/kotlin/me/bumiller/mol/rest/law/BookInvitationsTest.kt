@@ -26,7 +26,7 @@ class BookInvitationsTest {
                 ScopedPermission.Invitations.Read(1L),
                 user.id
             )
-        } throws RequestException(404, "")
+        } throws RequestException(404, null)
 
         client.get("/test/api/book-invitations/1/")
 
@@ -59,7 +59,7 @@ class BookInvitationsTest {
                 ScopedPermission.Invitations.Accept(1L),
                 user.id
             )
-        } throws RequestException(404, "")
+        } throws RequestException(404, null)
 
         client.post("/test/api/book-invitations/1/accept/")
 
@@ -91,7 +91,7 @@ class BookInvitationsTest {
                 ScopedPermission.Invitations.Deny(1L),
                 user.id
             )
-        } throws RequestException(404, "")
+        } throws RequestException(404, null)
 
         client.post("/test/api/book-invitations/1/deny/")
 
@@ -123,7 +123,7 @@ class BookInvitationsTest {
                 ScopedPermission.Invitations.Revoke(1L),
                 user.id
             )
-        } throws RequestException(404, "")
+        } throws RequestException(404, null)
 
         client.post("/test/api/book-invitations/1/revoke/")
 
@@ -155,7 +155,7 @@ class BookInvitationsTest {
                 ScopedPermission.Books.Members.ReadInvitations(5L),
                 user.id
             )
-        } throws RequestException(404, "")
+        } throws RequestException(404, null)
 
         client.get("/test/api/law-books/5/book-invitations/")
 
@@ -187,7 +187,7 @@ class BookInvitationsTest {
                 ScopedPermission.Books.Members.ManageInvitations(5L),
                 user.id
             )
-        } throws RequestException(404, "")
+        } throws RequestException(404, null)
 
         client.post("/test/api/law-books/5/book-invitations/")
 

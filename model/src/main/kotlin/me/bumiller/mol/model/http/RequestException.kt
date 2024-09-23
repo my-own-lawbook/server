@@ -18,7 +18,7 @@ data class RequestException(
     /**
      * The body of the response. Must be json content.
      */
-    val body: JsonElement
+    val body: JsonElement?
 
 ) : RuntimeException(body.toString()) {
 
@@ -26,7 +26,11 @@ data class RequestException(
 
         inline fun <reified T : ErrorInfo> create(code: Int, errorType: String, info: T): RequestException {
             val body = ErrorWrapper(info, errorType)
-            val jsonBody = Json.encodeToJsonElement(body)
+            val jsonBody = try {
+                Json.encodeToJsonElement(body)
+            } catch (e: Exception) {
+                null
+            }
 
             return RequestException(code, jsonBody)
         }
