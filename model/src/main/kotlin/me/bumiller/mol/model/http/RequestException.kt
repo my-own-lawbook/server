@@ -1,5 +1,7 @@
 package me.bumiller.mol.model.http
 
+import kotlinx.serialization.Serializable
+
 /**
  * Type of exception that is thrown for the sole purpose of automatically returning a specific HTTP-response to the user.
  */
@@ -122,6 +124,7 @@ fun internal() : Nothing {
 /**
  * Error body for a 409 response.
  */
+@Serializable
 data class ConflictUniqueInfo(
 
     /**
@@ -139,6 +142,7 @@ data class ConflictUniqueInfo(
 /**
  * Error body for a 404 response
  */
+@Serializable
 data class NotFoundIdentifierInfo(
 
     /**
@@ -156,6 +160,7 @@ data class NotFoundIdentifierInfo(
 /**
  * Error body for 400 when a format rule was violated
  */
+@Serializable
 data class BadFormatInfo(
 
     /**
@@ -173,20 +178,17 @@ data class BadFormatInfo(
 /**
  * Default error body for a [RequestException] for nice format of the HTTP-body.
  */
-data class DefaultErrorBody(
+@Serializable
+data class DefaultErrorBody<T>(
 
     /**
      * More detailed description of the error.
      */
-    val info: Any?,
+    val info: T,
 
     /**
      * The type of error
      */
     val errorType: String? = null
 
-) {
-
-    override fun toString() = info?.toString() ?: ""
-
-}
+)

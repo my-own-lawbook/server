@@ -26,7 +26,7 @@ internal fun Application.exceptionHandling() {
 
         exception<RequestException> { call, cause ->
             val httpStatus = statusCodeFor(cause.code)
-            call.respond(httpStatus, cause.body.toString())
+            call.respond(httpStatus, cause.body)
         }
     }
 }
