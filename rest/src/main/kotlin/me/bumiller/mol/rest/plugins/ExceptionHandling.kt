@@ -4,6 +4,8 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.http.RequestException
 import me.bumiller.mol.rest.response.error.handle
@@ -21,12 +23,18 @@ internal fun Application.exceptionHandling() {
             }
 
             val httpStatus = statusCodeFor(reqEx.code)
-            call.respond(httpStatus, reqEx.body.toString())
+            val body = Json.encodeToString(reqEx.body)
+
+            call.response.header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            call.respond(httpStatus, body)
         }
 
         exception<RequestException> { call, cause ->
             val httpStatus = statusCodeFor(cause.code)
-            call.respond(httpStatus, cause.body.toString())
+            val body = Json.encodeToString(cause.body)
+
+            call.response.header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            call.respond(httpStatus, body)
         }
     }
 }

@@ -26,7 +26,7 @@ class LawEntriesTest {
                 ScopedPermission.Entries.Read(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.get("/test/api/law-entries/1/")
 
@@ -63,7 +63,7 @@ class LawEntriesTest {
                 ScopedPermission.Entries.Write(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.patch("/test/api/law-entries/1/") {
             contentType(ContentType.Application.Json)
@@ -129,7 +129,7 @@ class LawEntriesTest {
                 ScopedPermission.Entries.Write(1L),
                 user.id
             )
-        } throws RequestException(404, Unit)
+        } throws RequestException(404, null)
 
         client.delete("/test/api/law-entries/1/")
 
@@ -170,7 +170,7 @@ class LawEntriesTest {
                     ScopedPermission.Books.Children.Read(1L),
                     user.id
                 )
-            } throws RequestException(404, Unit)
+            } throws RequestException(404, null)
 
             client.get("/test/api/law-books/1/law-entries/")
 
@@ -215,7 +215,7 @@ class LawEntriesTest {
                     ScopedPermission.Books.Children.Create(1L),
                     user.id
                 )
-            } throws RequestException(404, Unit)
+            } throws RequestException(404, null)
 
             client.post("/test/api/law-books/1/law-entries/") {
                 contentType(ContentType.Application.Json)
