@@ -5,7 +5,6 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Instant
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
@@ -75,12 +74,10 @@ internal fun Route.bookInvitations() {
 @Serializable
 private data class CreateInvitationRequest(
 
-    @SerialName("recipient_id")
     val recipientId: Long,
 
     val role: Optional<Int> = empty(),
 
-    @SerialName("expires_at")
     val expiresAt: Optional<Instant?> = empty(),
 
     val message: Optional<String?> = empty()

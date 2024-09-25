@@ -5,7 +5,6 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
@@ -58,10 +57,8 @@ internal fun Route.profile() {
 @Serializable
 internal data class CreateProfileRequest(
 
-    @SerialName("first_name")
     val firstName: String,
 
-    @SerialName("last_name")
     val lastName: String,
 
     val gender: Gender,
@@ -84,10 +81,8 @@ internal data class CreateProfileRequest(
 @Serializable
 internal data class UpdateProfileRequest(
 
-    @SerialName("first_name")
     val firstName: Optional<String> = empty(),
 
-    @SerialName("last_name")
     val lastName: Optional<String> = empty(),
 
     val birthday: Optional<LocalDate> = empty(),

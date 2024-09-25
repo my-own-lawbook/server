@@ -211,7 +211,7 @@ class BookInvitationsTest {
                 setBody(
                     """
                     {
-                      "recipient_id": 19,
+                      "recipientId": 19,
                       "role": 1,
                       "message": null
                     }
