@@ -16,6 +16,7 @@ import me.bumiller.mol.model.UserProfile
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.user.AuthUserWithProfileResponse
+import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
 import me.bumiller.mol.rest.response.user.UserProfileResponse
 import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.validation.Validatable
@@ -36,10 +37,14 @@ import org.koin.ktor.ext.inject
 internal fun Route.profile() {
     val userService by inject<UserService>()
 
-    route("user/profile/") {
-        createProfile(userService)
-        getProfile()
-        updateProfile(userService)
+    route("user/") {
+        route("profile/") {
+            createProfile(userService)
+            getProfile()
+            updateProfile(userService)
+        }
+
+        getUserInfo()
     }
 }
 
@@ -102,6 +107,13 @@ internal data class UpdateProfileRequest(
 //
 // Endpoint mappings
 //
+
+/**
+ * Endpoint to /user/ that returns the user data
+ */
+private fun Route.getUserInfo() = get {
+    call.respond(HttpStatusCode.OK, AuthUserWithoutProfileResponse.create(user))
+}
 
 /**
  * Endpoint to /user/profile/ that lets the authenticated user set their profile
