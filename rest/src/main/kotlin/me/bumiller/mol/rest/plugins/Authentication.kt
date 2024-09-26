@@ -16,16 +16,18 @@ import org.koin.ktor.ext.inject
 /* Endpoints that can be accessed without having the email verified.
  * POST to /auth/signup/email-verify/ is required to let a user verify their email-address.
  */
-private val allowedWithoutEmailVerified = mapOf(
-    HttpMethod.Post to "auth/signup/email-verify/"
+private val allowedWithoutEmailVerified = listOf(
+    HttpMethod.Post to "auth/signup/email-verify/",
+    HttpMethod.Get to "user/"
 )
 
 /* Endpoints that can be accessed without having the profile set up.
  * POST to /user/profile/ is required to let a user set up their profile for the first time.
  */
-private val allowedWithoutProfileSet = mapOf(
+private val allowedWithoutProfileSet = listOf(
     HttpMethod.Post to "auth/signup/email-verify/",
-    HttpMethod.Post to "user/profile/"
+    HttpMethod.Post to "user/profile/",
+    HttpMethod.Get to "user/"
 )
 
 internal fun Application.authentication(appConfig: AppConfig, basePath: String) {
@@ -51,13 +53,13 @@ internal fun Application.authentication(appConfig: AppConfig, basePath: String) 
                 val userNoProfile = user?.profile == null
                 val emailVerified = user?.isEmailVerified == true
                 val whitelistedForEmail = allowedWithoutEmailVerified.any { entry ->
-                    request.httpMethod == entry.key && request.uri.endsWith(
-                        "$basePath${entry.value}"
+                    request.httpMethod == entry.first && request.uri.endsWith(
+                        "$basePath${entry.second}"
                     )
                 }
                 val whitelistedForProfile = allowedWithoutProfileSet.any { entry ->
-                    request.httpMethod == entry.key && request.uri.endsWith(
-                        "$basePath${entry.value}"
+                    request.httpMethod == entry.first && request.uri.endsWith(
+                        "$basePath${entry.second}"
                     )
                 }
 

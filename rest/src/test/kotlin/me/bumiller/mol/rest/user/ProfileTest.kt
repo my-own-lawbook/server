@@ -81,8 +81,8 @@ class ProfileTest {
             setBody(
                 """
                 {
-                  "first_name": "Peter",
-                  "last_name": "Griffin"
+                  "firstName": "Peter",
+                  "lastName": "Griffin"
                 }
             """.trimIndent()
             )
@@ -129,8 +129,8 @@ class ProfileTest {
             setBody(
                 """
                 {
-                  "first_name": "Peter",
-                  "last_name": "Griffin"
+                  "firstName": "Peter",
+                  "lastName": "Griffin"
                 }
             """.trimIndent()
             )

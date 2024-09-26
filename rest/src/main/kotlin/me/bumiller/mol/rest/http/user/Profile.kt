@@ -5,7 +5,6 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import me.bumiller.mol.common.Optional
 import me.bumiller.mol.common.empty
@@ -16,6 +15,7 @@ import me.bumiller.mol.model.UserProfile
 import me.bumiller.mol.model.http.internal
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.user.AuthUserWithProfileResponse
+import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
 import me.bumiller.mol.rest.response.user.UserProfileResponse
 import me.bumiller.mol.rest.util.user
 import me.bumiller.mol.validation.Validatable
@@ -36,10 +36,14 @@ import org.koin.ktor.ext.inject
 internal fun Route.profile() {
     val userService by inject<UserService>()
 
-    route("user/profile/") {
-        createProfile(userService)
-        getProfile()
-        updateProfile(userService)
+    route("user/") {
+        route("profile/") {
+            createProfile(userService)
+            getProfile()
+            updateProfile(userService)
+        }
+
+        getUserInfo()
     }
 }
 
@@ -53,10 +57,8 @@ internal fun Route.profile() {
 @Serializable
 internal data class CreateProfileRequest(
 
-    @SerialName("first_name")
     val firstName: String,
 
-    @SerialName("last_name")
     val lastName: String,
 
     val gender: Gender,
@@ -79,10 +81,8 @@ internal data class CreateProfileRequest(
 @Serializable
 internal data class UpdateProfileRequest(
 
-    @SerialName("first_name")
     val firstName: Optional<String> = empty(),
 
-    @SerialName("last_name")
     val lastName: Optional<String> = empty(),
 
     val birthday: Optional<LocalDate> = empty(),
@@ -102,6 +102,13 @@ internal data class UpdateProfileRequest(
 //
 // Endpoint mappings
 //
+
+/**
+ * Endpoint to /user/ that returns the user data
+ */
+private fun Route.getUserInfo() = get {
+    call.respond(HttpStatusCode.OK, AuthUserWithoutProfileResponse.create(user))
+}
 
 /**
  * Endpoint to /user/profile/ that lets the authenticated user set their profile
