@@ -57,7 +57,7 @@ object BookInvitation {
 
         val recipient = reference("recipient_id", User.Table, ReferenceOption.CASCADE)
 
-        val role = text("role").check("role-valid") {
+        val role = text("role").check("role-valid2") {
             it inList LawBookMembersCrossref.Roles.entries.map(LawBookMembersCrossref.Roles::serializedName)
         }
 

@@ -42,7 +42,7 @@ object LawBookMembersCrossref {
 
         val member = reference("user_id", User.Table, ReferenceOption.CASCADE)
 
-        val role = text("role").check("role-valid") {
+        val role = text("role").check("role-valid1") {
             it inList Roles.entries.map(Roles::serializedName)
         }.default(Roles.Read.serializedName)
 
