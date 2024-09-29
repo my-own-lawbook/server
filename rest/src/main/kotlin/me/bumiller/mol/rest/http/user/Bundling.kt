@@ -129,7 +129,7 @@ private fun Route.allInvitations(
     val allBooks = lawContentService.getBooksForMember(user.id)
     val byBooks = allBooks.map { book ->
         val hasAccessToInvitations =
-            accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations(book.id), user.id)
+            accessValidator.resolveScoped(ScopedPermission.Books.Members.ReadInvitations(book.id), user.id, false)
         if (hasAccessToInvitations) invitationContentService.getAll(targetBookId = book.id)
         else emptyList()
     }.flatten()
