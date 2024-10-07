@@ -67,7 +67,7 @@ internal fun Route.lawBooks() {
             }
         }
 
-        route("/{$PathBookId}/roles/") {
+        route("{$PathBookId}/roles/") {
             memberRoles(memberContentService, accessValidator)
 
             route("{$PathUserId}/") {
