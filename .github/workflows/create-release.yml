@@ -1,0 +1,30 @@
+name: Create GitHub Release
+
+on:
+  push:
+    branches:
+      - 'release/**'
+
+jobs:
+  create-release:
+    if: github.event.created # Only run this workflow when the branch is created
+
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build fat jar
+        run: ./gradlew buildFatJar
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: my-own-lawbook/server
+          files: ./build/libs/my-own-lawbook-all.jar
+          body: Release body
+          name: Release name
+
+
