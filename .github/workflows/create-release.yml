@@ -27,14 +27,14 @@ jobs:
         run: |
           branch_name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           tag_name=${branch_name:8}
-          echo "$tag_name" >> $GITHUB_OUTPUT
+          echo "tag=$tag_name" >> $GITHUB_OUTPUT
         id: extract_tag_name
 
       - name: Tag snapshot
         uses: tvdias/github-tagger@v0.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.extract_tag_name.outputs.branch }}
+          tag: ${{ steps.extract_tag_name.outputs.tag }}
 
       #- name: Create release
       #  uses: softprops/action-gh-release@v2
