@@ -38,17 +38,6 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.extract_tag_name.outputs.tag }}
 
-      # Check changelog file exists, otherwise creates it
-      - name: Check changelog filename
-        shell: bash
-        run: |
-          CHANGELOG_FILENAME=./changelogs/${{ steps.extract_tag_name.outputs.tag }}.md
-          if [ -f "$CHANGELOG_FILENAME" ]; then
-            echo "Changelog file $CHANGELOG_FILENAME found."
-          else
-            echo "<Changelog content>" > "$CHANGELOG_FILENAME"
-          fi
-
       # Creates the release
       - name: Create release
         uses: softprops/action-gh-release@v2
