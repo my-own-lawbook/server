@@ -27,5 +27,5 @@ tasks.test.configure {
 }
 
 kotlin {
-    jvmToolchain(22)
+    jvmToolchain(21)
 }
