@@ -13,15 +13,16 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
 
-    # Checks out the repository
     steps:
+      # Checks out the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      ##- name: Build fat jar
-      ##  run: ./gradlew buildFatJar
+      # Build the fat jar
+      - name: Build fat jar
+        run: ./gradlew buildFatJar
 
-      # Returns the name of the tag
+      # Computes the name of the release (tag) and returns it into the output string
       - name: Extract tag name
         shell: bash
         run: |
@@ -30,16 +31,19 @@ jobs:
           echo "tag=$tag_name" >> $GITHUB_OUTPUT
         id: extract_tag_name
 
-      - name: Tag snapshot
+      # Creates the tag for the release
+      - name: Create Tag
         uses: tvdias/github-tagger@v0.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.extract_tag_name.outputs.tag }}
 
-      #- name: Create release
-      #  uses: softprops/action-gh-release@v2
-      #  with:
-      #    repository: my-own-lawbook/server
-      #    files: ./build/libs/my-own-lawbook-all.jar
-      #    body: Release body
-      #    name: Release name
+      # Creates the release
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: my-own-lawbook/server
+          files: ./build/libs/my-own-lawbook-all.jar
+          body: Release body
+          name: Release name
+          tag_name: ${{ steps.extract_tag_name.outputs.tag }}
