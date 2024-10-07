@@ -25,8 +25,8 @@ jobs:
       - name: Extract tag name
         shell: bash
         run: |
-          branch_name = ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
-          tag_name = ${branch_name$release/}
+          branch_name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          tag_name=${branch_name$release/}
           echo "$tag_name" >> $GITHUB_OUTPUT
         id: extract_tag_name
 
