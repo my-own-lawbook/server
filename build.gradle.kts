@@ -42,3 +42,19 @@ kotlin {
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
+
+ktor {
+    docker {
+        jreVersion.set(JavaVersion.VERSION_21)
+        localImageName.set("my-own-lawbook")
+        externalRegistry.set(
+            io.ktor.plugin.features.DockerImageRegistry.externalRegistry(
+                username = providers.environmentVariable("REGISTRY_USERNAME"),
+                password = providers.environmentVariable("REGISTRY_PASSWORD"),
+                project = providers.environmentVariable("REGISTRY_REPO"),
+                namespace = providers.environmentVariable("REGISTRY_ORG"),
+                hostname = providers.environmentVariable("REGISTRY")
+            )
+        )
+    }
+}
