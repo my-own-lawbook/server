@@ -17,7 +17,7 @@ jobs:
           distribution: 'zulu'
           cache: gradle
 
-      - name: Run gradle build command
+      - name: Run gradle build task
         run: ./gradlew build -x test
   Unit-Tests:
     runs-on: ubuntu-latest
@@ -32,5 +32,16 @@ jobs:
           distribution: 'zulu'
           cache: gradle
 
-      - name: Run gradle build command
+      - name: Run gradle test task
         run: ./gradlew test
+  Sonar-Analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Run gradle sonar task
+        env:
+          SONAR_TOKEN: ${{secrets.SONAR_TOKEN}}
+        run: ./gradlew sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=my-own-lawbook -Dsonar.projectKey=my-own-lawbook_server -Dsonar.token=$SONAR_TOKEN
