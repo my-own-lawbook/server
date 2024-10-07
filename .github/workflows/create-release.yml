@@ -38,13 +38,24 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.extract_tag_name.outputs.tag }}
 
+      # Check changelog file exists, otherwise creates it
+      - name: Check changelog filename
+        shell: bash
+        run: |
+          CHANGELOG_FILENAME=./changelogs/${{ steps.extract_tag_name.outputs.tag }}.md
+          if [ -f "$CHANGELOG_FILENAME" ]; then
+            echo "Changelog file $CHANGELOG_FILENAME found."
+          else
+            echo "<Changelog content>" > "$CHANGELOG_FILENAME"
+          fi
+
       # Creates the release
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           repository: my-own-lawbook/server
           files: ./build/libs/my-own-lawbook-all.jar
-          body_path: ./changelogs/${{ steps.extract_tag_name.outputs.tag }}.md
           body: <Create changelog>
+          body_path: ./changelogs/${{ steps.extract_tag_name.outputs.tag }}.md
           name: ${{ steps.extract_tag_name.outputs.tag }}
           tag_name: ${{ steps.extract_tag_name.outputs.tag }}
