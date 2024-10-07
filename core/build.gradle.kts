@@ -10,16 +10,27 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.bundles.koin)
+
     implementation(libs.kotlin.datetime)
+    implementation(libs.java.bcrypt)
+    implementation(libs.java.jwt)
+    implementation(libs.h2)
+
+    implementation(project(":database"))
+    implementation(project(":model"))
+    implementation(project(":email"))
+    implementation(project(":common"))
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
-
-    implementation(project(":database"))
-    implementation(project(":model"))
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(22)
 }

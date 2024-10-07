@@ -2,26 +2,20 @@ package me.bumiller.mol.email
 
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.User
+import me.bumiller.mol.model.config.AppConfig
 import org.apache.commons.mail.DefaultAuthenticator
 import org.apache.commons.mail.SimpleEmail
-import java.util.*
 
-internal class ApacheEmailService : EmailService {
-
-    val properties = Properties().apply {
-        val stream = javaClass.getResource("/email/email.properties")?.openStream()
-            ?: throw IllegalStateException("Did not find the /email/email.properties file!")
-        load(stream)
-    }
+internal class ApacheEmailService(
+    private val appConfig: AppConfig
+) : EmailService {
 
     override suspend fun sendEmailVerifyEmail(user: User, token: TwoFactorToken) {
-        require(user.profile != null)
-
         baseEmail(user.email).apply {
             subject = "Verify your email address"
             setMsg(
                 """
-            Hello ${user.profile!!.firstName} ${user.profile!!.lastName},
+            Hello,
             
             to confirm your email address, use the following token:
             
@@ -50,11 +44,12 @@ internal class ApacheEmailService : EmailService {
 
     private fun baseEmail(recipient: String) = SimpleEmail()
         .apply {
-            hostName = properties.getProperty("host")
-            authenticator = DefaultAuthenticator(properties.getProperty("from"), properties.getProperty("password"))
+            hostName = appConfig.mailSmtpServer
+            authenticator = DefaultAuthenticator(appConfig.mailUsername, appConfig.mailPassword)
+            isSSLOnConnect = appConfig.mailDoSsl
 
-            setFrom(properties.getProperty("from"))
-            setSmtpPort(properties.getProperty("port").toInt())
+            setFrom(appConfig.mailUsername)
+            setSmtpPort(appConfig.mailSmtpPort)
 
             addTo(recipient)
         }

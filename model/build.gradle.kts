@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 group = "me.bumiller.mol"
@@ -11,5 +12,9 @@ repositories {
 
 dependencies {
     implementation(libs.kotlin.datetime)
-    implementation(libs.java.jwt)
+    implementation(libs.kotlin.serialization.json)
+}
+
+kotlin {
+    jvmToolchain(22)
 }

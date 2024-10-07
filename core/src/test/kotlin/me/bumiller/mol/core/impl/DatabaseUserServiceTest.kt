@@ -8,32 +8,38 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
+import me.bumiller.mol.common.present
 import me.bumiller.mol.core.data.UserService
+import me.bumiller.mol.core.exception.ServiceException
+import me.bumiller.mol.database.repository.UserProfileRepository
 import me.bumiller.mol.database.repository.UserRepository
 import me.bumiller.mol.database.table.User
 import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.UserProfile
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.*
+import org.junit.jupiter.api.assertThrows
 import me.bumiller.mol.database.table.UserProfile.Model as UserProfileModel
 
 class DatabaseUserServiceTest {
 
-    lateinit var mockUserRepo: UserRepository
+    private lateinit var mockUserRepo: UserRepository
+    private lateinit var mockProfileRepo: UserProfileRepository
 
-    lateinit var userService: UserService
+    private lateinit var userService: UserService
 
     @BeforeEach
     fun setup() {
         mockUserRepo = mockk()
+        mockProfileRepo = mockk()
 
-        userService = DatabaseUserService(mockUserRepo)
+        userService = DatabaseUserService(mockUserRepo, mockProfileRepo)
     }
 
-    val models = (1..10).map {
+    private val models = (1..10).map {
         User.Model(
             it.toLong(),
             "email-$it",
@@ -78,15 +84,15 @@ class DatabaseUserServiceTest {
             id = 1L
         )
         assertEquals(
-            Optional.of(1L),
+            present(1L),
             idSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             emailSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             usernameSlot.captured
         )
 
@@ -94,15 +100,15 @@ class DatabaseUserServiceTest {
             email = "email"
         )
         assertEquals(
-            Optional.empty<Long>(),
+            empty<Long>(),
             idSlot.captured
         )
         assertEquals(
-            Optional.of("email"),
+            present("email"),
             emailSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             usernameSlot.captured
         )
 
@@ -111,15 +117,15 @@ class DatabaseUserServiceTest {
             id = 5L
         )
         assertEquals(
-            Optional.of(5L),
+            present(5L),
             idSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             emailSlot.captured
         )
         assertEquals(
-            Optional.of("username"),
+            present("username"),
             usernameSlot.captured
         )
 
@@ -128,24 +134,26 @@ class DatabaseUserServiceTest {
             id = 6L
         )
         assertEquals(
-            Optional.of(6L),
+            present(6L),
             idSlot.captured
         )
         assertEquals(
-            Optional.of("email"),
+            present("email"),
             emailSlot.captured
         )
         assertEquals(
-            Optional.empty<String>(),
+            empty<String>(),
             usernameSlot.captured
         )
     }
 
     @Test
     fun `createUser passes arguments and creates correct user model`() = runTest {
+        coEvery { mockUserRepo.getSpecific(any(), any(), any(), any()) } returns null
+
         val userModelSlot = slot<User.Model>()
 
-        coEvery { mockUserRepo.create(capture(userModelSlot)) } returns models.first()
+        coEvery { mockUserRepo.create(capture(userModelSlot), any()) } returns models.first()
 
         userService.createUser("email", "password", "username")
 
@@ -156,37 +164,44 @@ class DatabaseUserServiceTest {
     }
 
     @Test
-    fun `createProfile returns null when user is not found`() = runTest {
-        coEvery { mockUserRepo.getSpecific(1L) } returns null
+    fun `createProfile throws when user is not found`() = runTest {
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns null
 
         val mockProfile = mockk<UserProfile>()
 
-        val result = userService.createProfile(1L, mockProfile)
-
-        assertNull(result)
+        assertThrows<ServiceException.UserNotFound> {
+            userService.createProfile(1L, mockProfile)
+        }
     }
+
+    private val userNoProfile = User.Model(1L, "email", "username", "password", true, null)
+    private val userWithProfile = userNoProfile.copy(
+        profile = UserProfileModel(1L, LocalDate(2000, 1, 1), "firstname", "lastname", "male")
+    )
 
     @Test
     fun `createProfile returns user with added profile`() = runTest {
         coEvery { mockUserRepo.update(any()) } answers { t -> t.invocation.args.first() as User.Model }  // Returns argument
 
-        val user = models.first()
-        coEvery { mockUserRepo.getSpecific(1L) } returns user
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns userNoProfile
+        coEvery { mockProfileRepo.create(any()) } returns userWithProfile.profile!!
 
         val profile = UserProfile(1L, LocalDate(2000, 1, 1), Gender.Male, "firstname", "lastname")
-        val userWithProfile = userService.createProfile(1L, profile)
+        val updatedUser = userService.createProfile(1L, profile)
 
-        assertEquals(models.first().email, userWithProfile?.email)
-        assertEquals(profile, userWithProfile?.profile)
+        coVerify(exactly = 1) { mockProfileRepo.create(any()) }
+
+        assertEquals(userNoProfile.email, updatedUser.email)
+        assertEquals(profile, updatedUser.profile)
     }
 
     @Test
-    fun `deleteUser returns null when not found`() = runTest {
+    fun `deleteUser throws when not found`() = runTest {
         coEvery { mockUserRepo.delete(1L) } returns null
 
-        val deleted = userService.deleteUser(1L)
-
-        assertNull(deleted)
+        assertThrows<ServiceException.UserNotFound> {
+            userService.deleteUser(1L)
+        }
     }
 
     @Test
@@ -195,10 +210,82 @@ class DatabaseUserServiceTest {
 
         val deleted = userService.deleteUser(1L)
 
-        assertEquals(models[0].email, deleted?.email)
-        assertEquals(models[0].username, deleted?.username)
-        assertEquals(models[0].id, deleted?.id)
-        assertEquals(models[0].password, deleted?.password)
+        assertEquals(models[0].email, deleted.email)
+        assertEquals(models[0].username, deleted.username)
+        assertEquals(models[0].id, deleted.id)
+        assertEquals(models[0].password, deleted.password)
+    }
+
+    @Test
+    fun `update throws when user is not found`() = runTest {
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns null
+
+        assertThrows<ServiceException.UserNotFound> {
+            userService.update(1L)
+        }
+    }
+
+    private val user = User.Model(1L, "email", "username", "password", true, null)
+
+    @Test
+    fun `update properly maps optionals to default value`() = runTest {
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns user
+        coEvery { mockUserRepo.update(any()) } returns user
+        coEvery { mockUserRepo.getSpecific(any(), any(), any()) } returns null
+
+        userService.update(
+            userId = 1L,
+            email = present("email-1"),
+            username = empty(),
+            password = present("password-1"),
+            isEmailVerified = empty()
+        )
+
+        coVerify { mockUserRepo.update(User.Model(1L, "email-1", user.username, "password-1", user.isEmailVerified, null)) }
+    }
+
+    @Test
+    fun `update returns the user`() = runTest {
+        coEvery { mockUserRepo.getSpecific(present(1L), any(), any(), any()) } returns user
+        coEvery { mockUserRepo.update(any()) } returns user
+
+        val returned = userService.update(1L)
+
+        assertEquals(user.id, returned.id)
+        assertEquals(user.email, returned.email)
+        assertEquals(user.username, returned.username)
+        assertEquals(user.password, returned.password)
+        assertEquals(user.isEmailVerified, returned.isEmailVerified)
+    }
+
+    @Test
+    fun `updateProfile throws when user not found`() = runTest {
+        coEvery { mockUserRepo.getSpecific(any<Long>()) } returns null
+
+        assertThrows<ServiceException.UserNotFound> {
+            userService.updateProfile(1L, empty(), empty(), empty(), empty())
+        }
+    }
+
+    @Test
+    fun `updateProfile properly uses optional arguments`() = runTest {
+        val userModelSlot = slot<UserProfileModel>()
+
+        coEvery { mockUserRepo.getSpecific(any<Long>()) } returns userWithProfile
+        coEvery { mockProfileRepo.update(capture(userModelSlot)) } returns userWithProfile.profile
+
+        userService.updateProfile(
+            userId = 1L,
+            firstName = empty(),
+            lastName = present("lastname-1"),
+            birthday = empty(),
+            gender = present(Gender.Disclosed)
+        )
+
+        assertEquals(userWithProfile.profile?.firstName, userModelSlot.captured.firstName)
+        assertEquals("lastname-1", userModelSlot.captured.lastName)
+        assertEquals(userWithProfile.profile?.birthday, userModelSlot.captured.birthday)
+        assertEquals("disclosed", userModelSlot.captured.gender)
     }
 
 }

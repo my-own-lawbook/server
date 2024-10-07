@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.kover)
 }
 
 group = "me.bumiller.mol"
@@ -19,8 +20,17 @@ dependencies {
     implementation(libs.postgres)
 
     implementation(project(":database"))
+    implementation(project(":email"))
+    implementation(project(":model"))
+    implementation(project(":rest"))
+    implementation(project(":core"))
+    implementation(project(":validation"))
 
     implementation("ch.qos.logback:logback-classic:1.5.7")
+
+    allprojects {
+        kover(this)
+    }
 }
 
 kotlin {

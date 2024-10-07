@@ -8,5 +8,5 @@ import org.koin.dsl.module
  * Email module providing the [EmailService]
  */
 val emailModule = module {
-    single<EmailService> { ApacheEmailService() }
+    single<EmailService> { ApacheEmailService(get()) }
 }

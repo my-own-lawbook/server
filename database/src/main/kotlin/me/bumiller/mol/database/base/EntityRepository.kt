@@ -7,7 +7,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.dao.Entity as ExposedEntity
 
-interface IEntityRepository<Id : Comparable<Id>, Model> {
+interface IEntityRepository<Id : Comparable<Id>, Model : BaseModel<Id>> {
 
     /**
      * Gets all models
@@ -23,16 +23,6 @@ interface IEntityRepository<Id : Comparable<Id>, Model> {
      * @return The model, or null if it was not found
      */
     suspend fun getSpecific(id: Id): Model?
-
-    /**
-     * Creates a new model
-     *
-     * The id column is ignored
-     *
-     * @param model The model
-     * @return The created model
-     */
-    suspend fun create(model: Model): Model
 
     /**
      * Deletes a specific model
@@ -55,43 +45,26 @@ interface IEntityRepository<Id : Comparable<Id>, Model> {
 /**
  * Base interface providing simple CRUD methods to a repository
  */
-abstract class EntityRepository<Id : Comparable<Id>, Model : BaseModel<Id>, Entity : ExposedEntity<Id>, Table : IdTable<Id>, Class : EntityClass<Id, Entity>>(
+abstract class EntityRepository<
+        Id : Comparable<Id>,
+        Model : BaseModel<Id>,
+        Entity,
+        Table : IdTable<Id>,
+        Class : EntityClass<Id, Entity>
+        >(
 
     val table: Table,
 
     val entityClass: Class
 
-) : IEntityRepository<Id, Model> {
-
-    /**
-     * Copy the properties from the model to the entity class
-     *
-     * @param entity The dao to populate
-     * @param model The entity to take the traits from
-     * @return The populated dao
-     */
-    abstract fun populateEntity(entity: Entity, model: Model): Entity
-
-    /**
-     * Map an entity to its corresponding model
-     *
-     * @param entity The entity
-     * @return The model
-     */
-    abstract fun map(entity: Entity): Model
+) : IEntityRepository<Id, Model> where Entity : ExposedEntity<Id>, Entity : ModelMappableEntity<Model> {
 
     override suspend fun getAll(): List<Model> = suspendTransaction {
-        entityClass.all().map(::map)
+        entityClass.all().map { it.asModel }
     }
 
     override suspend fun getSpecific(id: Id): Model? = suspendTransaction {
-        entityClass.findById(id)?.let(::map)
-    }
-
-    override suspend fun create(model: Model): Model = suspendTransaction {
-        entityClass.new {
-            populateEntity(this, model)
-        }.let(::map)
+        entityClass.findById(id)?.asModel
     }
 
     override suspend fun delete(id: Id): Model? = suspendTransaction {
@@ -105,8 +78,8 @@ abstract class EntityRepository<Id : Comparable<Id>, Model : BaseModel<Id>, Enti
 
     override suspend fun update(model: Model): Model? = suspendTransaction {
         entityClass.findByIdAndUpdate(model.id) {
-            populateEntity(it, model)
-        }?.let(::map)
+            it.populate(model)
+        }?.asModel
     }
 
 }

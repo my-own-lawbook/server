@@ -1,15 +1,13 @@
 package me.bumiller.mol.core
 
+import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.AuthTokens
 import me.bumiller.mol.model.TwoFactorToken
 import me.bumiller.mol.model.User
-import me.bumiller.mol.model.http.RequestException
 import java.util.*
 
 /**
  * Interface to perform common authentication actions.
- *
- * Actions provided by this service will not signal failure by return value, but by throwing [RequestException]'s. This is done so to automatically respond to http-requests in the case of an error or wrong input value.
  */
 interface AuthService {
 
@@ -23,8 +21,10 @@ interface AuthService {
      * @param password The unhashed password of the user
      * @param sendVerificationEmail Whether this should automatically trigger sending an email with an email-verification-token to [email] for the user to verify their email address. Shorthand for calling [sendEmailVerification].
      * @return The created user
+     * @throws ServiceException.UserUsernameNotUnique If the username is not available
+     * @throws ServiceException.UserEmailNotUnique If the email is not available
      */
-    fun createNewUser(
+    suspend fun createNewUser(
         email: String,
         username: String,
         password: String,
@@ -34,41 +34,70 @@ interface AuthService {
     /**
      * Routine for sending an email-verification-token to an email.
      *
-     * This will create a two-factor-token for the email and send it to [email].
+     * This will create a two-factor-token for the email and send it to [User.email].
      *
-     * @param email The email to send the token to. Also, the email referenced in the token
+     * @param user The user, used for personalization and for email address
      * @return The two-factor-token that was created for the email.
+     * @throws ServiceException.UserNotFound If the user could not be found
      */
-    fun sendEmailVerification(email: String): TwoFactorToken
+    suspend fun sendEmailVerification(user: User): TwoFactorToken
 
     /**
      * Routine for getting a user for passed credentials.
      *
-     * Either [username] or [email] need to be passed. Otherwise, [RequestException] with status 400 is thrown.
-     *
      * @param email The email passed by the user
      * @param username The username passed by the user
-     * @param password The raw, unhashed password passed by the user.
-     * @return The user, if one was found for [email] or [username] that matched with [password].
+     * @param password The raw, unhashed password passed by the user
+     * @return The user, if one was found for [email] or [username] that matched with [password], or null if none was found or could not be authenticated.
+     * @throws IllegalArgumentException If both [email] and [username] are present
      */
-    fun getAuthenticatedUser(email: String? = null, username: String? = null, password: String): User
+    suspend fun getAuthenticatedUser(email: String? = null, username: String? = null, password: String): User?
 
     /**
      * Creates [AuthTokens] for a specified user.
      *
-     * **MUST** only be called after actually verifying the authentication of the user with [userId].
-     *
      * @param userId The id of the user
      * @return The auth tokens for the user
+     * @throws ServiceException.UserNotFound If the user was not found
      */
-    fun loginUser(userId: Long): AuthTokens
+    suspend fun loginUser(userId: Long): AuthTokens
 
     /**
      * Will deactivate the refresh [tokens] added to the user with [userId].
      *
      * @param userId The id of the user
      * @param tokens The refresh tokens to deactivate
+     * @throws ServiceException.UserNotFound If the user was not found
+     * @throws ServiceException.TwoFactorTokenNotFound If one of the [tokens] was not found
      */
-    fun logoutUser(userId: Long, vararg tokens: UUID)
+    suspend fun logoutUser(userId: Long, vararg tokens: UUID)
+
+    /**
+     * Will log in a user based on a refresh token.
+     *
+     * @param uuid The refresh token
+     * @return The login tokens
+     * @throws ServiceException.TwoFactorTokenNotFound If the token for [uuid] could not be found
+     * @throws ServiceException.InvalidTwoFactorTokenType If the token for [uuid] is not an email token
+     * @throws ServiceException.TwoFactorTokenExpired If the token for [uuid] is already expired
+     * @throws ServiceException.TwoFactorTokenUsed If the token for [uuid] is already used
+     * @throws ServiceException.UserNotFound If the user for the token for [uuid] could not be found
+     */
+    suspend fun loginUserWithRefreshToken(uuid: UUID): AuthTokens
+
+    /**
+     * Will set a user to have their email validated based on the [tokenUUID].
+     * Will also update [TwoFactorToken.used]
+     *
+     * @param tokenUUID The UUID of the token submitted by a user
+     * @return The user that has had their email verification status updated
+     * @throws ServiceException.TwoFactorTokenNotFound If the token for [tokenUUID] could not be found
+     * @throws ServiceException.InvalidTwoFactorTokenType If the token for [tokenUUID] is not an email token
+     * @throws ServiceException.TwoFactorTokenExpired If the token for [tokenUUID] is already expired
+     * @throws ServiceException.TwoFactorTokenUsed If the token for [tokenUUID] is already used
+     * @throws ServiceException.EmailTokenUserAlreadyVerified If the user for the token for [tokenUUID] already has their email verified
+     * @throws ServiceException.UserNotFound If the user for the token for [tokenUUID] could not be found
+     */
+    suspend fun validateEmailWithToken(tokenUUID: UUID): User
 
 }

@@ -1,7 +1,10 @@
 package me.bumiller.mol.database.repository
 
+import me.bumiller.mol.common.Optional
+import me.bumiller.mol.common.empty
 import me.bumiller.mol.database.base.EntityRepository
 import me.bumiller.mol.database.base.IEntityRepository
+import me.bumiller.mol.database.table.TwoFactorToken
 import me.bumiller.mol.database.table.TwoFactorToken.Entity
 import me.bumiller.mol.database.table.TwoFactorToken.Model
 import me.bumiller.mol.database.table.TwoFactorToken.Table
@@ -17,6 +20,15 @@ import java.util.*
 interface TwoFactorTokenRepository : IEntityRepository<Long, Model> {
 
     /**
+     * Creates a new [TwoFactorToken]
+     *
+     * @param model The model to take the data from
+     * @param userId The id of the user
+     * @return The created model, or null if the user was not found
+     */
+    suspend fun create(model: Model, userId: Long): Model?
+
+    /**
      * Gets a specific two factor token from the table matching all given criteria
      *
      * @param id The id of the entity
@@ -24,8 +36,8 @@ interface TwoFactorTokenRepository : IEntityRepository<Long, Model> {
      * @return The entity matching all given criteria, or null
      */
     suspend fun getSpecific(
-        id: Optional<Long> = Optional.empty(),
-        token: Optional<UUID> = Optional.empty()
+        id: Optional<Long> = empty(),
+        token: Optional<UUID> = empty()
     ): Model?
 
 }
@@ -36,12 +48,14 @@ internal class ExposedTwoFactorTokenRepository :
         Entity
     ), TwoFactorTokenRepository {
 
-    override fun populateEntity(entity: Entity, model: Model): Entity = entity.apply {
-        val userEntity = User.Entity.findById(model.user.id)!!
-        populate(model, userEntity)
-    }
+    override suspend fun create(model: Model, userId: Long): Model? = suspendTransaction {
+        val user = User.Entity.findById(userId) ?: return@suspendTransaction null
 
-    override fun map(entity: Entity): Model = entity.asModel
+        Entity.new {
+            this.user = user
+            populate(model)
+        }.asModel
+    }
 
     override suspend fun getSpecific(id: Optional<Long>, token: Optional<UUID>): Model? = suspendTransaction {
         Entity.find {
@@ -49,7 +63,7 @@ internal class ExposedTwoFactorTokenRepository :
                     (Table.id eqOpt id)
         }
             .limit(1)
-            .map(::map)
+            .map { it.asModel }
             .singleOrNull()
     }
 }
