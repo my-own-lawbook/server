@@ -44,6 +44,7 @@ jobs:
         with:
           repository: my-own-lawbook/server
           files: ./build/libs/my-own-lawbook-all.jar
-          body: Release body
-          name: Release name
+          body_path: ./changelogs/${{ steps.extract_tag_name.outputs.tag }}.md
+          body: <Create changelog>
+          name: ${{ steps.extract_tag_name.outputs.tag }}
           tag_name: ${{ steps.extract_tag_name.outputs.tag }}
