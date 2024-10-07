@@ -1,4 +1,4 @@
-name: Create GitHub Release
+name: Create Docker Image
 
 on:
   workflow_dispatch:
@@ -33,10 +33,6 @@ jobs:
           tag_name=${branch_name:8}
           echo "tag=$tag_name" >> $GITHUB_OUTPUT
         id: extract_tag_name
-
-      - name: Install docker client
-        shell: bash
-        run: apt install docker.io
 
       - name: Log in to the Container registry
         shell: bash
