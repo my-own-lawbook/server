@@ -138,6 +138,7 @@ private fun Route.getProfile() = get {
 /**
  * Endpoint to /user/profile/ that lets the authenticated user update their profile
  */
+@SuppressWarnings("kotlin:S1481")
 private fun Route.updateProfile(userService: UserService) = patch {
     val body = call.validated<UpdateProfileRequest>()
     val user = call.authenticatedUser()
