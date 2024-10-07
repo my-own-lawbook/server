@@ -16,6 +16,7 @@ h2 = "2.1.214"
 auth0-jwt = "4.4.0"
 jbcrypt = "0.10.2"
 kover = "0.8.0"
+sonarqube = "5.1.0.4882"
 
 [libraries]
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -53,6 +54,7 @@ java-bcrypt = { group = "at.favre.lib", name = "bcrypt", version.ref = "jbcrypt"
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-serialization-plugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-jvm-plugin" }
 kotlin-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 
 [bundles]
 exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]
