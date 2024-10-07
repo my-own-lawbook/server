@@ -1,0 +1,99 @@
+#
+# Contains jobs that execute a release.
+#
+
+name: Create GitHub Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'release/**'
+
+jobs:
+
+  #
+  # Job to create the GitHub release package for this specific release.
+  # Will create a GitHub release tagged with the release name and include the following assets:
+  #
+  # - Source code archives (.zip and .tar.gz)
+  # - Fat Jar
+  #
+  create-release:
+    if: github.event.created
+
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build fat jar
+        run: ./gradlew buildFatJar
+
+      - name: Extract tag name
+        shell: bash
+        run: |
+          branch_name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          tag_name=${branch_name:8}
+          echo "tag=$tag_name" >> $GITHUB_OUTPUT
+        id: extract_tag_name
+
+      - name: Create Tag
+        uses: tvdias/github-tagger@v0.0.1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.extract_tag_name.outputs.tag }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: my-own-lawbook/server
+          files: ./build/libs/my-own-lawbook-all.jar
+          body: <Create changelog>
+          body_path: ./changelogs/${{ steps.extract_tag_name.outputs.tag }}.md
+          name: ${{ steps.extract_tag_name.outputs.tag }}
+          tag_name: ${{ steps.extract_tag_name.outputs.tag }}
+
+  #
+  # Job to publish an image to the GitHub container registry (ghcr.io).
+  # Will use the ktor gradle task 'buildImage' to locally build an image, tag it with the release name and then push it to the registry
+  #
+  publish-image:
+    if: github.event.created
+
+    name: Publish Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract tag name
+        shell: bash
+        run: |
+          branch_name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          tag_name=${branch_name:8}
+          echo "tag=$tag_name" >> $GITHUB_OUTPUT
+        id: extract_tag_name
+
+      - name: Log in to the Container registry
+        shell: bash
+        run: docker login $REGISTRY -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
+
+      - name: Build the Image
+        shell: bash
+        run: ./gradlew buildImage
+
+      - name: Pull image to docker
+        shell: bash
+        run: docker image load < ./build/jib-image.tar
+
+      - name: Tag local image
+        shell: bash
+        run: docker image tag my-own-lawbook $REGISTRY/$REGISTRY_ORG/$REGISTRY_REPO:${{ steps.extract_tag_name.outputs.tag }}
+
+      - name: Push to Registry
+        shell: bash
+        run: docker push $REGISTRY/$REGISTRY_ORG/$REGISTRY_REPO:${{ steps.extract_tag_name.outputs.tag }}
