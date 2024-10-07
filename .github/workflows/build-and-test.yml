@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  Build:
+  build:
+    name: Building
     runs-on: ubuntu-latest
 
     steps:
@@ -19,33 +20,27 @@ jobs:
 
       - name: Run gradle build task
         run: ./gradlew build -x test
-  Unit-Tests:
+  unit-tests:
+    name: Unit Testing
     runs-on: ubuntu-latest
+
+    needs: [build]
 
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-      - name: Set up zulu/21 JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'zulu'
-          cache: gradle
 
       - name: Run gradle test task
         run: ./gradlew test
-  Sonar-Analysis:
+  sonar-analysis:
+    name: Sonar Analysis
     runs-on: ubuntu-latest
+
+    needs: [build]
 
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-      - name: Set up zulu/21 JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'zulu'
-          cache: gradle
 
       - name: Run gradle sonar task
         env:
