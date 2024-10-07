@@ -13,6 +13,7 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
 
+    # Checks out the repository
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,16 +21,20 @@ jobs:
       ##- name: Build fat jar
       ##  run: ./gradlew buildFatJar
 
-      - name: Extract branch name
+      # Returns the name of the tag
+      - name: Extract tag name
         shell: bash
-        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
-        id: extract_branch
+        run: |
+          branch_name = ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          tag_name = ${branch_name$release/}
+          echo "$tag_name" >> $GITHUB_OUTPUT
+        id: extract_tag_name
 
       - name: Tag snapshot
         uses: tvdias/github-tagger@v0.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.extract_branch.outputs.branch }}
+          tag: ${{ steps.extract_tag_name.outputs.branch }}
 
       #- name: Create release
       #  uses: softprops/action-gh-release@v2
