@@ -56,6 +56,7 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-jvm-plugin" }
 kotlin-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 
 [bundles]
 exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]

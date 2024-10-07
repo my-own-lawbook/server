@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.kover)
     alias(libs.plugins.sonarqube)
+    alias(libs.plugins.ktor)
 }
 
 group = "me.bumiller.mol"
@@ -36,4 +37,8 @@ dependencies {
 
 kotlin {
     jvmToolchain(21)
+}
+
+application {
+    mainClass.set("io.ktor.server.netty.EngineMain")
 }
