@@ -28,6 +28,7 @@ jobs:
       - name: Tag snapshot
         uses: tvdias/github-tagger@v0.0.1
         with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.extract_branch.outputs.branch }}
 
       #- name: Create release
