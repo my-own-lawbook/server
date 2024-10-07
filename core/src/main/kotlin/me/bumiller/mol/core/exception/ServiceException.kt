@@ -8,7 +8,6 @@ import java.util.*
 /**
  * An exception thrown by services when any kind of error occurs
  */
-@Suppress("JavaIoSerializableObjectMustHaveReadResolve")
 sealed class ServiceException : RuntimeException() {
 
     /**
