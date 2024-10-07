@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           java-version: '21'
+          distribution: 'zulu'
+          cache: gradle
 
       - name: Run a multi-line script
         run: ./gradlew build
