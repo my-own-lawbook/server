@@ -20,12 +20,26 @@ jobs:
       - name: Build fat jar
         run: ./gradlew buildFatJar
 
-      - name: Create release
-        uses: softprops/action-gh-release@v2
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
+
+      - name: Create tag for release
+        uses: actions/github-script@v5
         with:
-          repository: my-own-lawbook/server
-          files: ./build/libs/my-own-lawbook-all.jar
-          body: Release body
-          name: Release name
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{steps.extract_branch.outputs.branch}}',
+              sha: context.sha
+            })
 
-
+      #- name: Create release
+      #  uses: softprops/action-gh-release@v2
+      #  with:
+      #    repository: my-own-lawbook/server
+      #    files: ./build/libs/my-own-lawbook-all.jar
+      #    body: Release body
+      #    name: Release name
