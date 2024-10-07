@@ -29,3 +29,8 @@ const val PathProfileId = "profileId"
  * Path parameter name for the id of a book invitation
  */
 const val PathInvitationId = "invitationId"
+
+/**
+ * Path parameter name for a two factor token
+ */
+const val PathToken = "token"
