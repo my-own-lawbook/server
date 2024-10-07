@@ -17,7 +17,7 @@ internal class GenderSerializer: KSerializer<Gender> {
             "female" -> Gender.Female
             "other" -> Gender.Other
             "disclosed" -> Gender.Disclosed
-            else -> throw IllegalStateException("Unknown gender: '$str'")
+            else -> error("Unknown gender: '$str'")
         }
     }
 

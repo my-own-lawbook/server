@@ -26,7 +26,7 @@ internal class ApacheEmailService(
     }
 
     override suspend fun sendPasswordResetEmail(user: User, token: TwoFactorToken) {
-        require(user.profile != null)
+        requireNotNull(user.profile)
 
         baseEmail(user.email).apply {
             subject = "Reset password token"

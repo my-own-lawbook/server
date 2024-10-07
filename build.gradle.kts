@@ -19,6 +19,7 @@ dependencies {
 
     implementation(libs.kotlin.serialization.json)
     implementation(libs.postgres)
+    implementation(libs.logback)
 
     implementation(project(":database"))
     implementation(project(":email"))
@@ -27,7 +28,6 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":validation"))
 
-    implementation("ch.qos.logback:logback-classic:1.5.7")
 
     allprojects {
         kover(this)

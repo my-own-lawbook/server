@@ -8,6 +8,7 @@ import me.bumiller.mol.model.User
 /**
  * Service to access actions related to the members of specific law-books
  */
+@SuppressWarnings("kotlin:S6526")
 abstract class MemberContentService {
 
     /**

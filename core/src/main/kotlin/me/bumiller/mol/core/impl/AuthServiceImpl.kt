@@ -65,9 +65,7 @@ internal class AuthServiceImpl(
             return null
         }
 
-        val authenticated = encryptor.verify(password, user.password)
-
-        return if (authenticated) return user
+        return if (encryptor.verify(password, user.password)) return user
         else null
     }
 

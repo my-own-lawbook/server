@@ -29,7 +29,7 @@ internal fun mapGender(gender: String): Gender =
         "female" -> Gender.Female
         "other" -> Gender.Other
         "disclosed" -> Gender.Disclosed
-        else -> throw IllegalStateException("No gender found for string '$gender'")
+        else -> error("No gender found for string '$gender'")
     }
 
 internal fun mapGenderString(gender: Gender): String = when (gender) {

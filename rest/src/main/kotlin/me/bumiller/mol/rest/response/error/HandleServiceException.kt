@@ -6,22 +6,24 @@ import me.bumiller.mol.model.http.conflictUnique
 import me.bumiller.mol.model.http.notFound
 import me.bumiller.mol.model.http.notFoundIdentifier
 
+const val NAME_TOKEN = "two-factor-token"
+
 /**
  * Creates an appropriate http-error response for the given [ServiceException]
  */
 internal fun ServiceException.handle(): Nothing = when (this) {
     is ServiceException.BookNoAdminLeft -> conflict("At least one admin per book is required.")
     is ServiceException.EmailTokenUserAlreadyVerified -> conflict("The user for the given token is already verified.")
-    is ServiceException.InvalidTwoFactorTokenType -> notFoundIdentifier("two-factor-token", token.toString())
+    is ServiceException.InvalidTwoFactorTokenType -> notFoundIdentifier(NAME_TOKEN, token.toString())
     is ServiceException.LawBookKeyNotUnique -> conflictUnique("key", key)
     is ServiceException.LawBookNotFound -> notFoundIdentifier("law-book", id?.toString() ?: key ?: "")
     is ServiceException.LawEntryKeyNotUnique -> conflictUnique("key", key)
     is ServiceException.LawEntryNotFound -> notFoundIdentifier("law-entry", id?.toString() ?: key ?: "")
     is ServiceException.LawSectionIndexNotUnique -> conflictUnique("index", index)
     is ServiceException.LawSectionNotFound -> notFoundIdentifier("law-section", id?.toString() ?: index ?: key ?: "")
-    is ServiceException.TwoFactorTokenExpired -> notFoundIdentifier("two-factor-token", token.toString())
-    is ServiceException.TwoFactorTokenNotFound -> notFoundIdentifier("two-factor-token", token.toString())
-    is ServiceException.TwoFactorTokenUsed -> notFoundIdentifier("two-factor-token", token.toString())
+    is ServiceException.TwoFactorTokenExpired -> notFoundIdentifier(NAME_TOKEN, token.toString())
+    is ServiceException.TwoFactorTokenNotFound -> notFoundIdentifier(NAME_TOKEN, token.toString())
+    is ServiceException.TwoFactorTokenUsed -> notFoundIdentifier(NAME_TOKEN, token.toString())
     is ServiceException.UserAlreadyMemberOfBook -> conflict("User with id '$userId' is already member of book with id '$bookId'.")
     is ServiceException.UserEmailNotUnique -> conflictUnique("email", email)
     is ServiceException.UserNotFound -> notFoundIdentifier("user", id?.toString() ?: email ?: username ?: "")

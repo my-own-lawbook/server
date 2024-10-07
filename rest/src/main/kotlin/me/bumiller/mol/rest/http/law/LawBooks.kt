@@ -302,7 +302,6 @@ private fun Route.putMemberRole(
 
     val body = call.validated<PutUserBookRoleRequest>()
 
-    //TODO: Probably a new permission needed specifically for roles
     accessValidator.resolveScoped(ScopedPermission.Books.Members.ManageInvitations(bookId), user.id)
 
     val role = MemberRole.entries.find { it.value == body.role }!!

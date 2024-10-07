@@ -69,7 +69,7 @@ private fun Config.gender() {
                 "female" -> Gender.Female
                 "other" -> Gender.Other
                 "disclosed" -> Gender.Disclosed
-                else -> throw IllegalStateException("Did not find a matching gender for string '${values.single()}'")
+                else -> error("Did not find a matching gender for string '${values.single()}'")
             }
         }
 

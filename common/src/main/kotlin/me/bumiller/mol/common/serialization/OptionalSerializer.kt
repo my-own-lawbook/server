@@ -10,7 +10,7 @@ import me.bumiller.mol.common.present
 /**
  * Serializer for the custom [Optional] box type.
  *
- * Problem: This serializer only works as expected when **deserializing**. This is acceptable, as we usually only get optionals from REST-requests, and do not respond with optionals. This however makes testing hard. TODO: In the future, this should be fixed.
+ * Problem: This serializer only works as expected when **deserializing**. This is acceptable, as we usually only get optionals from REST-requests, and do not respond with optionals. This however makes testing hard.
  *
  * See also: [Blog entry by Alex Vanyo]([https://livefront.com/writing/kotlinx-serialization-de-serializing-jsons-nullable-optional-properties/])
  *

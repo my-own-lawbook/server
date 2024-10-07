@@ -9,6 +9,7 @@ import me.bumiller.mol.model.MemberRole
 /**
  * Service to perform basic operations and queries on the invitations
  */
+@SuppressWarnings("kotlin:S6526")
 abstract class InvitationContentService {
 
     /**
