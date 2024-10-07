@@ -28,8 +28,6 @@ object LawBookMembersCrossref {
 
         Admin("admin"),
 
-        Write("write"),
-
         Update("update"),
 
         Read("read")
