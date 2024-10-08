@@ -80,7 +80,7 @@ jobs:
 
       - name: Log in to the Container registry
         shell: bash
-        run: docker login $REGISTRY -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
+        run: cat $REGISTRY_PASSWORD | docker login $REGISTRY -u $REGISTRY_USERNAME -p --password-stdin
 
       - name: Build the Image
         shell: bash
