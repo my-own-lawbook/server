@@ -1,5 +1,5 @@
 # MOL-Server
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook_server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook_server) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook_server&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook_server)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook_server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook_server) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook_server&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook_server) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook_server&metric=coverage)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook_server)
 
 This is the repository for the server-component of the MOL-Organization.
 
