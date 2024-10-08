@@ -33,6 +33,8 @@ dependencies {
     subprojects(::jacocoAggregation)
 }
 
+tasks.test.get().finalizedBy("testCodeCoverageReport")
+
 kotlin {
     jvmToolchain(21)
 }
