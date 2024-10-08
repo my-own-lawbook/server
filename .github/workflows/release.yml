@@ -10,13 +10,6 @@ on:
     branches:
       - 'release/**'
 
-env:
-  REGISTRY: ghcr.io
-  REGISTRY_PASSWORD: $GITHUB_TOKEN
-  REGISTRY_USERNAME: ${{ github.actor }}
-  REGISTRY_ORG: ${{ github.repository_owner }}
-  REGISTRY_REPO: ${{ github.repository }}
-
 jobs:
 
   #
@@ -87,7 +80,7 @@ jobs:
 
       - name: Log in to the Container registry
         shell: bash
-        run: echo "$REGISTRY_PASSWORD" | docker login $REGISTRY -u $REGISTRY_USERNAME --password-stdin
+        run: echo $GITHUB_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build the Image
         shell: bash
@@ -99,8 +92,8 @@ jobs:
 
       - name: Tag local image
         shell: bash
-        run: docker image tag my-own-lawbook $REGISTRY/$REGISTRY_ORG/$REGISTRY_REPO:${{ steps.extract_tag_name.outputs.tag }}
+        run: docker image tag my-own-lawbook ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ steps.extract_tag_name.outputs.tag }}
 
       - name: Push to Registry
         shell: bash
-        run: docker push $REGISTRY/$REGISTRY_ORG/$REGISTRY_REPO:${{ steps.extract_tag_name.outputs.tag }}
+        run: docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ steps.extract_tag_name.outputs.tag }}
