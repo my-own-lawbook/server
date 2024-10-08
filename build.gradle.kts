@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.ktor)
+    alias(libs.plugins.jacoco.aggregation)
 }
 
 group = "me.bumiller.mol"
@@ -27,6 +28,9 @@ dependencies {
     implementation(project(":rest"))
     implementation(project(":core"))
     implementation(project(":validation"))
+
+    // Includes every submodule into the jacoco aggregate
+    subprojects(::jacocoAggregation)
 }
 
 kotlin {

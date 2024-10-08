@@ -56,6 +56,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-jvm-plugin
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 jacoco = { id = "jacoco" }
+jacoco-aggregation = { id = "jacoco-report-aggregation" }
 
 [bundles]
 exposed = ["exposed", "exposed-dao", "exposed-jdbc", "exposed-datetime"]
