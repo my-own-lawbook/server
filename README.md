@@ -104,6 +104,7 @@ Release branches are only created once and never to be touched again. They are s
 ### Creating a release
 To create a release, following steps are to be made:
 
+- Create a commit that bumps the gradle version attribute
 - Merge `develop` into `master`
 - Create new `release/<version>` branch off `master` with `<version>` being the version number
 
