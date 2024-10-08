@@ -33,6 +33,8 @@ internal class ServiceAccessValidator(
         is ScopedPermission.Books.Members.Read -> role satisfies MemberRole.Member
         is ScopedPermission.Books.Members.ReadInvitations -> role satisfies MemberRole.Moderator
         is ScopedPermission.Books.Members.Remove -> role satisfies MemberRole.Admin
+        is ScopedPermission.Books.Roles.Read -> role satisfies MemberRole.Member
+        is ScopedPermission.Books.Roles.Write -> role satisfies MemberRole.Admin
     }
 
     private fun resolveEntryPermission(

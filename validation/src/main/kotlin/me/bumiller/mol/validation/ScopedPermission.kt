@@ -173,6 +173,27 @@ sealed class ScopedPermission(
 
         }
 
+        /**
+         * Permissions related to the member-roles inside a book
+         */
+        sealed class Roles(id: Long): Books(id) {
+
+            /**
+             * Permission to read the roles of members
+             *
+             * @param id The id of the book
+             */
+            data class Read(override val id: Long) : Books(id)
+
+            /**
+             * Permission to set the roles of members
+             *
+             * @param id The id of the book
+             */
+            data class Write(override val id: Long) : Books(id)
+
+        }
+
     }
 
     /**
