@@ -103,6 +103,8 @@ class ServiceAccessValidatorTest {
             is ScopedPermission.Books.Children.Read -> MemberRole.Member
             is ScopedPermission.Books.Members.ManageInvitations -> MemberRole.Admin
             is ScopedPermission.Books.Members.Read -> MemberRole.Member
+            is ScopedPermission.Books.Roles.Read -> MemberRole.Member
+            is ScopedPermission.Books.Roles.Write -> MemberRole.Admin
             is ScopedPermission.Books.Members.ReadInvitations -> MemberRole.Moderator
             is ScopedPermission.Books.Members.Remove -> MemberRole.Admin
             is ScopedPermission.Books.Read -> null
@@ -177,6 +179,8 @@ class ServiceAccessValidatorTest {
             ScopedPermission.Books.Children.Read(1L),
             ScopedPermission.Books.Members.ManageInvitations(1L),
             ScopedPermission.Books.Members.Read(1L),
+            ScopedPermission.Books.Roles.Read(1L),
+            ScopedPermission.Books.Roles.Write(1L),
             ScopedPermission.Books.Members.ReadInvitations(1L),
             ScopedPermission.Books.Members.Remove(1L),
             ScopedPermission.Books.Read(1L),

@@ -1,0 +1,28 @@
+ktor:
+  deployment:
+    port: "$MOL_PORT:8080"
+  application:
+    modules:
+      - me.bumiller.mol.ApplicationKt.restApi
+
+mol:
+  security:
+    jwt:
+      duration: "$MOL_SECURITY_JWT_DURATION:15"
+      secret: "$MOL_SECURITY_JWT_SECRET"
+    refresh:
+      token:
+        duration: "$MOL_SECURITY_REFRESH_TOKEN_DURATION:15"
+    email:
+      token:
+        duration: "$MOL_EMAIL_REFRESH_TOKEN_DURATION:5"
+  database:
+    url: "$MOL_DATABASE_URL"
+    user: "$MOL_DATABASE_USER"
+    password: "$MOL_DATABASE_PASSWORD"
+  mail:
+    host: "$MOL_MAIL_HOST"
+    port: "$MOL_MAIL_PORT"
+    ssl: "$MOL_MAIL_SSL:true"
+    password: "$MOL_MAIL_PASSWORD"
+    from: "$MOL_MAIL_FROM"

@@ -383,7 +383,7 @@ class LawBooksTest {
     fun `GET law-books_{id}_roles checks for read access`() = ktorEndpointTest(user) { services, client ->
         coEvery {
             services.accessValidator.resolveScoped(
-                ScopedPermission.Books.Members.Read(1L),
+                ScopedPermission.Books.Roles.Read(1L),
                 user.id
             )
         } throws RequestException(404, null)
@@ -392,7 +392,7 @@ class LawBooksTest {
 
         coVerify(exactly = 1) {
             services.accessValidator.resolveScoped(
-                ScopedPermission.Books.Members.Read(1L),
+                ScopedPermission.Books.Roles.Read(1L),
                 user.id
             )
         }
@@ -432,7 +432,7 @@ class LawBooksTest {
     fun `GET law-books_{id}_roles_{id} checks for read access`() = ktorEndpointTest(user) { services, client ->
         coEvery {
             services.accessValidator.resolveScoped(
-                ScopedPermission.Books.Members.Read(1L),
+                ScopedPermission.Books.Roles.Read(1L),
                 user.id
             )
         } throws RequestException(404, null)
@@ -441,7 +441,7 @@ class LawBooksTest {
 
         coVerify(exactly = 1) {
             services.accessValidator.resolveScoped(
-                ScopedPermission.Books.Members.Read(1L),
+                ScopedPermission.Books.Roles.Read(1L),
                 user.id
             )
         }
@@ -466,7 +466,7 @@ class LawBooksTest {
     fun `PUT law-books_{id}_roles_{id} checks for write access`() = ktorEndpointTest(user) { services, client ->
         coEvery {
             services.accessValidator.resolveScoped(
-                ScopedPermission.Books.Members.ManageInvitations(1L),
+                ScopedPermission.Books.Roles.Write(1L),
                 user.id
             )
         } throws RequestException(404, null)
@@ -478,7 +478,7 @@ class LawBooksTest {
 
         coVerify(exactly = 1) {
             services.accessValidator.resolveScoped(
-                ScopedPermission.Books.Members.ManageInvitations(1L),
+                ScopedPermission.Books.Roles.Write(1L),
                 user.id
             )
         }

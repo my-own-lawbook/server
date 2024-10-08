@@ -255,7 +255,7 @@ private fun Route.removeMember(
 private fun Route.memberRoles(memberContentService: MemberContentService, accessValidator: AccessValidator) = get {
     val bookId = call.parameters.longOrBadRequest(PathBookId)
 
-    accessValidator.resolveScoped(ScopedPermission.Books.Members.Read(bookId), user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Roles.Read(bookId), user.id)
 
     val members = memberContentService.getMembersInBook(bookId)
     val rolesForMembers = members.map { member ->
@@ -280,7 +280,7 @@ private fun Route.memberRole(
     val bookId = call.parameters.longOrBadRequest(PathBookId)
     val userId = call.parameters.longOrBadRequest(PathUserId)
 
-        accessValidator.resolveScoped(ScopedPermission.Books.Members.Read(bookId), user.id)
+        accessValidator.resolveScoped(ScopedPermission.Books.Roles.Read(bookId), user.id)
 
         val user = userService.getSpecific(id = userId)
 
@@ -302,7 +302,7 @@ private fun Route.putMemberRole(
 
     val body = call.validated<PutUserBookRoleRequest>()
 
-    accessValidator.resolveScoped(ScopedPermission.Books.Members.ManageInvitations(bookId), user.id)
+    accessValidator.resolveScoped(ScopedPermission.Books.Roles.Write(bookId), user.id)
 
     val role = MemberRole.entries.find { it.value == body.role }!!
     memberService.setMemberRole(userId, bookId, role)

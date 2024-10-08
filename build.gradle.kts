@@ -1,9 +1,9 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.kover)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.ktor)
+    alias(libs.plugins.jacoco.aggregation)
 }
 
 group = "me.bumiller.mol"
@@ -29,11 +29,11 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":validation"))
 
-
-    allprojects {
-        kover(this)
-    }
+    // Includes every submodule into the jacoco aggregate
+    subprojects(::jacocoAggregation)
 }
+
+tasks.test.get().finalizedBy("testCodeCoverageReport")
 
 kotlin {
     jvmToolchain(21)
