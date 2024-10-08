@@ -96,4 +96,4 @@ jobs:
 
       - name: Push to Registry
         shell: bash
-        run: docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ steps.extract_tag_name.outputs.tag }}
+        run: docker push ghcr.io/${{ github.repository }}:${{ steps.extract_tag_name.outputs.tag }}
