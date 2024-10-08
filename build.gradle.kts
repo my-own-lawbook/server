@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.kover)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.ktor)
 }
@@ -28,11 +27,6 @@ dependencies {
     implementation(project(":rest"))
     implementation(project(":core"))
     implementation(project(":validation"))
-
-
-    allprojects {
-        kover(this)
-    }
 }
 
 kotlin {
