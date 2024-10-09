@@ -42,5 +42,5 @@ jobs:
       - name: Run gradle sonar task
         env:
           SONAR_TOKEN: ${{secrets.SONAR_TOKEN}}
-        run: ./gradlew sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=my-own-lawbook -Dsonar.projectKey=server -Dsonar.token=$SONAR_TOKEN -Dsonar.qualitygate.wait=true
+        run: ./gradlew sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=my-own-lawbook -Dsonar.projectKey=my-own-lawbook_server -Dsonar.token=$SONAR_TOKEN -Dsonar.qualitygate.wait=true
 
