@@ -56,7 +56,7 @@ Refer to [this guid](https://docs.docker.com/compose/how-tos/environment-variabl
 set up the environment variables with docker.
 
 ```bash
-docker run my-own-lawbook:latest
+docker run ghcr.io/my-own-lawbook:<version>
 ```
 
 #### Docker Compose
@@ -66,7 +66,7 @@ Example `docker-compose.yaml` file:
 ```yaml
 services:
   mol-server:
-    image: my-own-lawbook:latest
+    image: ghcr.io/my-own-lawbook:<version>
     ports:
       - 8080:8080
     environment:
