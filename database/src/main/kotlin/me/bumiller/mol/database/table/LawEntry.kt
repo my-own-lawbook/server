@@ -23,7 +23,7 @@ object LawEntry {
 
     object Table : LongIdTable(name = "law_entry") {
 
-        val key = text("key").uniqueIndex()
+        val key = text("key")
 
         val name = text("name")
 
