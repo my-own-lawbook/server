@@ -96,4 +96,14 @@ If you want to push changes, do the following steps:
   - If for issue: `issue-<issue-id>`
 - Do your changes, prefixing the commits with the id of the issue the commit is related to, e.g.:
   `371: Did some changes`
+- State your changes in the `./changelogs/next-changelog.md` (or create if it doesn't exist)
 - Create a pull request
+
+### Create a release
+
+If you want to create a release, do the following steps:
+
+- Merge the `develop` branch into the `main` or `master` branch
+- Rename `./changelogs/next-changelog.md` to `<release-semver>.md` and adjust content if needed
+- Update the `version` field in `./build.gradle.kts` to the semver
+- Trigger the 'release.yml' workflow and enter the semver as the release version
