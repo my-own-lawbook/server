@@ -84,32 +84,16 @@ services:
 Info: Changing the `MOL_PORT` environment variable changes the **internal** port of the docker container.
 
 ## Contributing
-### Branching structure
-#### Feature branches
-Feature branches are named in the `feature/*` way, where `*` would be the issue/milestone id for the feature.
 
-Once a feature is done, it is merged into the `develop` branch. **Merging into the development branch is only done when the feature is fully finished.** 
-#### Development branch
-The development branch is the branch that tracks the current state of the development. 
+### Making changes
 
-#### Master branch
-The master branch is the branch that tracks the state of the latest release.
+If you want to push changes, do the following steps:
 
-#### Release branches
-Feature branches are named in the `release/*` way, where `*` would be the semver version (**Without** a 'v'-prefix).
-
-Release branches are created for all kinds of releases (Major, Minor and Patch).
-
-Release branches are only created once and never to be touched again. They are supposed to freeze the code at the point of the tag/version.
-### Creating a release
-To create a release, following steps are to be made:
-
-- Create a commit that bumps the gradle version attribute
-- Merge `develop` into `master`
-- Create new `release/<version>` branch off `master` with `<version>` being the version number
-
-Creating a branch with the `release/` prefix will trigger GitHub actions to perform the following actions:
-
-- Create a GitHub tag for the version
-- Create a GitHub release for the tag with some artifacts and source code archives
-- Publish a new image to the `ghcr.io` registry, tagged with the created tag 
+- (If needed: fork the repository)
+- Choose or a create an issue/milestone in which you describe the problem/new feature
+- Create a new branch, and name it:
+  - If for milestone: `milestone-<milestone-id>`
+  - If for issue: `issue-<issue-id>`
+- Do your changes, prefixing the commits with the id of the issue the commit is related to, e.g.:
+  `371: Did some changes`
+- Create a pull request
