@@ -56,7 +56,7 @@ Refer to [this guid](https://docs.docker.com/compose/how-tos/environment-variabl
 set up the environment variables with docker.
 
 ```bash
-docker run my-own-lawbook:latest
+docker run ghcr.io/my-own-lawbook:<version>
 ```
 
 #### Docker Compose
@@ -66,7 +66,7 @@ Example `docker-compose.yaml` file:
 ```yaml
 services:
   mol-server:
-    image: my-own-lawbook:latest
+    image: ghcr.io/my-own-lawbook:<version>
     ports:
       - 8080:8080
     environment:
@@ -84,32 +84,26 @@ services:
 Info: Changing the `MOL_PORT` environment variable changes the **internal** port of the docker container.
 
 ## Contributing
-### Branching structure
-#### Feature branches
-Feature branches are named in the `feature/*` way, where `*` would be the issue/milestone id for the feature.
 
-Once a feature is done, it is merged into the `develop` branch. **Merging into the development branch is only done when the feature is fully finished.** 
-#### Development branch
-The development branch is the branch that tracks the current state of the development. 
+### Making changes
 
-#### Master branch
-The master branch is the branch that tracks the state of the latest release.
+If you want to push changes, do the following steps:
 
-#### Release branches
-Feature branches are named in the `release/*` way, where `*` would be the semver version (**Without** a 'v'-prefix).
+- (If needed: fork the repository)
+- Choose or a create an issue/milestone in which you describe the problem/new feature
+- Create a new branch, and name it:
+  - If for milestone: `milestone-<milestone-id>`
+  - If for issue: `issue-<issue-id>`
+- Do your changes, prefixing the commits with the id of the issue the commit is related to, e.g.:
+  `371: Did some changes`
+- State your changes in the `./changelogs/next-changelog.md` (or create if it doesn't exist)
+- Create a pull request
 
-Release branches are created for all kinds of releases (Major, Minor and Patch).
+### Create a release
 
-Release branches are only created once and never to be touched again. They are supposed to freeze the code at the point of the tag/version.
-### Creating a release
-To create a release, following steps are to be made:
+If you want to create a release, do the following steps:
 
-- Create a commit that bumps the gradle version attribute
-- Merge `develop` into `master`
-- Create new `release/<version>` branch off `master` with `<version>` being the version number
-
-Creating a branch with the `release/` prefix will trigger GitHub actions to perform the following actions:
-
-- Create a GitHub tag for the version
-- Create a GitHub release for the tag with some artifacts and source code archives
-- Publish a new image to the `ghcr.io` registry, tagged with the created tag 
+- Merge the `develop` branch into the `main` or `master` branch
+- Rename `./changelogs/next-changelog.md` to `<release-semver>.md` and adjust content if needed
+- Update the `version` field in `./build.gradle.kts` to the semver
+- Trigger the 'release.yml' workflow and enter the semver as the release version
