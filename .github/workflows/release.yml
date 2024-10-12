@@ -22,8 +22,6 @@ jobs:
   # - Fat Jar
   #
   create-release:
-    if: github.event.created
-
     name: Create GitHub Release
     runs-on: ubuntu-latest
 
@@ -55,8 +53,6 @@ jobs:
   # Will use the ktor gradle task 'buildImage' to locally build an image, tag it with the release name and then push it to the registry
   #
   publish-image:
-    if: github.event.created
-
     name: Publish Image
     runs-on: ubuntu-latest
 
