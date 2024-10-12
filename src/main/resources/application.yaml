@@ -15,7 +15,7 @@ mol:
         duration: "$MOL_SECURITY_REFRESH_TOKEN_DURATION:15"
     email:
       token:
-        duration: "$MOL_EMAIL_REFRESH_TOKEN_DURATION:5"
+        duration: "$MOL_SECURITY_EMAIL_TOKEN_DURATION:5"
   database:
     url: "$MOL_DATABASE_URL"
     user: "$MOL_DATABASE_USER"
