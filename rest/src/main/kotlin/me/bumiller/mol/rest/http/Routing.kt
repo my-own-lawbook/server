@@ -22,6 +22,8 @@ import me.bumiller.mol.rest.http.users.users
 internal fun Application.restRouting(basePath: String) = routing {
     route("/$basePath/") {
 
+        ping()
+
         authenticate {
             logout()
 
