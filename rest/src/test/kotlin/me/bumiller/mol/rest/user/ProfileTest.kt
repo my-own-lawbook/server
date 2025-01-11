@@ -72,6 +72,15 @@ class ProfileTest {
         assertEquals(profile.gender, body.gender)
     }
 
+
+    @Test
+    fun `GET user_profile returns 404 if the profile has not been set`() =
+        ktorEndpointTest(user.copy(profile = null)) { _, client ->
+            val res = client.get("/test/api/user/profile/")
+
+            assertEquals(404, res.status.value)
+        }
+
     @Test
     fun `PATCH user_profile correctly calls updateProfile`() = ktorEndpointTest(user) { services, client ->
         coEvery { services.userService.updateProfile(any(), any(), any(), any(), any()) } returns user

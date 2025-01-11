@@ -27,7 +27,8 @@ private val allowedWithoutEmailVerified = listOf(
 private val allowedWithoutProfileSet = listOf(
     HttpMethod.Post to "auth/signup/email-verify/",
     HttpMethod.Post to "user/profile/",
-    HttpMethod.Get to "user/"
+    HttpMethod.Get to "user/",
+    HttpMethod.Get to "user/profile/"
 )
 
 internal fun Application.authentication(appConfig: AppConfig, basePath: String) {
