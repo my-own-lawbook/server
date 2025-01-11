@@ -13,6 +13,7 @@ import me.bumiller.mol.core.exception.ServiceException
 import me.bumiller.mol.model.Gender
 import me.bumiller.mol.model.UserProfile
 import me.bumiller.mol.model.http.internal
+import me.bumiller.mol.model.http.notFound
 import me.bumiller.mol.rest.plugins.authenticatedUser
 import me.bumiller.mol.rest.response.user.AuthUserWithProfileResponse
 import me.bumiller.mol.rest.response.user.AuthUserWithoutProfileResponse
@@ -132,7 +133,11 @@ private fun Route.createProfile(userService: UserService) = post {
  * Endpoint to /user/profile/ that lets the authenticated user update their profile
  */
 private fun Route.getProfile() = get {
-    call.respond(HttpStatusCode.OK, UserProfileResponse.create(user.profile!!))
+    if (user.profile != null) {
+        call.respond(HttpStatusCode.OK, UserProfileResponse.create(user.profile!!))
+    } else {
+        notFound("The profile has not yet been set.")
+    }
 }
 
 /**
