@@ -26,3 +26,5 @@ mol:
     ssl: "$MOL_MAIL_SSL:true"
     password: "$MOL_MAIL_PASSWORD"
     from: "$MOL_MAIL_FROM"
+  rest:
+    path: "$MOL_REST_PATH:/api/"

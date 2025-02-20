@@ -67,6 +67,7 @@ fun ktorEndpointTest(
     testContent: suspend ApplicationTestBuilder.(Services, HttpClient) -> Unit
 ) = testApplication {
     every { appConfig.jwtSecret } returns "289499da-4592-4e7e-8f0b-a303d4c45ec8"
+    every { appConfig.basePath } returns "/test/api/"
 
     val services = Services()
 
@@ -106,7 +107,7 @@ fun ktorEndpointTest(
             }
         }
 
-        restApi(appConfig, "test/api/")
+        restApi(appConfig)
     }
 
     val client = createClient {

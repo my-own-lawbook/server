@@ -66,6 +66,7 @@ private fun Application.setupKoin(appConfig: AppConfig) {
 }
 
 private fun Application.appConfig(): AppConfig = environment.config.run {
+    println(keys().filter { it.startsWith("mol") }.toList())
     AppConfig(
         jwtSecret = property("mol.security.jwt.secret").getString(),
         jwtDuration = property("mol.security.jwt.duration").getString().toLong().minutes,
@@ -78,6 +79,7 @@ private fun Application.appConfig(): AppConfig = environment.config.run {
         mailSmtpPort = property("mol.mail.port").getString().toInt(),
         mailDoSsl = property("mol.mail.ssl").getString().toBoolean(),
         mailUsername = property("mol.mail.from").getString(),
-        mailPassword = property("mol.mail.password").getString()
+        mailPassword = property("mol.mail.password").getString(),
+        basePath = property("mol.rest.path").getString()
     )
 }
