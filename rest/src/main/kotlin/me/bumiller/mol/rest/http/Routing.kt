@@ -3,6 +3,7 @@ package me.bumiller.mol.rest.http
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
+import me.bumiller.mol.model.config.AppConfig
 import me.bumiller.mol.rest.http.auth.login
 import me.bumiller.mol.rest.http.auth.logout
 import me.bumiller.mol.rest.http.auth.signup
@@ -19,9 +20,8 @@ import me.bumiller.mol.rest.http.users.users
  *
  * @param basePath The base path
  */
-internal fun Application.restRouting(basePath: String) = routing {
-    route("/$basePath/") {
-
+internal fun Application.restRouting(appConfig: AppConfig) = routing {
+    route(appConfig.basePath) {
         ping()
 
         authenticate {

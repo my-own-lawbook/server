@@ -65,6 +65,11 @@ data class AppConfig(
     /**
      * Mail password
      */
-    val mailPassword: String
+    val mailPassword: String,
+
+    /**
+     * The base path of the rest server
+     */
+    val basePath: String
 
 )

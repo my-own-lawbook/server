@@ -31,7 +31,8 @@ private val allowedWithoutProfileSet = listOf(
     HttpMethod.Get to "user/profile/"
 )
 
-internal fun Application.authentication(appConfig: AppConfig, basePath: String) {
+internal fun Application.authentication(appConfig: AppConfig) {
+    val basePath = appConfig.basePath
 
     val verifier = JWT
         .require(Algorithm.HMAC256(appConfig.jwtSecret))
