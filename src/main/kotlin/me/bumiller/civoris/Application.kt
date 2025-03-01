@@ -66,7 +66,6 @@ private fun Application.setupKoin(appConfig: AppConfig) {
 }
 
 private fun Application.appConfig(): AppConfig = environment.config.run {
-    println(keys().filter { it.startsWith("mol") }.toList())
     AppConfig(
         jwtSecret = property("civoris.security.jwt.secret").getString(),
         jwtDuration = property("civoris.security.jwt.duration").getString().toLong().minutes,
