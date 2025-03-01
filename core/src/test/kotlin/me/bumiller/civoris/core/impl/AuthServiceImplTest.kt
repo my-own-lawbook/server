@@ -35,7 +35,8 @@ class AuthServiceImplTest {
 
     private lateinit var authService: AuthService
 
-    private val mockConfig = AppConfig("as394g843m3g", 5.minutes, 30.days, 5.minutes, "", "", "", "", 1, true, "", "")
+    private val mockConfig =
+        AppConfig("as394g843m3g", 5.minutes, 30.days, 5.minutes, "", "", "", "", 1, true, "", "", "/")
 
     @BeforeEach
     fun setup() {
