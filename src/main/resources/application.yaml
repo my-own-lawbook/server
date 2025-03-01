@@ -1,30 +1,30 @@
 ktor:
   deployment:
-    port: "$MOL_PORT:8080"
+    port: "$CIVORIS_PORT:8080"
   application:
     modules:
-      - me.bumiller.mol.ApplicationKt.restApi
+      - me.bumiller.civoris.ApplicationKt.restApi
 
-mol:
+civoris:
   security:
     jwt:
-      duration: "$MOL_SECURITY_JWT_DURATION:15"
-      secret: "$MOL_SECURITY_JWT_SECRET"
+      duration: "$CIVORIS_SECURITY_JWT_DURATION:15"
+      secret: "$CIVORIS_SECURITY_JWT_SECRET"
     refresh:
       token:
-        duration: "$MOL_SECURITY_REFRESH_TOKEN_DURATION:15"
+        duration: "$CIVORIS_SECURITY_REFRESH_TOKEN_DURATION:15"
     email:
       token:
-        duration: "$MOL_SECURITY_EMAIL_TOKEN_DURATION:5"
+        duration: "$CIVORIS_SECURITY_EMAIL_TOKEN_DURATION:5"
   database:
-    url: "$MOL_DATABASE_URL"
-    user: "$MOL_DATABASE_USER"
-    password: "$MOL_DATABASE_PASSWORD"
+    url: "$CIVORIS_DATABASE_URL"
+    user: "$CIVORIS_DATABASE_USER"
+    password: "$CIVORIS_DATABASE_PASSWORD"
   mail:
-    host: "$MOL_MAIL_HOST"
-    port: "$MOL_MAIL_PORT"
-    ssl: "$MOL_MAIL_SSL:true"
-    password: "$MOL_MAIL_PASSWORD"
-    from: "$MOL_MAIL_FROM"
+    host: "$CIVORIS_MAIL_HOST"
+    port: "$CIVORIS_MAIL_PORT"
+    ssl: "$CIVORIS_MAIL_SSL:true"
+    password: "$CIVORIS_MAIL_PASSWORD"
+    from: "$CIVORIS_MAIL_FROM"
   rest:
-    path: "$MOL_REST_PATH:/api/"
+    path: "$CIVORIS_REST_PATH:/api/"

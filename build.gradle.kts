@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.jacoco.aggregation)
 }
 
-group = "me.bumiller.mol"
+group = "me.bumiller.civoris"
 version = "1.0.4"
 
 repositories {
@@ -46,7 +46,7 @@ application {
 ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_21)
-        localImageName.set("my-own-lawbook")
+        localImageName.set("civoris-server")
         externalRegistry.set(
             io.ktor.plugin.features.DockerImageRegistry.externalRegistry(
                 username = providers.environmentVariable("REGISTRY_USERNAME"),
