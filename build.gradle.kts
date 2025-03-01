@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.jacoco.aggregation)
 }
 
-group = "me.bumiller.mol"
+group = "me.bumiller.civoris"
 version = "1.0.4"
 
 repositories {
