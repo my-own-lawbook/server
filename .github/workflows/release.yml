@@ -41,8 +41,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          repository: my-own-lawbook/server
-          files: ./build/libs/my-own-lawbook-all.jar
+          repository: civoris/server
+          files: ./build/libs/civoris-server-all.jar
           body: <Create changelog>
           body_path: ./changelogs/${{ inputs.releaseVersion }}.md
           name: ${{ inputs.releaseVersion }}
@@ -74,7 +74,7 @@ jobs:
 
       - name: Tag local image
         shell: bash
-        run: docker image tag my-own-lawbook ghcr.io/${{ github.repository }}:${{ inputs.releaseVersion }}
+        run: docker image tag civoris-server ghcr.io/${{ github.repository }}:${{ inputs.releaseVersion }}
 
       - name: Push to Registry
         shell: bash
