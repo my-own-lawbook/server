@@ -1,5 +1,6 @@
 # Civoris-Server
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook%3Aserver&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook%3Aserver) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook%3Aserver&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook%3Aserver) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook%3Aserver&metric=coverage)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook%3Aserver)
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=civoris_server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=civoris_server) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=civoris_server&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=civoris_server) [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=civoris_server)](https://sonarcloud.io/summary/new_code?id=civoris_server)
 
 This is the repository for the server-component of the Civoris-Organization.
 
