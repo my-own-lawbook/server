@@ -57,7 +57,7 @@ Refer to [this guid](https://docs.docker.com/compose/how-tos/environment-variabl
 set up the environment variables with docker.
 
 ```bash
-docker run ghcr.io/my-own-lawbook:<version>
+docker run ghcr.io/civoris/server:<version>
 ```
 
 #### Docker Compose
