@@ -3,7 +3,7 @@ ktor:
     port: "$CIVORIS_PORT:8080"
   application:
     modules:
-      - me.bumiller.mol.ApplicationKt.restApi
+      - me.bumiller.civoris.ApplicationKt.restApi
 
 civoris:
   security:
