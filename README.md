@@ -1,10 +1,10 @@
-# MOL-Server
+# Civoris-Server
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook%3Aserver&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook%3Aserver) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook%3Aserver&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook%3Aserver) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=my-own-lawbook%3Aserver&metric=coverage)](https://sonarcloud.io/summary/new_code?id=my-own-lawbook%3Aserver)
 
-This is the repository for the server-component of the MOL-Organization.
+This is the repository for the server-component of the Civoris-Organization.
 
 ## Features
-This server acts as the backend-component for the MOL-Clients. As such, it takes care of the following aspects:
+This server acts as the backend-component for the Civoris-Clients. As such, it takes care of the following aspects:
 
 - Data persistence via a SQL-Database
 - Authorization and access-management
@@ -66,8 +66,8 @@ Example `docker-compose.yaml` file:
 
 ```yaml
 services:
-  mol-server:
-    image: ghcr.io/my-own-lawbook:<version>
+  civoris-server:
+    image: ghcr.io/civoris/server:<version>
     ports:
       - 8080:8080
     environment:
