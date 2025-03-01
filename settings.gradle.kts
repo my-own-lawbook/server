@@ -1,7 +1,7 @@
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
 }
-rootProject.name = "my-own-lawbook"
+rootProject.name = "civoris-server"
 include("database")
 include("model")
 include("common")
