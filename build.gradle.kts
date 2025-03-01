@@ -46,7 +46,7 @@ application {
 ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_21)
-        localImageName.set("my-own-lawbook")
+        localImageName.set("civoris-server")
         externalRegistry.set(
             io.ktor.plugin.features.DockerImageRegistry.externalRegistry(
                 username = providers.environmentVariable("REGISTRY_USERNAME"),
