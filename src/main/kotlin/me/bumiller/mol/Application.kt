@@ -68,18 +68,18 @@ private fun Application.setupKoin(appConfig: AppConfig) {
 private fun Application.appConfig(): AppConfig = environment.config.run {
     println(keys().filter { it.startsWith("mol") }.toList())
     AppConfig(
-        jwtSecret = property("mol.security.jwt.secret").getString(),
-        jwtDuration = property("mol.security.jwt.duration").getString().toLong().minutes,
-        refreshDuration = property("mol.security.refresh.token.duration").getString().toLong().days,
-        emailTokenDuration = property("mol.security.email.token.duration").getString().toLong().minutes,
-        databaseUrl = property("mol.database.url").getString(),
-        databaseUser = property("mol.database.user").getString(),
-        databasePassword = property("mol.database.password").getString(),
-        mailSmtpServer = property("mol.mail.host").getString(),
-        mailSmtpPort = property("mol.mail.port").getString().toInt(),
-        mailDoSsl = property("mol.mail.ssl").getString().toBoolean(),
-        mailUsername = property("mol.mail.from").getString(),
-        mailPassword = property("mol.mail.password").getString(),
-        basePath = property("mol.rest.path").getString()
+        jwtSecret = property("civoris.security.jwt.secret").getString(),
+        jwtDuration = property("civoris.security.jwt.duration").getString().toLong().minutes,
+        refreshDuration = property("civoris.security.refresh.token.duration").getString().toLong().days,
+        emailTokenDuration = property("civoris.security.email.token.duration").getString().toLong().minutes,
+        databaseUrl = property("civoris.database.url").getString(),
+        databaseUser = property("civoris.database.user").getString(),
+        databasePassword = property("civoris.database.password").getString(),
+        mailSmtpServer = property("civoris.mail.host").getString(),
+        mailSmtpPort = property("civoris.mail.port").getString().toInt(),
+        mailDoSsl = property("civoris.mail.ssl").getString().toBoolean(),
+        mailUsername = property("civoris.mail.from").getString(),
+        mailPassword = property("civoris.mail.password").getString(),
+        basePath = property("civoris.rest.path").getString()
     )
 }
