@@ -40,7 +40,7 @@ Running the server requires a certain configuration via environment variables. B
 
 #### Jar
 
-Download the latest jar from [the releases page](https://github.com/my-own-lawbook/server/releases) and run it like
+Download the latest jar from [the releases page](https://github.com/civoris/server/releases) and run it like
 this:
 
 ```bash
@@ -52,7 +52,7 @@ Setting up the environment variables depends on your system.
 #### Docker
 
 Run the latest container with docker. For the latest tag, check
-out [the packages page](https://github.com/orgs/my-own-lawbook/packages?repo_name=server) and run it like this:
+out [the packages page](https://github.com/orgs/civoris/packages?repo_name=server) and run it like this:
 
 Refer to [this guid](https://docs.docker.com/compose/how-tos/environment-variables/set-environment-variables/) on how to
 set up the environment variables with docker.
