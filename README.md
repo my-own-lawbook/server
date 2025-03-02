@@ -1,6 +1,6 @@
 # Civoris-Server
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=civoris_server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=civoris_server) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=civoris_server&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=civoris_server) [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=civoris_server)](https://sonarcloud.io/summary/new_code?id=civoris_server)
+[![Quality Gate Status](https://sonar.bumiller.me/api/project_badges/measure?project=civoris_server_3151a48e-dd5d-4cd7-b192-3d4485522003&metric=alert_status&token=sqb_5f5b42d920fb5d240326e1b6a7bfbb27eaba925c)](https://sonar.bumiller.me/dashboard?id=civoris_server_3151a48e-dd5d-4cd7-b192-3d4485522003) [![Lines of Code](https://sonar.bumiller.me/api/project_badges/measure?project=civoris_server_3151a48e-dd5d-4cd7-b192-3d4485522003&metric=ncloc&token=sqb_5f5b42d920fb5d240326e1b6a7bfbb27eaba925c)](https://sonar.bumiller.me/dashboard?id=civoris_server_3151a48e-dd5d-4cd7-b192-3d4485522003)
 
 This is the repository for the server-component of the Civoris-Organization.
 
