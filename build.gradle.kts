@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "me.bumiller.civoris"
-version = "1.0.4"
+version = "0.0.5"
 
 repositories {
     mavenCentral()
