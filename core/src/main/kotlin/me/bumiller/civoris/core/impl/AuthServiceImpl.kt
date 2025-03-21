@@ -7,6 +7,7 @@ import kotlinx.datetime.toJavaInstant
 import me.bumiller.civoris.common.present
 import me.bumiller.civoris.core.AuthService
 import me.bumiller.civoris.core.EncryptionService
+import me.bumiller.civoris.core.TokenGenerationStrategy
 import me.bumiller.civoris.core.data.TwoFactorTokenService
 import me.bumiller.civoris.core.data.UserService
 import me.bumiller.civoris.core.exception.ServiceException
@@ -44,6 +45,7 @@ internal class AuthServiceImpl(
         val emailToken = tokenService.create(
             type = TwoFactorTokenType.EmailConfirm,
             userId = user.id,
+            strategy = TokenGenerationStrategy.OneTimePassword(OTP_LENGTH),
             expiringAt = now.plus(appConfig.emailTokenDuration),
             issuedAt = now,
             additionalContent = user.email
@@ -78,6 +80,7 @@ internal class AuthServiceImpl(
         val refreshToken = tokenService.create(
             type = TwoFactorTokenType.RefreshToken,
             userId = userId,
+            strategy = TokenGenerationStrategy.UUID,
             expiringAt = expiringAtRefresh,
             issuedAt = now
         )
@@ -136,4 +139,11 @@ internal class AuthServiceImpl(
 
         return tokenEntity
     }
+
+    companion object {
+
+        private const val OTP_LENGTH = 6;
+
+    }
+
 }
