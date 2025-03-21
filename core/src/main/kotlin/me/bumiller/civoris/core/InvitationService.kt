@@ -67,4 +67,13 @@ interface InvitationService {
      */
     suspend fun revokeInvitation(invitationId: Long)
 
+    /**
+     * Checks whether a user currently has an active invitation.
+     *
+     * @param userId The id of the user to check for
+     * @param targetId The id of the book to check for ivitations to. If null, any invitation will be accepted
+     * @return Whether the user has an up-to-date, active invitation to the specified, or any, lawbook
+     */
+    suspend fun hasUserActiveInvitation(userId: Long, targetId: Long? = null): Boolean
+
 }
