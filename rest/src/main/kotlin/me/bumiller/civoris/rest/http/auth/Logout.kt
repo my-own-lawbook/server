@@ -9,8 +9,8 @@ import me.bumiller.civoris.core.data.TwoFactorTokenService
 import me.bumiller.civoris.model.TwoFactorToken
 import me.bumiller.civoris.model.TwoFactorTokenType
 import me.bumiller.civoris.rest.http.PathToken
+import me.bumiller.civoris.rest.util.stringOrBadRequest
 import me.bumiller.civoris.rest.util.user
-import me.bumiller.civoris.rest.util.uuidOrBadRequest
 import org.koin.ktor.ext.inject
 
 /**
@@ -40,7 +40,7 @@ internal fun Route.logout() {
  * Route to POST auth/logout/?token=<token> to invalidate it
  */
 fun Route.logout(authService: AuthService) = post {
-    val toLogoutToken = call.request.queryParameters.uuidOrBadRequest(PathToken)
+    val toLogoutToken = call.request.queryParameters.stringOrBadRequest(PathToken)
 
     try {
         authService.logoutUser(user.id, toLogoutToken)

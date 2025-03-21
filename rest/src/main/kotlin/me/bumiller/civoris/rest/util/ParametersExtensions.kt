@@ -1,9 +1,7 @@
 package me.bumiller.civoris.rest.util
 
 import io.ktor.http.*
-import me.bumiller.civoris.common.toUUIDSafe
 import me.bumiller.civoris.model.http.bad
-import java.util.*
 
 /**
  * Gets the int-value for a specific key or throws a 400 error
@@ -24,10 +22,10 @@ internal fun Parameters.longOrBadRequest(key: String): Long =
     get(key)?.toLongOrNull() ?: bad("Invalid format for path parameter '$key'")
 
 /**
- * Gets the uuid-value for a specific key or throws a 400 error
+ * Gets the string-value for a specific key or throws a 400 error
  *
  * @param key The key
- * @return The uuid
+ * @return The string
  */
-internal fun Parameters.uuidOrBadRequest(key: String): UUID =
-    get(key)?.toUUIDSafe() ?: bad("Invalid format for path parameter '$key'")
+internal fun Parameters.stringOrBadRequest(key: String): String =
+    get(key) ?: bad("Invalid format for path parameter '$key'")

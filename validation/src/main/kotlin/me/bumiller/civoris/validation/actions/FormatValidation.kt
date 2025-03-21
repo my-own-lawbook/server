@@ -1,7 +1,6 @@
 package me.bumiller.civoris.validation.actions
 
 import io.ktor.server.plugins.requestvalidation.*
-import me.bumiller.civoris.common.toUUIDSafe
 import me.bumiller.civoris.model.MemberRole
 import me.bumiller.civoris.model.http.badFormat
 import me.bumiller.civoris.validation.ValidatableWrapper
@@ -51,19 +50,12 @@ fun ValidatableWrapper<String>.isPassword() =
     if (!PasswordRegex.matcher(value).matches()) badFormat("password", value)
     else null
 
-/**
- * Validates whether a string is a uuid
- */
-fun ValidatableWrapper<String>.isUUID() =
-    if (value.toUUIDSafe() == null) badFormat("uuid", value)
-    else null
-
 private val ProfileNameRegex = Pattern.compile(
     "^[a-zA-Z ]{2,}$"
 )
 
 /**
- * Validates whether a string is a uuid
+ * Validates whether a string is a valid name
  */
 fun ValidatableWrapper<String>.isProfileName() =
     if (!ProfileNameRegex.matcher(value).matches()) badFormat("name", value)

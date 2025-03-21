@@ -317,7 +317,7 @@ class ServiceAccessValidatorTest {
             book.id
         )
 
-        val returned = accessValidator.resolveScoped(ScopedPermission.Books.Read(book.id), user.id)
+        val returned = accessValidator.resolveScoped(ScopedPermission.Books.Read(book.id), user.id, false)
         assertFalse(returned)
     }
 

@@ -1,5 +1,6 @@
 package me.bumiller.civoris.database.repository
 
+import kotlinx.datetime.Clock
 import me.bumiller.civoris.common.Optional
 import me.bumiller.civoris.common.empty
 import me.bumiller.civoris.database.base.EntityRepository
@@ -11,8 +12,10 @@ import me.bumiller.civoris.database.table.TwoFactorToken.Table
 import me.bumiller.civoris.database.table.User
 import me.bumiller.civoris.database.util.eqOpt
 import me.bumiller.civoris.database.util.suspendTransaction
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.and
-import java.util.*
+import org.jetbrains.exposed.sql.deleteWhere
 
 /**
  * Interface that grants access to the two_factor_token table in the database
@@ -37,8 +40,13 @@ interface TwoFactorTokenRepository : IEntityRepository<Long, Model> {
      */
     suspend fun getSpecific(
         id: Optional<Long> = empty(),
-        token: Optional<UUID> = empty()
+        token: Optional<String> = empty()
     ): Model?
+
+    /**
+     * Deletes all expired tokens in the database.
+     */
+    suspend fun deleteExpired()
 
 }
 
@@ -57,7 +65,7 @@ internal class ExposedTwoFactorTokenRepository :
         }.asModel
     }
 
-    override suspend fun getSpecific(id: Optional<Long>, token: Optional<UUID>): Model? = suspendTransaction {
+    override suspend fun getSpecific(id: Optional<Long>, token: Optional<String>): Model? = suspendTransaction {
         Entity.find {
             (Table.token eqOpt token) and
                     (Table.id eqOpt id)
@@ -65,5 +73,13 @@ internal class ExposedTwoFactorTokenRepository :
             .limit(1)
             .map { it.asModel }
             .singleOrNull()
+    }
+
+    override suspend fun deleteExpired() {
+        val now = Clock.System.now()
+        table.deleteWhere {
+            (Table.expiringAt.isNotNull()) and
+                    (Table.expiringAt less now)
+        }
     }
 }

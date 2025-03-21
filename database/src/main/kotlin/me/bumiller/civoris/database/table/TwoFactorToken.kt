@@ -10,7 +10,6 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
-import java.util.*
 
 object TwoFactorToken {
 
@@ -27,7 +26,7 @@ object TwoFactorToken {
         /**
          * The actual token
          */
-        val token: UUID,
+        val token: String,
 
         /**
          * When it wa issued
@@ -52,7 +51,7 @@ object TwoFactorToken {
         val additionalContent: String?,
 
         /**
-         * THe usage type for this token
+         * The usage type for this token
          */
         val type: String,
 
@@ -67,7 +66,7 @@ object TwoFactorToken {
 
         val user = reference("user_id", User.Table, ReferenceOption.CASCADE)
 
-        val token = uuid("token").uniqueIndex()
+        val token = text("token").uniqueIndex()
 
         val issuedAt = timestamp("issued_at").clientDefault { Clock.System.now() }
 

@@ -7,15 +7,12 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import me.bumiller.civoris.common.Optional
 import me.bumiller.civoris.common.empty
-import me.bumiller.civoris.common.toUUID
 import me.bumiller.civoris.core.AuthService
 import me.bumiller.civoris.core.exception.ServiceException
 import me.bumiller.civoris.model.http.bad
 import me.bumiller.civoris.model.http.internal
 import me.bumiller.civoris.rest.response.user.TokenResponse
 import me.bumiller.civoris.validation.Validatable
-import me.bumiller.civoris.validation.actions.isUUID
-import me.bumiller.civoris.validation.validateThat
 import me.bumiller.civoris.validation.validated
 import org.koin.ktor.ext.inject
 
@@ -83,7 +80,7 @@ internal data class LoginRefreshRequest(
 ) : Validatable {
 
     override suspend fun validate() {
-        validateThat(token).isUUID()
+
     }
 
 }
@@ -121,10 +118,10 @@ private fun Route.loginWithCredentials(authService: AuthService) = post {
  * Allows to authenticate using a previously acquired refresh token
  */
 private fun Route.loginWithRefreshToken(authService: AuthService) = post("refresh/") {
-    val uuid = call.validated<LoginRefreshRequest>().token.toUUID()
+    val token = call.validated<LoginRefreshRequest>().token
 
     val tokens = try {
-        authService.loginUserWithRefreshToken(uuid)
+        authService.loginUserWithRefreshToken(token)
     } catch (e: ServiceException.UserNotFound) {
         internal()
     }
