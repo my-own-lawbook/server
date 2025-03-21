@@ -3,6 +3,7 @@ package me.bumiller.civoris.validation.impl
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import me.bumiller.civoris.core.InvitationService
 import me.bumiller.civoris.core.data.InvitationContentService
 import me.bumiller.civoris.core.data.LawContentService
 import me.bumiller.civoris.core.data.MemberContentService
@@ -28,6 +29,7 @@ class ServiceAccessValidatorTest {
     private lateinit var memberContentService: MemberContentService
     private lateinit var userService: UserService
     private lateinit var invitationContentService: InvitationContentService
+    private lateinit var invitationService: InvitationService
 
     private lateinit var accessValidator: AccessValidator
 
@@ -37,9 +39,16 @@ class ServiceAccessValidatorTest {
         memberContentService = mockk()
         userService = mockk()
         invitationContentService = mockk()
+        invitationService = mockk()
 
         accessValidator =
-            ServiceAccessValidator(lawContentService, memberContentService, userService, invitationContentService)
+            ServiceAccessValidator(
+                lawContentService,
+                memberContentService,
+                userService,
+                invitationService,
+                invitationContentService
+            )
     }
 
     @Test
@@ -126,6 +135,7 @@ class ServiceAccessValidatorTest {
             coEvery { lawContentService.getBookByEntry(entry.id) } returns book
             coEvery { lawContentService.getEntryForSection(section.id) } returns entry
             coEvery { userService.getSpecific(user.id) } returns user
+            coEvery { invitationService.hasUserActiveInvitation(any(), any()) } returns false
 
             MemberRole.entries.forEach { memberRole ->
                 coEvery { memberContentService.getMemberRole(any(), any()) } returns memberRole
@@ -296,5 +306,55 @@ class ServiceAccessValidatorTest {
             assertEquals(404, ex.code)
 
         }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Books#Read returns false if neither member or invitation`() = runTest {
+        coEvery { lawContentService.getSpecificBook(book.id) } returns book
+        coEvery { invitationService.hasUserActiveInvitation(any(), any()) } returns false
+        coEvery { userService.getSpecific(user.id) } returns user
+        coEvery { memberContentService.getMemberRole(user.id, book.id) } throws ServiceException.UserNotMemberOfBook(
+            user.id,
+            book.id
+        )
+
+        val returned = accessValidator.resolveScoped(ScopedPermission.Books.Read(book.id), user.id)
+        assertFalse(returned)
+    }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Books#Read returns true if only invitation is present`() = runTest {
+        coEvery { lawContentService.getSpecificBook(book.id) } returns book
+        coEvery { invitationService.hasUserActiveInvitation(any(), any()) } returns true
+        coEvery { userService.getSpecific(user.id) } returns user
+        coEvery { memberContentService.getMemberRole(user.id, book.id) } throws ServiceException.UserNotMemberOfBook(
+            user.id,
+            book.id
+        )
+
+        val returned = accessValidator.resolveScoped(ScopedPermission.Books.Read(book.id), user.id)
+        assertTrue(returned)
+    }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Books#Read returns true if only user is member`() = runTest {
+        coEvery { lawContentService.getSpecificBook(book.id) } returns book
+        coEvery { invitationService.hasUserActiveInvitation(any(), any()) } returns false
+        coEvery { userService.getSpecific(user.id) } returns user
+        coEvery { memberContentService.getMemberRole(user.id, book.id) } returns MemberRole.Member
+
+        val returned = accessValidator.resolveScoped(ScopedPermission.Books.Read(book.id), user.id)
+        assertTrue(returned)
+    }
+
+    @Test
+    fun `resolveScoped for ScopedPermission#Books#Read returns true if both member and invitation`() = runTest {
+        coEvery { lawContentService.getSpecificBook(book.id) } returns book
+        coEvery { invitationService.hasUserActiveInvitation(any(), any()) } returns true
+        coEvery { userService.getSpecific(user.id) } returns user
+        coEvery { memberContentService.getMemberRole(user.id, book.id) } returns MemberRole.Member
+
+        val returned = accessValidator.resolveScoped(ScopedPermission.Books.Read(book.id), user.id)
+        assertTrue(returned)
+    }
 
 }
