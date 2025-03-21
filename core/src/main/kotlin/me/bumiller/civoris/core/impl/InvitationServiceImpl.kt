@@ -79,4 +79,15 @@ internal class InvitationServiceImpl(
 
         invitationContentService.updateStatus(invitationId, InvitationStatus.Revoked)
     }
+
+    override suspend fun hasUserActiveInvitation(userId: Long, targetId: Long?): Boolean {
+        val invitations = invitationContentService.getAll(
+            recipientId = userId,
+            targetBookId = targetId,
+            statuses = listOf(InvitationStatus.Open),
+            onlyNonExpired = true
+        )
+
+        return invitations.isNotEmpty()
+    }
 }

@@ -10,7 +10,7 @@ import me.bumiller.civoris.model.MemberRole
 import me.bumiller.civoris.test.util.invitationModel
 import me.bumiller.civoris.test.util.invitationModels
 import me.bumiller.civoris.test.util.userModels
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -184,6 +184,56 @@ class InvitationServiceImplTest {
         invitationService.revokeInvitation(1L)
 
         coVerify { invitationContentService.updateStatus(1L, InvitationStatus.Revoked) }
+    }
+
+    @Test
+    fun `hasUserActiveInvitation passes correct arguments`() = runTest {
+        val userIdCapture = slot<Long>()
+        val bookIdCapture = slot<Long>()
+
+        coEvery {
+            invitationContentService.getAll(
+                any(),
+                capture(bookIdCapture),
+                capture(userIdCapture),
+                any(),
+                any()
+            )
+        } returns emptyList()
+
+        val userId = 482L
+        val bookId = 331L
+
+        invitationService.hasUserActiveInvitation(userId, bookId)
+
+        assertEquals(userId, userIdCapture.captured)
+        assertEquals(bookId, bookIdCapture.captured)
+    }
+
+    @Test
+    fun `hasUserActiveInvitation returns true for non empty list`() = runTest {
+        coEvery {
+            invitationContentService.getAll(
+                any(),
+                any(),
+                any(),
+                any(),
+                any()
+            )
+        } returns listOf(invitationModel(1L))
+
+        val actual = invitationService.hasUserActiveInvitation(1L, 1L)
+
+        assertTrue(actual)
+    }
+
+    @Test
+    fun `hasUserActiveInvitation returns false for empty list`() = runTest {
+        coEvery { invitationContentService.getAll(any(), any(), any(), any(), any()) } returns emptyList()
+
+        val actual = invitationService.hasUserActiveInvitation(1L, 1L)
+
+        assertFalse(actual)
     }
 
 }

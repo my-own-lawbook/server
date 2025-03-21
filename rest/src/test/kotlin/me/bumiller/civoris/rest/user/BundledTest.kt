@@ -6,8 +6,9 @@ import io.mockk.coEvery
 import me.bumiller.civoris.rest.response.law.book.LawBookResponse
 import me.bumiller.civoris.rest.response.law.entry.LawEntryResponse
 import me.bumiller.civoris.test.*
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BundledTest {
@@ -16,8 +17,15 @@ class BundledTest {
     private val user = userModel(1L).copy(isEmailVerified = true, profile = profile)
 
     @Test
-    fun `GET law-books returns 200 with books by member`() =
+    fun `GET law-books returns 200 with books by member and by invitations`() =
         ktorEndpointTest(user) { services, client ->
+            val invitations = (1L..3L).map { invitationId ->
+                invitationModel(invitationId).copy(
+                    targetBook = lawBookModel(invitationId)
+                )
+            }
+
+            coEvery { services.invitationContentService.getAll(any(), any(), any(), any(), any()) } returns invitations
             coEvery { services.lawContentService.getBooksForMember(user.id) } returns lawBookModels(3, 4L)
 
             val res = client.get("/test/api/user/law-books/")
@@ -25,10 +33,16 @@ class BundledTest {
 
             val body = res.body<List<LawBookResponse>>()
 
-            assertArrayEquals(
-                (4L..6L).toList().sorted().toTypedArray(),
-                body.map(LawBookResponse::id).sorted().toTypedArray()
-            )
+            (1L..6L).forEach { id ->
+                val bookResponse = body.find { it.id == id }
+                assertNotNull(bookResponse)
+
+                if (id <= 3) {
+                    assertFalse(bookResponse!!.isMemberOf)
+                } else {
+                    assertTrue(bookResponse!!.isMemberOf)
+                }
+            }
         }
 
     @Test

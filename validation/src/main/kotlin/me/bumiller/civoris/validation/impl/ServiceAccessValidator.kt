@@ -1,5 +1,6 @@
 package me.bumiller.civoris.validation.impl
 
+import me.bumiller.civoris.core.InvitationService
 import me.bumiller.civoris.core.data.InvitationContentService
 import me.bumiller.civoris.core.data.LawContentService
 import me.bumiller.civoris.core.data.MemberContentService
@@ -17,16 +18,18 @@ internal class ServiceAccessValidator(
     private val lawContentService: LawContentService,
     private val memberContentService: MemberContentService,
     private val userService: UserService,
+    private val invitationService: InvitationService,
     private val invitationContentService: InvitationContentService
 ) : AccessValidator {
 
 
     private fun resolveBookPermission(
         role: MemberRole?,
-        permission: ScopedPermission.Books
+        permission: ScopedPermission.Books,
+        hasActiveInvitation: Boolean
     ): Boolean = when (permission) {
         is ScopedPermission.Books.Write -> role satisfies MemberRole.Admin
-        is ScopedPermission.Books.Read -> true
+        is ScopedPermission.Books.Read -> hasActiveInvitation || role != null
         is ScopedPermission.Books.Children.Create -> role satisfies MemberRole.Moderator
         is ScopedPermission.Books.Children.Read -> role satisfies MemberRole.Member
         is ScopedPermission.Books.Members.ManageInvitations -> role satisfies MemberRole.Admin
@@ -87,8 +90,13 @@ internal class ServiceAccessValidator(
             null
         }
 
+        val hasPendingInvitation = when (permission) {
+            is ScopedPermission.Books -> invitationService.hasUserActiveInvitation(userId, permission.id)
+            else -> false
+        }
+
         return when (permission) {
-            is ScopedPermission.Books -> resolveBookPermission(memberRole, permission)
+            is ScopedPermission.Books -> resolveBookPermission(memberRole, permission, hasPendingInvitation)
             is ScopedPermission.Entries -> resolveEntryPermission(memberRole, permission)
             is ScopedPermission.Sections -> resolveSectionPermission(memberRole, permission)
 

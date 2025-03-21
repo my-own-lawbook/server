@@ -20,8 +20,8 @@ import me.bumiller.civoris.rest.response.user.BookRoleUserResponse
 import me.bumiller.civoris.rest.response.user.UserWithProfileResponse
 import me.bumiller.civoris.test.*
 import me.bumiller.civoris.validation.ScopedPermission
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class LawBooksTest {
@@ -52,6 +52,12 @@ class LawBooksTest {
     fun `GET law-books_{id} returns 200 with book`() = ktorEndpointTest(user) { services, client ->
         val book = lawBookModel(1L)
         coEvery { services.lawContentService.getSpecificBook(eq(book.id), any()) } returns book
+        coEvery {
+            services.memberContentService.getMemberRole(
+                user.id,
+                book.id
+            )
+        } throws ServiceException.UserNotMemberOfBook(user.id, book.id)
 
         val res = client.get("/test/api/law-books/1/")
         val body = res.body<LawBookResponse>()
@@ -61,6 +67,36 @@ class LawBooksTest {
         assertEquals(book.key, body.key)
         assertEquals(book.description, body.description)
     }
+
+    @Test
+    fun `GET law-books_{id} returns isMember flag if user is member`() = ktorEndpointTest(user) { services, client ->
+        val book = lawBookModel(1L)
+        coEvery { services.lawContentService.getSpecificBook(eq(book.id), any()) } returns book
+        coEvery { services.memberContentService.getMemberRole(user.id, book.id) } returns MemberRole.Member
+
+        val res = client.get("/test/api/law-books/1/")
+        val body = res.body<LawBookResponse>()
+
+        assertTrue(body.isMemberOf)
+    }
+
+    @Test
+    fun `GET law-books_{id} returns not isMember flag if user is not member`() =
+        ktorEndpointTest(user) { services, client ->
+            val book = lawBookModel(1L)
+            coEvery { services.lawContentService.getSpecificBook(eq(book.id), any()) } returns book
+            coEvery {
+                services.memberContentService.getMemberRole(
+                    user.id,
+                    book.id
+                )
+            } throws ServiceException.UserNotMemberOfBook(user.id, book.id)
+
+            val res = client.get("/test/api/law-books/1/")
+            val body = res.body<LawBookResponse>()
+
+            assertFalse(body.isMemberOf)
+        }
 
     @Test
     fun `POST law-books returns 500 if user is not found`() = ktorEndpointTest(user) { services, client ->
@@ -99,6 +135,7 @@ class LawBooksTest {
             assertEquals(book.name, body.name)
             assertEquals(book.key, body.key)
             assertEquals(book.description, body.description)
+            assertTrue(body.isMemberOf)
         }
 
     @Test
@@ -169,6 +206,7 @@ class LawBooksTest {
             assertEquals(book.name, body.name)
             assertEquals(book.description, body.description)
             assertEquals(book.key, body.key)
+            assertTrue(body.isMemberOf)
         }
 
     @Test
@@ -194,13 +232,17 @@ class LawBooksTest {
         val book = lawBookModel(1L)
         coEvery { services.lawContentService.deleteBook(1L) } returns book
 
-        val res1 = client.delete("/test/api/law-books/1/")
-        assertEquals(200, res1.status.value)
+        val res = client.delete("/test/api/law-books/1/")
+        assertEquals(200, res.status.value)
         coVerify(exactly = 1) {
             services.lawContentService.deleteBook(
                 1L
             )
         }
+
+        val body = res.body<LawBookResponse>()
+
+        assertTrue(body.isMemberOf)
     }
 
     @Test
