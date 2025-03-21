@@ -54,7 +54,7 @@ internal fun Route.lawBooks() {
     val accessValidator by inject<AccessValidator>()
 
     route("law-books/") {
-        getById(lawContentService, accessValidator)
+        getById(lawContentService, memberContentService, accessValidator)
         create(lawContentService)
         update(lawContentService, accessValidator)
         delete(lawContentService, accessValidator)
@@ -124,15 +124,27 @@ internal data class PutUserBookRoleRequest(
 /**
  * Endpoint to GET /law-books/:id that returns a specific law-book
  */
-private fun Route.getById(lawContentService: LawContentService, accessValidator: AccessValidator) =
+private fun Route.getById(
+    lawContentService: LawContentService,
+    memberContentService: MemberContentService,
+    accessValidator: AccessValidator
+) =
     get("{$PathBookId}/") {
-    val bookId = call.parameters.longOrBadRequest(PathBookId)
+        val bookId = call.parameters.longOrBadRequest(PathBookId)
 
         accessValidator.resolveScoped(ScopedPermission.Books.Read(bookId), user.id)
 
         val book = lawContentService.getSpecificBook(id = bookId)
-    val response = LawBookResponse.create(book)
-    call.respond(HttpStatusCode.OK, response)
+
+        val isMember = try {
+            memberContentService.getMemberRole(user.id, book.id)
+            true
+        } catch (exception: ServiceException.UserNotMemberOfBook) {
+            false
+        }
+
+        val response = LawBookResponse.create(book, isMember)
+        call.respond(HttpStatusCode.OK, response)
 }
 
 /**
@@ -147,7 +159,7 @@ private fun Route.create(lawContentService: LawContentService) = post {
         internal()
     }
 
-    val response = LawBookResponse.create(created)
+    val response = LawBookResponse.createForMember(created)
 
     call.respond(HttpStatusCode.Created, response)
 }
@@ -157,20 +169,20 @@ private fun Route.create(lawContentService: LawContentService) = post {
  */
 private fun Route.update(lawContentService: LawContentService, accessValidator: AccessValidator) =
     patch("{$PathBookId}/") {
-    val body = call.validated<UpdateLawBookRequest>()
-    val bookId = call.parameters.longOrBadRequest(PathBookId)
+        val body = call.validated<UpdateLawBookRequest>()
+        val bookId = call.parameters.longOrBadRequest(PathBookId)
 
         accessValidator.resolveScoped(ScopedPermission.Books.Write(bookId), user.id)
 
-    val updated = lawContentService.updateBook(
-        bookId = bookId,
-        key = body.key,
-        name = body.name,
-        description = body.description
-    )
-    val response = LawBookResponse.create(updated)
+        val updated = lawContentService.updateBook(
+            bookId = bookId,
+            key = body.key,
+            name = body.name,
+            description = body.description
+        )
+        val response = LawBookResponse.createForMember(updated)
 
-    call.respond(HttpStatusCode.OK, response)
+        call.respond(HttpStatusCode.OK, response)
 }
 
 /**
@@ -183,7 +195,7 @@ private fun Route.delete(lawContentService: LawContentService, accessValidator: 
         accessValidator.resolveScoped(ScopedPermission.Books.Write(bookId), user.id)
 
         val deleted = lawContentService.deleteBook(bookId)
-    val response = LawBookResponse.create(deleted)
+        val response = LawBookResponse.createForMember(deleted)
 
     call.respond(HttpStatusCode.OK, response)
 }

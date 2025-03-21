@@ -8,6 +8,7 @@ import me.bumiller.civoris.core.data.InvitationContentService
 import me.bumiller.civoris.core.data.LawContentService
 import me.bumiller.civoris.core.exception.ServiceException
 import me.bumiller.civoris.model.BookInvitation
+import me.bumiller.civoris.model.InvitationStatus
 import me.bumiller.civoris.model.http.internal
 import me.bumiller.civoris.rest.response.law.book.LawBookResponse
 import me.bumiller.civoris.rest.response.law.entry.LawEntryResponse
@@ -32,7 +33,7 @@ internal fun Route.userBundled() {
 
     route("user/") {
         route("law-books/") {
-            allBooks(lawContentService)
+            allBooks(lawContentService, invitationContentService)
         }
         route("law-entries/") {
             allEntries(lawContentService)
@@ -49,12 +50,24 @@ internal fun Route.userBundled() {
 /**
  * Endpoint to GET /user/law-books/ that returns the law-books the user has access to
  */
-private fun Route.allBooks(lawContentService: LawContentService) = get {
+private fun Route.allBooks(lawContentService: LawContentService, invitationContentService: InvitationContentService) =
+    get {
     try {
         val booksByMember = lawContentService.getBooksForMember(user.id)
 
-        val responses = booksByMember
-            .map(LawBookResponse.Companion::create)
+        val activeInvitations = invitationContentService.getAll(
+            recipientId = user.id,
+            statuses = listOf(InvitationStatus.Open),
+            onlyNonExpired = true
+        )
+        val booksByOpenInvitation = activeInvitations.map(BookInvitation::targetBook)
+
+        val allBooks = booksByMember + booksByOpenInvitation
+
+        val responses = allBooks.toSet().map { book ->
+            if (book in booksByMember) LawBookResponse.createForMember(book)
+            else LawBookResponse.createForInvited(book)
+        }
 
         call.respond(HttpStatusCode.OK, responses)
     } catch (e: ServiceException.UserNotFound) {
