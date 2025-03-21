@@ -15,13 +15,20 @@ data class LawBookResponse(
 
     val name: String,
 
-    val description: String
+    val description: String,
+
+    val isMemberOf: Boolean
 
 ) {
 
     companion object {
 
-        fun create(lawBook: LawBook) = lawBook.run { LawBookResponse(id, key, name, description) }
+        fun createForMember(lawBook: LawBook) = create(lawBook, true)
+
+        fun createForInvited(lawBook: LawBook) = create(lawBook, false)
+
+        fun create(lawBook: LawBook, isMember: Boolean) =
+            lawBook.run { LawBookResponse(id, key, name, description, isMember) }
 
     }
 
