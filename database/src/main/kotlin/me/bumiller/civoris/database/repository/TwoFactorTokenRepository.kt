@@ -75,7 +75,7 @@ internal class ExposedTwoFactorTokenRepository :
             .singleOrNull()
     }
 
-    override suspend fun deleteExpired() {
+    override suspend fun deleteExpired(): Unit = suspendTransaction {
         val now = Clock.System.now()
         table.deleteWhere {
             (Table.expiringAt.isNotNull()) and
