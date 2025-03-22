@@ -23,7 +23,7 @@ data class TokenResponse (
 
     companion object {
 
-        fun create(tokens: AuthTokens) = TokenResponse(tokens.jwt, tokens.refresh.token.toString())
+        fun create(tokens: AuthTokens) = TokenResponse(tokens.jwt, tokens.refresh.token)
 
     }
 

@@ -1,7 +1,6 @@
 package me.bumiller.civoris.model
 
 import kotlinx.datetime.Instant
-import java.util.*
 
 /**
  * Model for a token used for several security related processes
@@ -16,7 +15,7 @@ data class TwoFactorToken (
     /**
      * The actual token
      */
-    val token: UUID,
+    val token: String,
 
     /**
      * Optional additional info

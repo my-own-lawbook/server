@@ -9,6 +9,7 @@ import kotlinx.datetime.Instant
 import me.bumiller.civoris.common.Optional
 import me.bumiller.civoris.common.empty
 import me.bumiller.civoris.common.present
+import me.bumiller.civoris.core.TokenGenerationStrategy
 import me.bumiller.civoris.core.data.TwoFactorTokenService
 import me.bumiller.civoris.core.exception.ServiceException
 import me.bumiller.civoris.database.repository.TwoFactorTokenRepository
@@ -43,7 +44,7 @@ class DatabaseTwoFactorTokenServiceTest {
     private val tokens = (1..10).map {
         TwoFactorTokenModel(
             it.toLong(),
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             issuedAt = Instant.fromEpochMilliseconds(it.toLong()),
             expiringAt = Instant.fromEpochMilliseconds(it.toLong()),
             used = it % 2 == 0,
@@ -66,23 +67,23 @@ class DatabaseTwoFactorTokenServiceTest {
     @Test
     fun `getSpecific correctly maps arguments to Optional`() = runTest {
         val idSlot = slot<Optional<Long>>()
-        val tokenSlot = slot<Optional<UUID>>()
+        val tokenSlot = slot<Optional<String>>()
 
-        val uuid = UUID.randomUUID()
+        val token = UUID.randomUUID().toString()
 
         coEvery { mockTokenRepository.getSpecific(capture(idSlot), capture(tokenSlot)) } returns tokens.first()
 
-        tokenService.getSpecific(null, uuid)
+        tokenService.getSpecific(null, token)
         assertEquals(empty<Long>(), idSlot.captured)
-        assertEquals(present(uuid), tokenSlot.captured)
+        assertEquals(present(token), tokenSlot.captured)
 
         tokenService.getSpecific()
         assertEquals(empty<Long>(), idSlot.captured)
-        assertEquals(empty<UUID>(), tokenSlot.captured)
+        assertEquals(empty<String>(), tokenSlot.captured)
 
-        tokenService.getSpecific(1L, uuid)
+        tokenService.getSpecific(1L, token)
         assertEquals(present(1L), idSlot.captured)
-        assertEquals(present(uuid), tokenSlot.captured)
+        assertEquals(present(token), tokenSlot.captured)
     }
 
     @Test
@@ -97,7 +98,14 @@ class DatabaseTwoFactorTokenServiceTest {
 
         val time = Clock.System.now()
 
-        val returned1 = tokenService.create(TwoFactorTokenType.RefreshToken, userModel.id, time, time, "content")
+        val returned1 = tokenService.create(
+            TwoFactorTokenType.RefreshToken,
+            userModel.id,
+            TokenGenerationStrategy.UUID,
+            time,
+            time,
+            "content"
+        )
         val returned2 = tokenService.create(TwoFactorTokenType.EmailConfirm, userModel.id)
 
         assertEquals("content", returned1.additionalInfo)
@@ -115,7 +123,14 @@ class DatabaseTwoFactorTokenServiceTest {
         val time = Clock.System.now()
 
         assertThrows<ServiceException.UserNotFound> {
-            tokenService.create(TwoFactorTokenType.RefreshToken, userModel.id, time, time, "content")
+            tokenService.create(
+                TwoFactorTokenType.RefreshToken,
+                userModel.id,
+                TokenGenerationStrategy.UUID,
+                time,
+                time,
+                "content"
+            )
         }
     }
 
@@ -128,7 +143,7 @@ class DatabaseTwoFactorTokenServiceTest {
 
         val token = me.bumiller.civoris.model.TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             null,
             time,
             time,
@@ -150,7 +165,7 @@ class DatabaseTwoFactorTokenServiceTest {
 
         val token = me.bumiller.civoris.model.TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             null,
             time,
             time,

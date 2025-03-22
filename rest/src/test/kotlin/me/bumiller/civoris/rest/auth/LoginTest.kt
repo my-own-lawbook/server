@@ -20,9 +20,9 @@ class LoginTest {
 
     private val user = User(1L, "email@domain.com", "username", "password", true, null)
 
-    private val uuid: UUID = UUID.randomUUID()
+    private val tokenString = UUID.randomUUID().toString()
     private val token =
-        TwoFactorToken(1L, uuid, null, Clock.System.now(), null, TwoFactorTokenType.RefreshToken, false, user)
+        TwoFactorToken(1L, tokenString, null, Clock.System.now(), null, TwoFactorTokenType.RefreshToken, false, user)
 
     @Test
     fun `POST auth_login returns tokens when passed valid credentials`() = ktorEndpointTest { services, client ->
@@ -42,7 +42,7 @@ class LoginTest {
             )
         }
         assertEquals(200, res1.status.value)
-        assertEquals(uuid.toString(), res1.body<TokenResponse>().refreshToken)
+        assertEquals(tokenString.toString(), res1.body<TokenResponse>().refreshToken)
 
         val res2 = client.post("/test/api/auth/login/") {
             contentType(ContentType.Application.Json)
@@ -56,7 +56,7 @@ class LoginTest {
             )
         }
         assertEquals(200, res2.status.value)
-        assertEquals(uuid.toString(), res2.body<TokenResponse>().refreshToken)
+        assertEquals(tokenString.toString(), res2.body<TokenResponse>().refreshToken)
     }
 
     @Test
@@ -110,15 +110,15 @@ class LoginTest {
 
     @Test
     fun `POST auth_login_refresh returns tokens`() = ktorEndpointTest { services, client ->
-        coEvery { services.authService.loginUserWithRefreshToken(uuid) } returns AuthTokens("jwt", token)
+        coEvery { services.authService.loginUserWithRefreshToken(tokenString) } returns AuthTokens("jwt", token)
 
         val res = client.post("/test/api/auth/login/refresh/") {
             contentType(ContentType.Application.Json)
-            setBody(LoginRefreshRequest(uuid.toString()))
+            setBody(LoginRefreshRequest(tokenString.toString()))
         }
 
         assertEquals(200, res.status.value)
-        assertEquals(uuid.toString(), res.body<TokenResponse>().refreshToken)
+        assertEquals(tokenString.toString(), res.body<TokenResponse>().refreshToken)
     }
 
 }

@@ -6,7 +6,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import me.bumiller.civoris.common.toUUID
 import me.bumiller.civoris.core.AuthService
 import me.bumiller.civoris.core.exception.ServiceException
 import me.bumiller.civoris.model.http.conflict
@@ -16,7 +15,6 @@ import me.bumiller.civoris.rest.util.user
 import me.bumiller.civoris.validation.Validatable
 import me.bumiller.civoris.validation.actions.isEmail
 import me.bumiller.civoris.validation.actions.isPassword
-import me.bumiller.civoris.validation.actions.isUUID
 import me.bumiller.civoris.validation.actions.isUsername
 import me.bumiller.civoris.validation.validateThat
 import me.bumiller.civoris.validation.validated
@@ -91,7 +89,7 @@ internal data class SubmitEmailTokenRequest(
 ): Validatable {
 
     override suspend fun validate() {
-        validateThat(token).isUUID()
+
     }
 
 }
@@ -134,7 +132,7 @@ private fun Route.requestEmailToken(authService: AuthService) = post("email-veri
 private fun Route.submitEmailToken(
     authService: AuthService
 ) = patch("email-verify/") {
-    val token = call.validated<SubmitEmailTokenRequest>().token.toUUID()
+    val token = call.validated<SubmitEmailTokenRequest>().token
 
     try {
         authService.validateEmailWithToken(token)

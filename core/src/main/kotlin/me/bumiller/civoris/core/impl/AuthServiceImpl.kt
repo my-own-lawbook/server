@@ -7,6 +7,7 @@ import kotlinx.datetime.toJavaInstant
 import me.bumiller.civoris.common.present
 import me.bumiller.civoris.core.AuthService
 import me.bumiller.civoris.core.EncryptionService
+import me.bumiller.civoris.core.TokenGenerationStrategy
 import me.bumiller.civoris.core.data.TwoFactorTokenService
 import me.bumiller.civoris.core.data.UserService
 import me.bumiller.civoris.core.exception.ServiceException
@@ -16,7 +17,6 @@ import me.bumiller.civoris.model.TwoFactorToken
 import me.bumiller.civoris.model.TwoFactorTokenType
 import me.bumiller.civoris.model.User
 import me.bumiller.civoris.model.config.AppConfig
-import java.util.*
 
 internal class AuthServiceImpl(
     val userService: UserService,
@@ -45,6 +45,7 @@ internal class AuthServiceImpl(
         val emailToken = tokenService.create(
             type = TwoFactorTokenType.EmailConfirm,
             userId = user.id,
+            strategy = TokenGenerationStrategy.OneTimePassword(OTP_LENGTH),
             expiringAt = now.plus(appConfig.emailTokenDuration),
             issuedAt = now,
             additionalContent = user.email
@@ -79,6 +80,7 @@ internal class AuthServiceImpl(
         val refreshToken = tokenService.create(
             type = TwoFactorTokenType.RefreshToken,
             userId = userId,
+            strategy = TokenGenerationStrategy.UUID,
             expiringAt = expiringAtRefresh,
             issuedAt = now
         )
@@ -92,7 +94,7 @@ internal class AuthServiceImpl(
         return AuthTokens(jwt, refreshToken)
     }
 
-    override suspend fun logoutUser(userId: Long, vararg tokens: UUID) {
+    override suspend fun logoutUser(userId: Long, vararg tokens: String) {
         val user = userService.getSpecific(id = userId, onlyActive = false)
 
         tokens.forEach { token ->
@@ -102,39 +104,46 @@ internal class AuthServiceImpl(
         }
     }
 
-    override suspend fun loginUserWithRefreshToken(uuid: UUID): AuthTokens {
-        val token = validateToken(uuid, TwoFactorTokenType.RefreshToken)
+    override suspend fun loginUserWithRefreshToken(token: String): AuthTokens {
+        val tokenEntity = validateToken(token, TwoFactorTokenType.RefreshToken)
 
-        tokenService.markAsUsed(token.id)
-        return loginUser(token.user.id)
+        tokenService.markAsUsed(tokenEntity.id)
+        return loginUser(tokenEntity.user.id)
     }
 
-    override suspend fun validateEmailWithToken(tokenUUID: UUID): User {
-        val token = validateToken(tokenUUID, TwoFactorTokenType.EmailConfirm)
-        val user = token.additionalInfo?.let { userService.getSpecific(email = it, onlyActive = false) }!!
+    override suspend fun validateEmailWithToken(token: String): User {
+        val tokenEntity = validateToken(token, TwoFactorTokenType.EmailConfirm)
+        val user = tokenEntity.additionalInfo?.let { userService.getSpecific(email = it, onlyActive = false) }!!
 
         if (user.isEmailVerified)
-            throw ServiceException.EmailTokenUserAlreadyVerified(tokenUUID)
+            throw ServiceException.EmailTokenUserAlreadyVerified(token)
 
-        tokenService.markAsUsed(token.id)
+        tokenService.markAsUsed(tokenEntity.id)
         return userService.update(
             userId = user.id,
             isEmailVerified = present(true)
         )
     }
 
-    private suspend fun validateToken(uuid: UUID, type: TwoFactorTokenType): TwoFactorToken {
+    private suspend fun validateToken(token: String, type: TwoFactorTokenType): TwoFactorToken {
         val now = Clock.System.now()
 
-        val token = tokenService.getSpecific(token = uuid)
+        val tokenEntity = tokenService.getSpecific(token = token)
 
-        if (token.type != type)
-            throw ServiceException.InvalidTwoFactorTokenType(uuid, type)
-        if (token.expiringAt == null || token.expiringAt!! < now)
-            throw ServiceException.TwoFactorTokenExpired(uuid, token.expiringAt)
-        if (token.used)
-            throw ServiceException.TwoFactorTokenUsed(uuid)
+        if (tokenEntity.type != type)
+            throw ServiceException.InvalidTwoFactorTokenType(tokenEntity.token, type)
+        if (tokenEntity.expiringAt == null || tokenEntity.expiringAt!! < now)
+            throw ServiceException.TwoFactorTokenExpired(tokenEntity.token, tokenEntity.expiringAt)
+        if (tokenEntity.used)
+            throw ServiceException.TwoFactorTokenUsed(tokenEntity.token)
 
-        return token
+        return tokenEntity
     }
+
+    companion object {
+
+        private const val OTP_LENGTH = 6;
+
+    }
+
 }

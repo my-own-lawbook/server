@@ -49,15 +49,15 @@ class AuthServiceImplTest {
 
         coEvery { userService.createUser(any(), any(), any()) } returns user
         coEvery { encryptor.encrypt(any()) } returns ""
-        coEvery { tokenService.create(any(), any(), any(), any(), any()) } returns token
+        coEvery { tokenService.create(any(), any(), any(), any(), any(), any()) } returns token
         coEvery { emailService.sendEmailVerifyEmail(any(), any()) } returns Unit
     }
 
     private val user = User(1L, "", "", "", true, null)
 
-    private val uuid: UUID = UUID.randomUUID()
+    private val tokenString = UUID.randomUUID().toString()
     private val now = Clock.System.now()
-    private val token = TwoFactorToken(1L, uuid, "", now, now, TwoFactorTokenType.RefreshToken, false, user)
+    private val token = TwoFactorToken(1L, tokenString, "", now, now, TwoFactorTokenType.RefreshToken, false, user)
 
     @Test
     fun `createNewUser returns the user`() = runTest {
@@ -143,16 +143,16 @@ class AuthServiceImplTest {
 
     @Test
     fun `logoutUser deletes only tokens for user`() = runTest {
-        val uuids = (1..4).map { UUID.randomUUID() }
+        val tokenStrings = (1..4).map { UUID.randomUUID().toString() }
         val now = Clock.System.now()
 
         val user2 = User(2L, "email2", "username2", "password2", false, null)
 
         val tokens = listOf(
-            TwoFactorToken(1L, uuids[0], null, now, now, TwoFactorTokenType.RefreshToken, false, user),
-            TwoFactorToken(2L, uuids[1], null, now, now, TwoFactorTokenType.RefreshToken, false, user2),
-            TwoFactorToken(3L, uuids[2], null, now, now, TwoFactorTokenType.RefreshToken, false, user),
-            TwoFactorToken(4L, uuids[3], null, now, now, TwoFactorTokenType.RefreshToken, false, user2),
+            TwoFactorToken(1L, tokenStrings[0], null, now, now, TwoFactorTokenType.RefreshToken, false, user),
+            TwoFactorToken(2L, tokenStrings[1], null, now, now, TwoFactorTokenType.RefreshToken, false, user2),
+            TwoFactorToken(3L, tokenStrings[2], null, now, now, TwoFactorTokenType.RefreshToken, false, user),
+            TwoFactorToken(4L, tokenStrings[3], null, now, now, TwoFactorTokenType.RefreshToken, false, user2),
         )
 
         val tokenIdSlots = mutableListOf<Long>()
@@ -163,7 +163,7 @@ class AuthServiceImplTest {
                 any(),
                 any()
             )
-        } answers { c -> tokens.find { it.token == (c.invocation.args[1] as UUID) }!! }
+        } answers { c -> tokens.find { it.token == (c.invocation.args[1] as String) }!! }
         coEvery { tokenService.markAsUsed(capture(tokenIdSlots)) } returns token
 
         authService.logoutUser(user.id, *tokens.map(TwoFactorToken::token).toTypedArray())
@@ -178,18 +178,45 @@ class AuthServiceImplTest {
     fun `validateEmailWithToken throws for non email-verification-token`() = runTest {
         val now = Clock.System.now()
 
-        val token1 = TwoFactorToken(1L, UUID.randomUUID(), null, now, now, TwoFactorTokenType.RefreshToken, false, user)
+        val token1 = TwoFactorToken(
+            1L,
+            UUID.randomUUID().toString(),
+            null,
+            now,
+            now,
+            TwoFactorTokenType.RefreshToken,
+            false,
+            user
+        )
         val token2 =
-            TwoFactorToken(2L, UUID.randomUUID(), null, now, now, TwoFactorTokenType.PasswordReset, false, user)
-        val token3 = TwoFactorToken(3L, UUID.randomUUID(), null, now, now, TwoFactorTokenType.EmailConfirm, false, user)
+            TwoFactorToken(
+                2L,
+                UUID.randomUUID().toString(),
+                null,
+                now,
+                now,
+                TwoFactorTokenType.PasswordReset,
+                false,
+                user
+            )
+        val token3 = TwoFactorToken(
+            3L,
+            UUID.randomUUID().toString(),
+            null,
+            now,
+            now,
+            TwoFactorTokenType.EmailConfirm,
+            false,
+            user
+        )
 
         coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2, token3)
 
         assertThrows<ServiceException.InvalidTwoFactorTokenType> {
-            authService.validateEmailWithToken(UUID.randomUUID())
+            authService.validateEmailWithToken(UUID.randomUUID().toString())
         }
         assertThrows<ServiceException.InvalidTwoFactorTokenType> {
-            authService.validateEmailWithToken(UUID.randomUUID())
+            authService.validateEmailWithToken(UUID.randomUUID().toString())
         }
     }
 
@@ -199,7 +226,7 @@ class AuthServiceImplTest {
 
         val token1 = TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             null,
             now,
             now.minus(10.days),
@@ -208,10 +235,19 @@ class AuthServiceImplTest {
             user
         )
         val token2 =
-            TwoFactorToken(2L, UUID.randomUUID(), null, now, null, TwoFactorTokenType.EmailConfirm, false, user)
+            TwoFactorToken(
+                2L,
+                UUID.randomUUID().toString(),
+                null,
+                now,
+                null,
+                TwoFactorTokenType.EmailConfirm,
+                false,
+                user
+            )
         val token3 = TwoFactorToken(
             3L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             null,
             now,
             now.plus(10.days),
@@ -223,10 +259,10 @@ class AuthServiceImplTest {
         coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2, token3)
 
         assertThrows<ServiceException.TwoFactorTokenExpired> {
-            authService.validateEmailWithToken(UUID.randomUUID())
+            authService.validateEmailWithToken(UUID.randomUUID().toString())
         }
         assertThrows<ServiceException.TwoFactorTokenExpired> {
-            authService.validateEmailWithToken(UUID.randomUUID())
+            authService.validateEmailWithToken(UUID.randomUUID().toString())
         }
     }
 
@@ -236,7 +272,7 @@ class AuthServiceImplTest {
 
         val token1 = TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             null,
             now,
             now.plus(10.days),
@@ -245,12 +281,21 @@ class AuthServiceImplTest {
             user
         )
         val token2 =
-            TwoFactorToken(2L, UUID.randomUUID(), null, now, null, TwoFactorTokenType.EmailConfirm, false, user)
+            TwoFactorToken(
+                2L,
+                UUID.randomUUID().toString(),
+                null,
+                now,
+                null,
+                TwoFactorTokenType.EmailConfirm,
+                false,
+                user
+            )
 
         coEvery { tokenService.getSpecific(any(), any()) }.returnsMany(token1, token2)
 
         assertThrows<ServiceException.TwoFactorTokenUsed> {
-            authService.validateEmailWithToken(UUID.randomUUID())
+            authService.validateEmailWithToken(UUID.randomUUID().toString())
         }
     }
 
@@ -262,7 +307,7 @@ class AuthServiceImplTest {
 
         val token1 = TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             user.email,
             now,
             now.plus(10.days),
@@ -274,7 +319,7 @@ class AuthServiceImplTest {
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
         assertThrows<ServiceException.EmailTokenUserAlreadyVerified> {
-            authService.validateEmailWithToken(UUID.randomUUID())
+            authService.validateEmailWithToken(UUID.randomUUID().toString())
         }
     }
 
@@ -288,7 +333,7 @@ class AuthServiceImplTest {
 
         val token1 = TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             user.email,
             now,
             now.plus(10.days),
@@ -299,7 +344,7 @@ class AuthServiceImplTest {
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
-        authService.validateEmailWithToken(UUID.randomUUID())
+        authService.validateEmailWithToken(UUID.randomUUID().toString())
 
         coVerify(exactly = 1) { tokenService.markAsUsed(token1.id) }
     }
@@ -314,7 +359,7 @@ class AuthServiceImplTest {
 
         val token1 = TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             user.email,
             now,
             now.plus(10.days),
@@ -325,7 +370,7 @@ class AuthServiceImplTest {
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
-        authService.validateEmailWithToken(UUID.randomUUID())
+        authService.validateEmailWithToken(UUID.randomUUID().toString())
 
         coVerify(exactly = 1) { userService.update(user.id, any(), any(), any(), present(true)) }
     }
@@ -340,7 +385,7 @@ class AuthServiceImplTest {
 
         val token1 = TwoFactorToken(
             1L,
-            UUID.randomUUID(),
+            UUID.randomUUID().toString(),
             user.email,
             now,
             now.plus(10.days),
@@ -351,7 +396,7 @@ class AuthServiceImplTest {
 
         coEvery { tokenService.getSpecific(any(), any()) } returns token1
 
-        val returned = authService.validateEmailWithToken(UUID.randomUUID())
+        val returned = authService.validateEmailWithToken(UUID.randomUUID().toString())
 
         assertEquals(user, returned)
     }

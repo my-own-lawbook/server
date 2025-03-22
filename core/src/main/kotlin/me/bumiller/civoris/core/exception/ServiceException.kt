@@ -3,7 +3,6 @@ package me.bumiller.civoris.core.exception
 import kotlinx.datetime.Instant
 import me.bumiller.civoris.model.InvitationStatus
 import me.bumiller.civoris.model.TwoFactorTokenType
-import java.util.*
 
 /**
  * An exception thrown by services when any kind of error occurs
@@ -70,7 +69,7 @@ sealed class ServiceException : RuntimeException() {
     /**
      * A two-factor-token could not be found
      */
-    data class TwoFactorTokenNotFound(val id: Long? = null, val token: UUID? = null) : ServiceException()
+    data class TwoFactorTokenNotFound(val id: Long? = null, val token: String? = null) : ServiceException()
 
     /**
      * A user already has a profile set
@@ -95,22 +94,22 @@ sealed class ServiceException : RuntimeException() {
     /**
      * A token had an unexpected type
      */
-    data class InvalidTwoFactorTokenType(val token: UUID, val expectedType: TwoFactorTokenType) : ServiceException()
+    data class InvalidTwoFactorTokenType(val token: String, val expectedType: TwoFactorTokenType) : ServiceException()
 
     /**
      * A token that is already expired
      */
-    data class TwoFactorTokenExpired(val token: UUID, val expiredSince: Instant?) : ServiceException()
+    data class TwoFactorTokenExpired(val token: String, val expiredSince: Instant?) : ServiceException()
 
     /**
      * A token that is already used
      */
-    data class TwoFactorTokenUsed(val token: UUID) : ServiceException()
+    data class TwoFactorTokenUsed(val token: String) : ServiceException()
 
     /**
      * The user for an email token is already verified
      */
-    data class EmailTokenUserAlreadyVerified(val token: UUID) : ServiceException()
+    data class EmailTokenUserAlreadyVerified(val token: String) : ServiceException()
 
     /**
      * A book-invitation was not found

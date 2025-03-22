@@ -22,10 +22,10 @@ class SignupTest {
 
     val profile = UserProfile(1L, LocalDate(2000, 1, 1), Gender.Other, "firstName", "lastName")
     val user = User(1L, "email@email.com", "username", "password", false, profile)
-    val uuid: UUID = UUID.randomUUID()
+    val tokenString = UUID.randomUUID().toString()
     val token = TwoFactorToken(
         1L,
-        uuid,
+        tokenString,
         null,
         Clock.System.now(),
         Clock.System.now().plus(5.minutes),
@@ -63,14 +63,14 @@ class SignupTest {
     @Test
     fun `PATCH auth_signup_email-verify calls validateEmailWithToken and returns 200`() =
         ktorEndpointTest { services, client ->
-            coEvery { services.authService.validateEmailWithToken(uuid) } returns user
+            coEvery { services.authService.validateEmailWithToken(tokenString) } returns user
 
             val res1 = client.patch("/test/api/auth/signup/email-verify/") {
                 contentType(ContentType.Application.Json)
-                setBody(SubmitEmailTokenRequest(uuid.toStr()))
+                setBody(SubmitEmailTokenRequest(tokenString.toStr()))
             }
             assertEquals(200, res1.status.value)
-            coVerify(exactly = 1) { services.authService.validateEmailWithToken(uuid) }
+            coVerify(exactly = 1) { services.authService.validateEmailWithToken(tokenString) }
         }
 
 }

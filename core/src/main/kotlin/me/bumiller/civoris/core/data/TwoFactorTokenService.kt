@@ -2,10 +2,10 @@ package me.bumiller.civoris.core.data
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import me.bumiller.civoris.core.TokenGenerationStrategy
 import me.bumiller.civoris.core.exception.ServiceException
 import me.bumiller.civoris.model.TwoFactorToken
 import me.bumiller.civoris.model.TwoFactorTokenType
-import java.util.*
 
 /**
  * Interface to perform common operations on two factor tokens
@@ -21,11 +21,11 @@ interface TwoFactorTokenService {
      * Gets a specific token from the database
      *
      * @param id The id of the token
-     * @param token The token uuid
+     * @param token The token
      * @return The [TwoFactorToken]
      * @throws ServiceException.TwoFactorTokenNotFound If the token could not be found
      */
-    suspend fun getSpecific(id: Long? = null, token: UUID? = null): TwoFactorToken
+    suspend fun getSpecific(id: Long? = null, token: String? = null): TwoFactorToken
 
     /**
      * Creates a new two factor token in the database
@@ -41,6 +41,7 @@ interface TwoFactorTokenService {
     suspend fun create(
         type: TwoFactorTokenType,
         userId: Long,
+        strategy: TokenGenerationStrategy = TokenGenerationStrategy.UUID,
         expiringAt: Instant? = null,
         issuedAt: Instant = Clock.System.now(),
         additionalContent: String? = null
