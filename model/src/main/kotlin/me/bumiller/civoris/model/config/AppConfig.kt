@@ -70,6 +70,11 @@ data class AppConfig(
     /**
      * The base path of the rest server
      */
-    val basePath: String
+    val basePath: String,
+
+    /**
+     * Base url of the web server.
+     */
+    val webBaseUrl: String?
 
 )
