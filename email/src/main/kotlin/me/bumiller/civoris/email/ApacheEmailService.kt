@@ -4,53 +4,67 @@ import me.bumiller.civoris.model.TwoFactorToken
 import me.bumiller.civoris.model.User
 import me.bumiller.civoris.model.config.AppConfig
 import org.apache.commons.mail.DefaultAuthenticator
-import org.apache.commons.mail.SimpleEmail
+import org.apache.commons.mail.ImageHtmlEmail
+import org.apache.commons.mail.resolver.DataSourceUrlResolver
+import java.net.URI
 
 internal class ApacheEmailService(
     private val appConfig: AppConfig
 ) : EmailService {
 
+    companion object {
+
+        private const val ASSETS_BASE_URL = "https://raw.githubusercontent.com"
+
+        private const val OTP = "otp"
+
+        private const val PLACEHOLDER_PREFIX = "{{"
+        private const val PLACEHOLDER_POSTFIX = "}}"
+
+    }
+
+    private val emailVerifyHtmlContent: String
+
+    init {
+        emailVerifyHtmlContent =
+            this::class.java.getResourceAsStream("/templates/email_verify.html")
+                ?.bufferedReader()
+                ?.readLines()
+                ?.joinToString(System.lineSeparator())
+                ?: throw IllegalStateException("Could not read html resource")
+    }
+
     override suspend fun sendEmailVerifyEmail(user: User, token: TwoFactorToken) {
-        baseEmail(user.email).apply {
+        val html = emailVerifyHtmlContent
+            .placeholder(OTP, token.token)
+
+        createHtmlMail(user.email, html).apply {
             subject = "Verify your email address"
-            setMsg(
-                """
-            Hello,
-            
-            to confirm your email address, use the following token:
-            
-            '${token.token}'.
-        """.trimIndent()
-            )
-        }.send()
+        }
+            .send()
     }
 
     override suspend fun sendPasswordResetEmail(user: User, token: TwoFactorToken) {
-        requireNotNull(user.profile)
-
-        baseEmail(user.email).apply {
-            subject = "Reset password token"
-            setMsg(
-                """
-            Hello ${user.profile!!.firstName} ${user.profile!!.lastName},
-            
-            to reset your password, use the following token:
-            
-            '${token.token}'.
-        """.trimIndent()
-            )
-        }.send()
+        TODO()
     }
 
-    private fun baseEmail(recipient: String) = SimpleEmail()
-        .apply {
-            hostName = appConfig.mailSmtpServer
-            authenticator = DefaultAuthenticator(appConfig.mailUsername, appConfig.mailPassword)
-            isSSLOnConnect = appConfig.mailDoSsl
+    private fun createHtmlMail(
+        recipient: String,
+        htmlContent: String
+    ) = ImageHtmlEmail().apply {
+        hostName = appConfig.mailSmtpServer
+        authenticator = DefaultAuthenticator(appConfig.mailUsername, appConfig.mailPassword)
+        isSSLOnConnect = appConfig.mailDoSsl
 
-            setFrom(appConfig.mailUsername)
-            setSmtpPort(appConfig.mailSmtpPort)
+        setFrom(appConfig.mailUsername)
+        setSmtpPort(appConfig.mailSmtpPort)
 
-            addTo(recipient)
-        }
+        addTo(recipient)
+
+        setHtmlMsg(htmlContent)
+        dataSourceResolver = DataSourceUrlResolver(URI.create(ASSETS_BASE_URL).toURL())
+    }
+
+    private fun String.placeholder(placeholder: String, value: String) =
+        replace(PLACEHOLDER_PREFIX + placeholder + PLACEHOLDER_POSTFIX, value)
 }
