@@ -68,8 +68,8 @@ internal class DatabaseTwoFactorTokenService(
         is TokenGenerationStrategy.OneTimePassword -> {
             tokenRepository.deleteExpired()
 
-            val lowerBound = pow(10.0, strategy.length.toDouble()).toInt()
-            val upperBound = pow(10.0, strategy.length.toDouble() + 1.0).toInt()
+            val lowerBound = pow(10.0, strategy.length.toDouble() - 1).toInt()
+            val upperBound = pow(10.0, strategy.length.toDouble()).toInt()
             val boundDif = upperBound - lowerBound
 
             var token = random.nextInt(boundDif) + lowerBound
