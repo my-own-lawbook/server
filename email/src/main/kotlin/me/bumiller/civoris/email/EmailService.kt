@@ -1,5 +1,6 @@
 package me.bumiller.civoris.email
 
+import me.bumiller.civoris.model.BookInvitation
 import me.bumiller.civoris.model.TwoFactorToken
 import me.bumiller.civoris.model.User
 
@@ -17,11 +18,10 @@ interface EmailService {
     suspend fun sendEmailVerifyEmail(user: User, token: TwoFactorToken)
 
     /**
-     * Sends an email containing a password-reset-token
+     * Sends an email reflecting the latest status change of it.
      *
-     * @param user The recipient. [User.email] is used as the sending address
-     * @param token The token to verify the email
+     * @param invitation The invitation whose status was just updated
      */
-    suspend fun sendPasswordResetEmail(user: User, token: TwoFactorToken)
+    suspend fun sendInvitationStatusChangeEmail(invitation: BookInvitation)
 
 }
