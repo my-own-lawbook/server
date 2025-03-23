@@ -10,6 +10,7 @@ repositories {
 dependencies {
     implementation(libs.apache.email)
     implementation(libs.koin)
+    implementation(libs.kotlin.datetime)
 
     implementation(project(":model"))
 }
