@@ -21,6 +21,8 @@ internal class ApacheEmailService(
 
     companion object {
 
+        private const val EMAIL_FROM = "Civoris"
+
         private const val SUBJECT_EMAIL_VERIFY = "Verify your Email"
         private const val SUBJECT_INVITATION_NEW = "New invitation"
         private const val SUBJECT_INVITATION_REVOKED = "Invitation revoked"
@@ -138,7 +140,7 @@ internal class ApacheEmailService(
         authenticator = DefaultAuthenticator(appConfig.mailUsername, appConfig.mailPassword)
         isSSLOnConnect = appConfig.mailDoSsl
 
-        setFrom(appConfig.mailUsername)
+        setFrom("$EMAIL_FROM <${appConfig.mailUsername}>")
         setSmtpPort(appConfig.mailSmtpPort)
 
         addTo(recipient)
