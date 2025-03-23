@@ -26,31 +26,20 @@
         justify-content: center;
     }
 
-    #logo-wrapper {
-        display: flex;
-        align-content: center;
-        justify-content: center;
-    }
-
-    #logo {
-        width: min(50%, 400px);
-    }
-
 </style>
 
 <div>
-    <div id="logo-wrapper">
-        <img
-                alt="Logo"
-                id="logo"
-                src="/civoris/assets/refs/heads/main/general/text_logo.png">
-    </div>
+
     <div class="centered">
         <h1>Verify your email address</h1>
     </div>
     <p>Welcome to Civoris! To continue, use the following OTP to verify that this email address belongs to you.</p>
     <div class="centered">
-        <code><h1>957384</h1></code>
+        <code>
+            <h1>
+                {otp}
+            </h1>
+        </code>
     </div>
     <p>Yours, the Civoris server</p>
 </div>
