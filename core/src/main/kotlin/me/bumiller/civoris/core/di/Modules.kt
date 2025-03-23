@@ -24,5 +24,5 @@ val servicesModule = module {
     single<AuthService> { AuthServiceImpl(get(), get(), get(), get(), get()) }
     single<LawService> { LawServiceImpl(get()) }
     single<MemberService> { MemberServiceImpl(get(), get()) }
-    single<InvitationService> { InvitationServiceImpl(get(), get()) }
+    single<InvitationService> { InvitationServiceImpl(get(), get(), get()) }
 }

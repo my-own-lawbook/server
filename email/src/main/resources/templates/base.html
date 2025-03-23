@@ -1,0 +1,83 @@
+<style>
+    * {
+        box-sizing: border-box;
+        padding: 0;
+        color: #191C20;
+        font-family: sans-serif;
+    }
+
+    #wrapper {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #logo-wrapper {
+        display: flex;
+        align-content: center;
+        justify-content: center;
+    }
+
+    #logo {
+        width: min(50%, 400px);
+    }
+
+    #footer-container {
+        width: 100%;
+        background: #D6E3FF;
+        height: min(100px, 30%);
+        border-top-left-radius: 32px;
+        border-top-right-radius: 32px;
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+    }
+
+    #links-container {
+        display: flex;
+        flex-direction: row;
+        gap: 32px;
+    }
+
+    #links-container > a {
+        color: #001B3E;
+        text-decoration: none;
+    }
+
+    #copyright-container {
+        color: rgba(0, 27, 62, 0.75);
+    }
+
+    #spacer {
+        flex: 1;
+    }
+
+</style>
+
+<div id="wrapper">
+    <div id="logo-wrapper">
+        <img
+                alt="Logo"
+                id="logo"
+                src="/civoris/assets/refs/heads/main/general/text_logo.png">
+    </div>
+
+    <div id="content-wrapper">
+        <include>{{content}}</include>
+    </div>
+
+    <div id="spacer"></div>
+
+    <div id="footer-container">
+        <div id="links-container">
+            <a href="{web_link}">Visit Website</a>
+            <a href="{github_link}">Visit GitHub</a>
+        </div>
+        <div id="copyright-container">
+            &copy; 2025 Civoris
+        </div>
+    </div>
+</div>

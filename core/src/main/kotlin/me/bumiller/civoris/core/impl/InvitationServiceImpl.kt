@@ -6,6 +6,7 @@ import me.bumiller.civoris.core.InvitationService
 import me.bumiller.civoris.core.data.InvitationContentService
 import me.bumiller.civoris.core.data.MemberContentService
 import me.bumiller.civoris.core.exception.ServiceException
+import me.bumiller.civoris.email.EmailService
 import me.bumiller.civoris.model.BookInvitation
 import me.bumiller.civoris.model.InvitationStatus
 import me.bumiller.civoris.model.MemberRole
@@ -13,7 +14,8 @@ import me.bumiller.civoris.model.User
 
 internal class InvitationServiceImpl(
     private val invitationContentService: InvitationContentService,
-    private val memberContentService: MemberContentService
+    private val memberContentService: MemberContentService,
+    private val emailService: EmailService
 ) : InvitationService {
 
     override suspend fun createInvitation(
@@ -39,8 +41,10 @@ internal class InvitationServiceImpl(
             recipientId,
             targetBookId
         )
+        println("Inside createInvitation")
 
         return invitationContentService.createInvitation(authorId, targetBookId, recipientId, role, expiresAt, message)
+            .also { emailService.sendInvitationStatusChangeEmail(it) }
     }
 
     override suspend fun acceptInvitation(invitationId: Long) {
@@ -58,6 +62,9 @@ internal class InvitationServiceImpl(
 
         memberContentService.addMemberToBook(invitation.targetBook.id, invitation.recipient.id)
         memberContentService.setMemberRole(invitation.recipient.id, invitation.targetBook.id, invitation.role)
+
+        val updatedInvitation = invitationContentService.getInvitationById(invitationId)
+        emailService.sendInvitationStatusChangeEmail(updatedInvitation)
     }
 
     override suspend fun denyInvitation(invitationId: Long) {
@@ -68,6 +75,9 @@ internal class InvitationServiceImpl(
             throw ServiceException.InvitationNotOpen(invitationId, invitation.status)
 
         invitationContentService.updateStatus(invitationId, InvitationStatus.Declined)
+
+        val updatedInvitation = invitationContentService.getInvitationById(invitationId)
+        emailService.sendInvitationStatusChangeEmail(updatedInvitation)
     }
 
     override suspend fun revokeInvitation(invitationId: Long) {
@@ -78,6 +88,9 @@ internal class InvitationServiceImpl(
             throw ServiceException.InvitationNotOpen(invitationId, invitation.status)
 
         invitationContentService.updateStatus(invitationId, InvitationStatus.Revoked)
+
+        val updatedInvitation = invitationContentService.getInvitationById(invitationId)
+        emailService.sendInvitationStatusChangeEmail(updatedInvitation)
     }
 
     override suspend fun hasUserActiveInvitation(userId: Long, targetId: Long?): Boolean {

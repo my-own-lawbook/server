@@ -1,0 +1,45 @@
+<style>
+    * {
+        font-family: sans-serif;
+    }
+
+    body {
+        background: #F9F9FF;
+    }
+
+    p, h1, h2 {
+        color: #191C20;
+    }
+
+    code {
+        background: #E7E8EE;
+        border-radius: 32px;
+        padding-left: 32px;
+        padding-right: 32px;
+        color: #415F91;
+    }
+
+    .centered {
+        width: 100%;
+        display: flex;
+        align-content: center;
+        justify-content: center;
+    }
+
+</style>
+
+<div>
+
+    <div class="centered">
+        <h1>Verify your email address</h1>
+    </div>
+    <p>Welcome to Civoris! To continue, use the following OTP to verify that this email address belongs to you.</p>
+    <div class="centered">
+        <code>
+            <h1>
+                {otp}
+            </h1>
+        </code>
+    </div>
+    <p>Yours, the Civoris server</p>
+</div>

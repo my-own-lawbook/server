@@ -79,6 +79,7 @@ private fun Application.appConfig(): AppConfig = environment.config.run {
         mailDoSsl = property("civoris.mail.ssl").getString().toBoolean(),
         mailUsername = property("civoris.mail.from").getString(),
         mailPassword = property("civoris.mail.password").getString(),
-        basePath = property("civoris.rest.path").getString()
+        basePath = property("civoris.rest.path").getString(),
+        webBaseUrl = propertyOrNull("civoris.web")?.getString()
     )
 }
