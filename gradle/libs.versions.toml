@@ -16,6 +16,7 @@ auth0-jwt = "4.4.0"
 jbcrypt = "0.10.2"
 sonarqube = "5.1.0.4882"
 logback = "1.5.7"
+kotlin_html = "0.12.0"
 
 [libraries]
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -39,11 +40,13 @@ ktor-dataconversion = { group = "io.ktor", name = "ktor-server-data-conversion",
 ktor-yaml = { group = "io.ktor", name = "ktor-server-config-yaml", version.ref = "ktor" }
 ktor-cors = { group = "io.ktor", name = "ktor-server-cors", version.ref = "ktor" }
 ktor-test = { group = "io.ktor", name = "ktor-server-test-host", version.ref = "ktor" }
+ktor-http = { group = "io.ktor", name = "ktor-http", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 koin = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-ktor = { group = "io.insert-koin", name = "koin-ktor", version.ref = "koin" }
 kotlin-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlin-serialization" }
 kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlin_datetime" }
+kotlin-html = { group = "org.jetbrains.kotlinx", name = "kotlinx-html", version.ref = "kotlin_html" }
 postgres = { group = "org.postgresql", name = "postgresql", version.ref = "postgres" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 java-jwt = { group = "com.auth0", name = "java-jwt", version.ref = "auth0-jwt" }

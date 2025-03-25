@@ -1,10 +1,9 @@
 package me.bumiller.civoris.email
 
-import me.bumiller.civoris.email.formatting.format
-import me.bumiller.civoris.email.formatting.formatFullName
-import me.bumiller.civoris.email.formatting.formatName
-import me.bumiller.civoris.email.template.TemplateResult
-import me.bumiller.civoris.email.template.generateTemplate
+import kotlinx.html.DIV
+import me.bumiller.civoris.email.html.emailBase
+import me.bumiller.civoris.email.html.emailVerifyContent
+import me.bumiller.civoris.email.html.invitationStatusUpdate
 import me.bumiller.civoris.model.BookInvitation
 import me.bumiller.civoris.model.InvitationStatus
 import me.bumiller.civoris.model.TwoFactorToken
@@ -19,6 +18,8 @@ internal class ApacheEmailService(
     private val appConfig: AppConfig
 ) : EmailService {
 
+    private val linkGenerator = appConfig.webBaseUrl?.let(::LinkGenerator)
+
     companion object {
 
         private const val EMAIL_FROM = "Civoris"
@@ -29,12 +30,14 @@ internal class ApacheEmailService(
         private const val SUBJECT_INVITATION_DECLINED = "Invitation declined"
         private const val SUBJECT_INVITATION_ACCEPTED = "Invitation accepted"
 
+        private const val RELATIVE_LOGO_URL = "/civoris/assets/refs/heads/main/general/text_logo.png"
         private const val ASSETS_BASE_URL = "https://raw.githubusercontent.com"
         private const val GITHUB_URL = "https://github.com/civoris/"
 
         private const val GITHUB_LINK_PLACEHOLDER = "github_link"
         private const val WEB_LINK_PLACEHOLDER = "web_link"
         private const val OTP_PLACEHOLDER = "otp"
+        private const val EMAIL_VERIFY_LINK_PLACEHOLDER = "email_verify_link"
         private const val USERNAME_PLACEHOLDER = "username"
         private const val TARGET_BOOK_NAME_PLACEHOLDER = "book_name"
         private const val AUTHOR_NAME_PLACEHOLDER = "author_name"
@@ -58,29 +61,40 @@ internal class ApacheEmailService(
     )
 
     override suspend fun sendEmailVerifyEmail(user: User, token: TwoFactorToken) {
-        val placeholders = mapOf(
-            OTP_PLACEHOLDER to token.token
-        )
+        val html = createHtml {
+            emailVerifyContent(
+                otp = token.token, emailVerifyLink = linkGenerator?.emailVerify(token.token)
+            )
+        }
 
-        createHtmlMail(
-            recipient = user.email,
-            templateName = EMAIL_VERIFY_TEMPLATE,
-            basePlaceholders + placeholders
-        ).apply {
-            subject = SUBJECT_EMAIL_VERIFY
-        }.send()
+        createHtmlMail(user.email, html).apply { subject = SUBJECT_EMAIL_VERIFY }.send()
     }
 
     override suspend fun sendInvitationStatusChangeEmail(invitation: BookInvitation) {
-        when (invitation.status) {
-            InvitationStatus.Open -> invitationCreatedEmail(invitation)
-            InvitationStatus.Accepted -> invitationAcceptedMail(invitation)
-            InvitationStatus.Declined -> invitationDeniedMail(invitation)
-            InvitationStatus.Revoked -> invitationRevokedMail(invitation)
-        }.apply {
-            subject = invitation.status.subject()
-        }.send()
+        val html = createHtml {
+            invitationStatusUpdate(
+                invitation = invitation, webLink = linkGenerator?.invitationStatusUpdate(invitation)
+            )
+        }
+
+        val recipient = when (invitation.status) {
+            InvitationStatus.Open, InvitationStatus.Revoked -> invitation.recipient
+
+            InvitationStatus.Accepted, InvitationStatus.Declined -> invitation.author
+        }
+
+        createHtmlMail(recipient.email, html)
+            .apply { subject = invitation.status.subject() }
     }
+
+    private fun createHtml(content: DIV.() -> Unit): String = StringBuilder().apply {
+        emailBase(
+            logoSrc = RELATIVE_LOGO_URL,
+            githubLink = GITHUB_URL,
+            webLink = appConfig.webBaseUrl,
+            content = content
+        )
+    }.toString()
 
     private fun InvitationStatus.subject() = when (this) {
         InvitationStatus.Open -> SUBJECT_INVITATION_NEW
@@ -89,52 +103,8 @@ internal class ApacheEmailService(
         InvitationStatus.Revoked -> SUBJECT_INVITATION_REVOKED
     }
 
-    private fun invitationAcceptedMail(invitation: BookInvitation) = createHtmlMail(
-        recipient = invitation.author.email,
-        templateName = INVITATION_ACCEPTED_TEMPLATE,
-        placeholders = basePlaceholders + mapOf(
-            USERNAME_PLACEHOLDER to invitation.author.username,
-            INVITATION_RECIPIENT_PLACEHOLDER to invitation.recipient.formatFullName(),
-            TARGET_BOOK_NAME_PLACEHOLDER to invitation.targetBook.name
-        )
-    )
-
-    private fun invitationRevokedMail(invitation: BookInvitation) = createHtmlMail(
-        recipient = invitation.recipient.email,
-        templateName = INVITATION_REVOKED_TEMPLATE,
-        placeholders = basePlaceholders + mapOf(
-            USERNAME_PLACEHOLDER to invitation.recipient.username,
-            TARGET_BOOK_NAME_PLACEHOLDER to invitation.targetBook.name
-        )
-    )
-
-    private fun invitationDeniedMail(invitation: BookInvitation) = createHtmlMail(
-        recipient = invitation.author.email,
-        templateName = INVITATION_DENIED_TEMPLATE,
-        placeholders = basePlaceholders + mapOf(
-            USERNAME_PLACEHOLDER to invitation.author.username,
-            INVITATION_RECIPIENT_PLACEHOLDER to invitation.recipient.formatFullName(),
-            TARGET_BOOK_NAME_PLACEHOLDER to invitation.targetBook.name
-        )
-    )
-
-    private fun invitationCreatedEmail(invitation: BookInvitation) = createHtmlMail(
-        recipient = invitation.recipient.email,
-        templateName = INVITATION_NEW_TEMPLATE,
-        placeholders = basePlaceholders + mapOf(
-            USERNAME_PLACEHOLDER to invitation.recipient.username,
-            AUTHOR_NAME_PLACEHOLDER to invitation.author.formatFullName(),
-            TARGET_BOOK_NAME_PLACEHOLDER to invitation.targetBook.name,
-            INVITATION_MEMBER_ROLE_PLACEHOLDER to invitation.role.formatName(),
-            INVITATION_EXPIRATION_PLACEHOLDER to invitation.expiredAt?.format(),
-            INVITATION_MESSAGE_PLACEHOLDER to invitation.message
-        )
-    )
-
     private fun createHtmlMail(
-        recipient: String,
-        templateName: String,
-        placeholders: Map<String, String?>
+        recipient: String, html: String
     ) = ImageHtmlEmail().apply {
         hostName = appConfig.mailSmtpServer
         authenticator = DefaultAuthenticator(appConfig.mailUsername, appConfig.mailPassword)
@@ -144,12 +114,6 @@ internal class ApacheEmailService(
         setSmtpPort(appConfig.mailSmtpPort)
 
         addTo(recipient)
-
-        val template = generateTemplate(templateName, placeholders)
-        val html = when (template) {
-            is TemplateResult.Template<String> -> template.html
-            is TemplateResult.MissingPlaceholder<String> -> throw IllegalStateException("Could not create template due to missing placeholder: '${template.missingKey}'.")
-        }
 
         setHtmlMsg(html)
         dataSourceResolver = DataSourceUrlResolver(URI.create(ASSETS_BASE_URL).toURL())
