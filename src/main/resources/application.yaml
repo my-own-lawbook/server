@@ -28,4 +28,4 @@ civoris:
     from: "$CIVORIS_MAIL_FROM"
   rest:
     path: "$CIVORIS_REST_PATH:/api/"
-  web: "$CIVORIS_WEB_URL:"
+  web: "$CIVORIS_WEB_URL"
